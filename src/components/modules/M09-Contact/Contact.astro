@@ -1,0 +1,101 @@
+---
+// M09 · Contact (§7.9). Phone is the conversion — given weight, not buried.
+// WhatsApp is the fallback, styled navy/ivory — NEVER WhatsApp green (§7.9).
+// Phone + WhatsApp are TODO until real numbers exist; the section renders
+// complete with clear placeholders and nothing invented (CLAUDE.md).
+import Section from '@/components/primitives/Section.astro';
+import Rule from '@/components/primitives/Rule.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+import Heading from '@/components/primitives/Heading.astro';
+import Lead from '@/components/primitives/Lead.astro';
+import Caption from '@/components/primitives/Caption.astro';
+import Button from '@/components/primitives/Button.astro';
+import Reveal from '@/components/primitives/Reveal.astro';
+import Icon from '@/components/primitives/Icon.astro';
+import { site } from '@/data/site';
+
+const { phone, phoneDisplay, whatsapp, hours, email } = site.contact;
+---
+<Section id="contact" dark>
+  <Rule />
+  <Reveal index={0}><Eyebrow>Contact</Eyebrow></Reveal>
+  <Reveal index={1}><Heading>Call us</Heading></Reveal>
+  <Reveal index={2}><Lead>We would rather talk than exchange forms.</Lead></Reveal>
+
+  <div class="contact__actions reveal" style="--i:3">
+    {
+      phone && phoneDisplay ? (
+        <Button href={`tel:${phone}`} variant="primary" weight="heavy" aria-label={`Call ${phoneDisplay}`}>
+          <Icon name="phone" /> {phoneDisplay}
+        </Button>
+      ) : (
+        <span class="todo-pill" title="Add a business phone number in src/data/site.ts">
+          TODO · business phone
+        </span>
+      )
+    }
+
+    {
+      whatsapp ? (
+        <Button href={`https://wa.me/${whatsapp}`} variant="ghost" rel="noopener" target="_blank">
+          <Icon name="whatsapp" /> WhatsApp
+        </Button>
+      ) : (
+        <span class="todo-pill" title="Add a WhatsApp Business number in src/data/site.ts">
+          TODO · WhatsApp
+        </span>
+      )
+    }
+  </div>
+
+  <Reveal index={4}><Caption>{hours}</Caption></Reveal>
+  {
+    email && (
+      <Reveal index={5}>
+        <Caption>
+          <a class="contact__email" href={`mailto:${email}`}>
+            <Icon name="mail" /> {email}
+          </a>
+        </Caption>
+      </Reveal>
+    )
+  }
+</Section>
+
+<style>
+  .contact__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin-top: var(--space-1);
+  }
+  .todo-pill {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--ivory) 70%, transparent);
+    border: 1px dashed color-mix(in srgb, var(--ivory) 45%, transparent);
+    padding: 0.9em 1.4em;
+    border-radius: 2px;
+  }
+
+  /* Email fallback — quiet, tappable, and never wider than the screen. */
+  .contact__email {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    text-underline-offset: 2px;
+    color: inherit;
+    overflow-wrap: anywhere;
+  }
+  .contact__email > :global(.icon) { opacity: 0.85; }
+  .contact__email:hover { text-decoration: underline; }
+
+  /* Narrow screens: stack the actions so nothing overflows the edge. */
+  @media (max-width: 30rem) {
+    .contact__actions { flex-direction: column; align-items: flex-start; }
+  }
+</style>

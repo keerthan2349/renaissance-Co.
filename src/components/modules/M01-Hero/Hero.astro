@@ -1,0 +1,93 @@
+---
+// M01 · Hero. Type sits on a settled dark band, never on image detail (§8.5).
+// Lines rise + fade in on load via the site's single IntersectionObserver reveal
+// (the same reliable mechanism every section uses) — no dependency on font-load
+// timing, which was leaving the headline stuck on a cold cache.
+//
+// HERO ASSET: none dropped yet. Until a still/footage lands in assets-incoming/,
+// the background is a settled dark navy field (no detail, exactly where type is
+// allowed to sit). When the asset arrives it goes behind .hero__scrim and the
+// type stays on the dark band.
+import Display from '@/components/primitives/Display.astro';
+import Lead from '@/components/primitives/Lead.astro';
+import { heroContent } from './content';
+---
+<section class="hero" data-hero>
+  <div class="hero__media" aria-hidden="true">
+    {/* TODO: hero asset (image or footage). Drop into repo/assets-incoming/. */}
+  </div>
+  <div class="hero__scrim" aria-hidden="true"></div>
+
+  <div class="hero__content">
+    <Display as="h1" class="hero__headline">
+      {
+        heroContent.headlineLines.map((line, i) => (
+          <span class="hero__line" style={`--line:${i}`}>{line}</span>
+        ))
+      }
+    </Display>
+    <Lead class="hero__sub">{heroContent.sub}</Lead>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-end;
+    color: var(--ivory);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  /* Placeholder dark field — a settled navy with no detail (§8.5). */
+  .hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background:
+      radial-gradient(120% 90% at 70% 10%, #16224f 0%, #0A1440 55%, #070d2b 100%);
+  }
+  /* Scrim guarantees the type always sits on a dark band, even once real
+     footage is added behind it. */
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(to top, rgba(7, 13, 43, 0.92) 0%, rgba(7, 13, 43, 0.5) 45%, rgba(7, 13, 43, 0.15) 100%);
+  }
+  .hero__content {
+    max-width: 72rem;
+    width: 100%;
+    margin-inline: auto;
+    padding: 0 var(--gutter) clamp(4rem, 12vh, 8rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  /* text-wrap:balance (from Display) re-lays-out the big headline when Cinzel
+     loads, which collides with the entrance animation on wide screens. The
+     headline wrap is already controlled by max-width, so balance isn't needed. */
+  .hero .hero__headline { max-width: 20ch; text-wrap: normal; }
+  .hero__line { display: block; }
+  .hero__sub { color: color-mix(in srgb, var(--ivory) 88%, transparent); max-width: 42rem; }
+
+  /* Hero entrance — pure CSS, driven by the document timeline, so it is immune to
+     layout/font timing and can never get stuck. Only applies when motion is
+     allowed; under reduced-motion the base state (fully visible) stands. */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__line,
+    .hero__sub {
+      opacity: 0;
+      animation: heroRise var(--dur-hero) var(--ease) both;
+    }
+    .hero__line { animation-delay: calc(var(--line, 0) * 140ms + 200ms); }
+    .hero__sub { animation-delay: 620ms; }
+
+    @keyframes heroRise {
+      from { opacity: 0; transform: translateY(var(--rise)); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
+
+</style>

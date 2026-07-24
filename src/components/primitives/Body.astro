@@ -1,0 +1,19 @@
+---
+// Body — standard reading paragraph. EB Garamond carries all reading.
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+<p class:list={['body', className]}><slot /></p>
+
+<style>
+  .body {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    max-width: var(--measure);
+    color: inherit;
+    margin: 0;
+  }
+</style>

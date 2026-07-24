@@ -1,0 +1,21 @@
+---
+// Caption — metadata, hours, footnotes. Inter, secondary colour.
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+<p class:list={['caption', className]}><slot /></p>
+
+<style>
+  .caption {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  :global(.section--dark) .caption {
+    color: color-mix(in srgb, var(--ivory) 72%, transparent);
+  }
+</style>

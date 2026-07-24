@@ -1,0 +1,164 @@
+---
+// Header — logo left, phone right. No navigation (nowhere to navigate yet, §4.3).
+// Transparent over the hero, then settles into an ivory bar with a hairline
+// beneath once scrolled past the hero. On pages without a hero it is solid.
+//
+// LOGO: the real raster lockup isn't dropped in yet. Until it is, the wordmark
+// is a TEMPORARY typographic stand-in (Cinzel), which also lets it sit in ivory
+// over the dark hero — the real colour lockup can't go on a dark ground (§8.5).
+// When color_logo.jpg lands in assets-incoming/, this swaps to the image lockup.
+import Icon from '@/components/primitives/Icon.astro';
+import { site } from '@/data/site';
+const phoneDisplay = site.contact.phoneDisplay;
+const phoneDial = site.contact.phone;
+---
+<header class="header" data-header>
+  <div class="header__inner">
+    <a href="/" class="header__logo" aria-label={`${site.name} — home`}>
+      <span class="wordmark">Renaissance &amp; Co</span>
+      <span class="wordmark__sub">Investments</span>
+    </a>
+
+    {
+      phoneDisplay && phoneDial ? (
+        <a href={`tel:${phoneDial}`} class="header__phone" aria-label={`Call ${phoneDisplay}`}>
+          <Icon name="phone" />
+          <span>{phoneDisplay}</span>
+        </a>
+      ) : (
+        <span class="header__phone header__phone--todo" title="Add a business phone number in src/data/site.ts">
+          TODO&nbsp;· phone
+        </span>
+      )
+    }
+  </div>
+  <span class="header__rule" aria-hidden="true"></span>
+</header>
+
+<style>
+  .header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    background: transparent;
+    transition: background var(--dur-element) var(--ease);
+  }
+  .header__inner {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: var(--space-3) var(--gutter);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+  .header__rule {
+    display: block;
+    height: 1px;
+    background: var(--hairline);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-element) var(--ease);
+  }
+
+  /* Colours default to ivory (over the dark hero). */
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    letter-spacing: 0.08em;
+    color: var(--ivory);
+    display: block;
+    line-height: 1;
+    transition: color var(--dur-element) var(--ease);
+  }
+  .wordmark__sub {
+    font-family: var(--font-util);
+    font-size: 0.6rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--gold-highlight);
+    display: block;
+    margin-top: 0.35rem;
+    transition: color var(--dur-element) var(--ease);
+  }
+  .header__phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    letter-spacing: 0.04em;
+    color: var(--ivory);
+    white-space: nowrap;
+    border: 1px solid color-mix(in srgb, var(--ivory) 36%, transparent);
+    padding: 0.55em 0.95em;
+    border-radius: 2px;
+    transition:
+      color var(--dur-element) var(--ease),
+      border-color var(--dur-micro) var(--ease),
+      background var(--dur-micro) var(--ease);
+  }
+  .header__phone:hover { border-color: var(--ivory); }
+  .header__phone--todo {
+    opacity: 0.6;
+    border: 1px dashed currentColor;
+    padding: 0.35em 0.7em;
+    border-radius: 2px;
+    text-transform: uppercase;
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.1em;
+  }
+
+  /* Scrolling through the dark hero: solid navy bar so hero text passing
+     underneath is hidden, not collided with. Text stays ivory (the default). */
+  .header.is-dark { background: var(--navy); }
+
+  /* Settled state: ivory bar, navy text, hairline drawn beneath. */
+  .header.is-solid { background: var(--ivory); }
+  .header.is-solid .wordmark { color: var(--navy); }
+  .header.is-solid .wordmark__sub { color: var(--text-gold-safe); }
+  .header.is-solid .header__phone { color: var(--navy); border-color: color-mix(in srgb, var(--navy) 22%, transparent); }
+  .header.is-solid .header__phone:hover { border-color: var(--navy); }
+  .header.is-solid .header__rule { transform: scaleX(1); }
+</style>
+
+<script>
+  function initHeader() {
+    teardownHeader(); // avoid stacking scroll listeners across re-inits
+    const header = document.querySelector<HTMLElement>('[data-header]');
+    if (!header) return;
+    const hero = document.querySelector<HTMLElement>('[data-hero]');
+
+    // No hero on this page (e.g. legal pages): solid ivory from the top.
+    if (!hero) {
+      header.classList.add('is-solid');
+      header.classList.remove('is-dark');
+      return;
+    }
+
+    const onScroll = () => {
+      const headerH = header.offsetHeight;
+      const heroH = hero.offsetHeight;
+      const pastHero = window.scrollY > heroH - headerH; // header has cleared the hero
+      const scrolled = window.scrollY > 8;
+      header.classList.toggle('is-solid', pastHero);
+      header.classList.toggle('is-dark', scrolled && !pastHero);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Store so we can detach before a View Transitions navigation.
+    (header as any).__onScroll = onScroll;
+  }
+
+  function teardownHeader() {
+    const header = document.querySelector<HTMLElement>('[data-header]');
+    const fn = header && (header as any).__onScroll;
+    if (fn) { window.removeEventListener('scroll', fn); (header as any).__onScroll = null; }
+  }
+
+  document.addEventListener('astro:page-load', initHeader);
+  document.addEventListener('astro:before-swap', teardownHeader);
+  document.addEventListener('DOMContentLoaded', initHeader);
+  initHeader();
+</script>

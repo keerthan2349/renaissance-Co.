@@ -1,0 +1,81 @@
+---
+// M15 · Footer — formality layer, partner line, legal links.
+// Ivory ground, gold rule above (§4.3). No logo in the footer: there is no
+// reversed/transparent lockup, and a workaround would look worse than none (§8).
+import { Image } from 'astro:assets';
+import LegalBlock from '@/components/primitives/LegalBlock.astro';
+import { site } from '@/data/site';
+import { legalPages } from '@/data/legal';
+import logoColor from '@/assets/logo-color.png';
+
+const year = new Date().getFullYear();
+---
+<footer class="footer">
+  <span class="drawn-rule" aria-hidden="true"></span>
+  <div class="footer__inner">
+    <Image
+      src={logoColor}
+      alt={site.name}
+      width={260}
+      densities={[1.5, 2]}
+      class="footer__logo"
+      loading="lazy"
+    />
+
+    <p class="footer__partner">{site.partner.line}</p>
+
+    <LegalBlock />
+
+    <nav class="footer__legal" aria-label="Legal">
+      {legalPages.map((p) => <a href={p.href}>{p.label}</a>)}
+    </nav>
+
+    <p class="footer__meta">
+      © {year} {site.name}. Figures are indicative and dated; nothing here is a return promise. See the <a href="/disclaimer">disclaimer</a>.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer { background: var(--ivory); color: var(--text); }
+  .footer__inner {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: var(--space-8) var(--gutter) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  /* The colour lockup on its home ground (ivory) — the one blessed placement
+     (§8). Transparent PNG, so it sits clean with no plate. 260px keeps the
+     INVESTMENTS subline above the legibility floor (§8.4). */
+  .footer__logo {
+    width: 260px;
+    max-width: 72vw;
+    height: auto;
+    margin-bottom: var(--space-2);
+  }
+  .footer__partner {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    max-width: 46rem;
+    color: var(--text);
+  }
+  .footer__legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    letter-spacing: 0.03em;
+  }
+  .footer__legal a { position: relative; }
+  .footer__legal a:hover { color: var(--text-gold-safe); }
+  .footer__meta {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--text-muted);
+    max-width: 46rem;
+  }
+  .footer__meta a { text-decoration: underline; text-underline-offset: 2px; }
+</style>

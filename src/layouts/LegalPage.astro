@@ -1,0 +1,66 @@
+---
+// LegalPage — shared shell for privacy / terms / disclaimer. Plain, well-set,
+// not an afterthought (§4.6). The prose is deliberately readable, not boilerplate
+// noise. These are first drafts and should have professional / CA review before
+// the site goes public.
+import Base from '@/layouts/Base.astro';
+import Section from '@/components/primitives/Section.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+import Display from '@/components/primitives/Display.astro';
+import Rule from '@/components/primitives/Rule.astro';
+
+interface Props {
+  title: string;
+  updated?: string;
+  description?: string;
+}
+const { title, updated, description } = Astro.props;
+---
+<Base title={`${title} — Renaissance & Co.`} description={description}>
+  <Section as="article" class="legal">
+    <header class="legal__head">
+      <Eyebrow>Legal</Eyebrow>
+      <Display as="h1">{title}</Display>
+      <Rule />
+      {updated && <p class="legal__updated">Last updated {updated}</p>}
+    </header>
+    <div class="prose">
+      <slot />
+    </div>
+  </Section>
+</Base>
+
+<style>
+  /* Clear the fixed header. The article's section padding handles desktop; on
+     mobile the header is about as tall as that padding, so add a little more. */
+  .legal__head { display: flex; flex-direction: column; gap: var(--space-3); padding-top: 2.5rem; }
+  .legal__updated {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--text-muted);
+  }
+  .prose { max-width: var(--measure); display: flex; flex-direction: column; gap: var(--space-3); }
+  .prose :global(h2) {
+    font-family: var(--font-display);
+    font-size: var(--type-heading);
+    font-weight: 600;
+    margin-top: var(--space-4);
+  }
+  .prose :global(p),
+  .prose :global(li) {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+  }
+  .prose :global(ul) { display: flex; flex-direction: column; gap: var(--space-1); padding-left: var(--space-3); }
+  .prose :global(li) { list-style: disc; }
+  .prose :global(a) { text-decoration: underline; text-underline-offset: 2px; }
+  .prose :global(strong) { font-weight: 600; }
+  .prose :global(.note) {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--text-muted);
+    border-left: 2px solid var(--rule-quiet);
+    padding-left: var(--space-2);
+  }
+</style>

@@ -1,0 +1,26 @@
+---
+// M04 · The Refusal. Dark ground — a single navy band that spotlights the firm's
+// strongest asset (the walk-away) between the ivory sections around it. Assembled
+// only from primitives + its own content.
+//
+// BUILD RULE (§6): M04 and M10 (curated shelf) must NEVER appear on the same page
+// — an unnamed cautionary developer beside a named partner is a collision. M10 is
+// Wave 4 and not built, so no conflict now; keep this in mind when ordering later.
+import Section from '@/components/primitives/Section.astro';
+import Rule from '@/components/primitives/Rule.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+import Heading from '@/components/primitives/Heading.astro';
+import Body from '@/components/primitives/Body.astro';
+import Reveal from '@/components/primitives/Reveal.astro';
+import { refusalContent } from './content';
+
+const { eyebrow, heading, paras } = refusalContent;
+---
+<Section id="refusal" dark>
+  <Rule />
+  <Reveal index={0}><Eyebrow>{eyebrow}</Eyebrow></Reveal>
+  <Reveal index={1}><Heading>{heading}</Heading></Reveal>
+  {paras.map((p, i) => (
+    <Reveal index={2 + i}><Body>{p}</Body></Reveal>
+  ))}
+</Section>

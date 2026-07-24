@@ -1,0 +1,22 @@
+---
+// Eyebrow — small tracked label above a heading. Inter, uppercase.
+// Gold-antique on ivory (safe, 4.9:1); gold-highlight on dark grounds (9:1).
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+<p class:list={['eyebrow', className]}><slot /></p>
+
+<style>
+  .eyebrow {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--text-gold-safe);
+    margin: 0;
+  }
+  :global(.section--dark) .eyebrow { color: var(--gold-highlight); }
+</style>

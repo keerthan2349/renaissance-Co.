@@ -1,0 +1,32 @@
+---
+// LegalBlock — the reserved formality layer (§4.6). Renders the registration
+// rows ONLY if src/data/legal.ts has entries. Registration is in progress, so
+// today it renders nothing and the footer stays intentionally silent (§2).
+// Nothing here may imply a registered or licensed status we do not hold.
+import { registrations } from '@/data/legal';
+---
+{
+  registrations.length > 0 && (
+    <dl class="legal-block">
+      {registrations.map((r) => (
+        <div class="legal-block__row">
+          <dt>{r.label}</dt>
+          <dd>{r.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+<style>
+  .legal-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--text-muted);
+  }
+  .legal-block__row { display: flex; gap: var(--space-1); }
+  .legal-block dt { font-weight: 600; }
+</style>

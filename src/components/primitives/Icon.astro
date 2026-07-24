@@ -1,0 +1,41 @@
+---
+// Icon — minimal monochrome line/solid glyphs, inline SVG (no icon library).
+// Uses currentColor, so an icon always takes the colour of the text beside it —
+// never a colour pop, never WhatsApp green (§7.9). Decorative: the visible label
+// beside it carries the meaning, so the SVG is aria-hidden.
+//
+// These are functional wayfinding for the contact CHANNELS, not ornament — the
+// logo remains the only ornament (§8.1). Keep the set small and consistent.
+interface Props {
+  name: 'phone' | 'whatsapp' | 'mail';
+  class?: string;
+}
+const { name, class: className } = Astro.props;
+
+const paths: Record<Props['name'], string> = {
+  phone:
+    '<path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1 1 0 0 0-1.02.24l-2.2 2.2a15.05 15.05 0 0 1-6.59-6.59l2.2-2.2a1 1 0 0 0 .25-1.01A11.36 11.36 0 0 1 8.5 4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.5a1 1 0 0 0-1-1z"/>',
+  whatsapp:
+    '<path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 1.67c2.2 0 4.27.86 5.83 2.42a8.19 8.19 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm-2.9 4.35c-.14 0-.36.05-.55.26-.19.2-.72.7-.72 1.72 0 1.01.74 1.99.84 2.13.1.14 1.45 2.22 3.52 3.11.49.21.87.34 1.17.44.49.16.94.13 1.29.08.39-.06 1.21-.49 1.38-.97.17-.48.17-.89.12-.97-.05-.08-.19-.13-.4-.24-.21-.1-1.24-.61-1.43-.68-.19-.07-.33-.1-.47.11-.14.2-.54.68-.66.82-.12.14-.24.16-.45.05-.21-.1-.89-.33-1.69-1.05-.63-.56-1.05-1.25-1.17-1.46-.12-.21-.01-.32.09-.42.1-.1.21-.24.32-.36.1-.12.14-.21.21-.35.07-.14.03-.26-.02-.37-.05-.1-.46-1.13-.64-1.55-.17-.4-.34-.35-.47-.36l-.4-.01z"/>',
+  mail:
+    '<path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4.24-8 4.75-8-4.75V6l8 4.75L20 6v2.24z"/>',
+};
+---
+<svg
+  class:list={['icon', className]}
+  viewBox="0 0 24 24"
+  fill="currentColor"
+  aria-hidden="true"
+  focusable="false"
+  set:html={paths[name]}
+/>
+
+<style>
+  .icon {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: -0.125em;
+  }
+</style>

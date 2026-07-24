@@ -1,0 +1,15 @@
+---
+// Rule — the drawn gold hairline (§5). Draws (scaleX 0->1) via the shared
+// .drawn-rule behaviour in base.css + the reveal observer. Never fades.
+// The brand's only permitted ornament (§8.2 allows gold for rules/borders).
+interface Props {
+  quiet?: boolean;
+  class?: string;
+}
+const { quiet = false, class: className } = Astro.props;
+---
+<span
+  class:list={['drawn-rule', { 'drawn-rule--quiet': quiet }, className]}
+  role="separator"
+  aria-hidden="true"
+></span>

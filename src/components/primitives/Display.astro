@@ -1,0 +1,22 @@
+---
+// Display — the largest type, for the hero. Cinzel, used large and sparingly.
+interface Props {
+  as?: 'h1' | 'h2' | 'p';
+  class?: string;
+}
+const { as = 'h1', class: className } = Astro.props;
+const Tag = as;
+---
+<Tag class:list={['display', className]}><slot /></Tag>
+
+<style>
+  .display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--type-display-1);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    color: inherit;
+    text-wrap: balance;
+  }
+</style>

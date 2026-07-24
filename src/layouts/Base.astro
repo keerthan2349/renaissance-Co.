@@ -1,0 +1,89 @@
+---
+// Base — the single layout. Loads the design system, self-hosted fonts, the
+// header/footer shell, View Transitions (the page-to-page cross-fade), and the
+// one reveal script. Every page uses this.
+import '@/styles/tokens.css';
+import '@/styles/base.css';
+
+// Self-hosted fonts (Fontsource — vendored into the bundle, NOT hotlinked to
+// Google, per §8.7 / stack constraints). Only the weights the site uses.
+import '@fontsource/cinzel/400.css';
+import '@fontsource/cinzel/600.css';
+import '@fontsource/eb-garamond/400.css';
+import '@fontsource/eb-garamond/500.css';
+import '@fontsource/eb-garamond/400-italic.css';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+
+import { ClientRouter } from 'astro:transitions';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/modules/M15-Footer/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'Renaissance & Co. — Dubai property, advised not sold',
+  description = 'A Hyderabad advisory for Indian buyers and NRIs entering the UAE property market.',
+} = Astro.props;
+
+// Absolute URL for the share card. Resolves correctly once a domain is set in
+// astro.config `site`; until then it falls back to the current origin.
+const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0A1440" />
+    <title>{title}</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png" />
+
+    <!-- Link-preview (Open Graph + Twitter) so a pasted URL shows the brand. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <ClientRouter />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      import '@/scripts/reveal.ts';
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    background: var(--navy);
+    color: var(--ivory);
+    padding: var(--space-1) var(--space-2);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+  }
+  .skip-link:focus { left: var(--space-2); top: var(--space-2); }
+</style>

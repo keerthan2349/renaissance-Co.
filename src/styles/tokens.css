@@ -1,0 +1,69 @@
+/* ============================================================
+   tokens.css — the whole design system (blueprint §4.1 + §4.2)
+   Palette measured from the logo files (brand §8.2). Do not add colours.
+   These are frozen: modules read semantic tokens, never raw values.
+   ============================================================ */
+
+:root {
+  /* ---- Colour (raw) ---- */
+  --navy:           #0A1440;
+  --gold:           #B38C47;
+  --gold-highlight: #DDB369;
+  --gold-antique:   #8E6629;
+  --gold-deep:      #503C19;
+  --ivory:          #F9FAF5;
+  --hairline:       #DCDEDF;
+  --secondary:      #6A7088;
+
+  /* ---- Semantic — the only tokens components should use ----
+     Note: there is deliberately NO text token that resolves to --gold.
+     Gold on ivory measures 3.0:1 and fails as text (brand §8.2).
+     Gold is exposed only through rules/borders/backgrounds below.
+     Gold carrying words on a light ground is --gold-antique (4.9:1) and nothing else. */
+  --text:           var(--navy);
+  --text-muted:     var(--secondary);
+  --text-on-dark:   var(--ivory);
+  --text-gold-safe: var(--gold-antique); /* the only gold allowed on ivory text */
+  --ground:         var(--ivory);
+  --ground-dark:    var(--navy);
+  --rule:           var(--gold);
+  --rule-quiet:     var(--hairline);
+
+  /* ---- Type ---- */
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-body:    'EB Garamond', Georgia, serif;
+  --font-util:    'Inter', system-ui, sans-serif;
+
+  --type-display-1: clamp(2.3rem, 5.6vw, 4.25rem);
+  --type-display-2: clamp(2rem, 4vw, 3rem);
+  --type-heading:   clamp(1.5rem, 2.5vw, 2rem);
+  --type-lead:      clamp(1.125rem, 1.6vw, 1.375rem);
+  --type-body:      1.0625rem;
+  --type-caption:   0.8125rem;
+  --type-eyebrow:   0.75rem;
+
+  --tracking-eyebrow: 0.18em;
+  --tracking-display: 0.02em;
+  --leading-body:     1.65;
+  --leading-display:  1.12;
+
+  /* ---- Space — 8px base ---- */
+  --space-1: 0.5rem;   --space-2: 1rem;    --space-3: 1.5rem;
+  --space-4: 2rem;     --space-6: 3rem;    --space-8: 4rem;
+  --space-12: 6rem;    --space-16: 8rem;
+  --section-y: clamp(5rem, 10vw, 9rem);
+  --measure:   34rem;
+  --gutter:    clamp(1.25rem, 5vw, 4rem);
+
+  /* ---- Motion — one curve, four durations, one reveal (§4.2) ---- */
+  --ease:        cubic-bezier(0.16, 1, 0.3, 1);   /* expo-out. settles, never bounces */
+  --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --dur-micro:   200ms;   /* hover, focus, small state */
+  --dur-element: 400ms;   /* one thing appearing */
+  --dur-section: 700ms;   /* a section arriving, a rule drawing */
+  --dur-hero:   1200ms;   /* load sequence, counters */
+
+  --stagger: 80ms;
+  --rise:    24px;
+}

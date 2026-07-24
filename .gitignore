@@ -1,0 +1,28 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# env & secrets
+.env
+.env.production
+.env.*.local
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# large incoming assets are staged, not committed by default
+# (remove this line once you want the real logo/hero tracked)
+assets-incoming/*
+!assets-incoming/README.md
+
+# internal reference — NOT part of the shippable site and NOT needed to build it.
+# Kept off GitHub so private strategy never travels with the deploy. The canonical
+# copies live in the vault (outside this repo). The build never imports these.
+docs/
+CLAUDE.md

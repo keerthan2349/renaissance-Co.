@@ -1,0 +1,19 @@
+---
+// Lead — the opening paragraph of a section. EB Garamond, slightly larger.
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+<p class:list={['lead', className]}><slot /></p>
+
+<style>
+  .lead {
+    font-family: var(--font-body);
+    font-size: var(--type-lead);
+    line-height: 1.5;
+    max-width: var(--measure);
+    color: inherit;
+    margin: 0;
+  }
+</style>

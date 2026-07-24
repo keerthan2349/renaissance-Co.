@@ -1,0 +1,22 @@
+---
+// Heading — section titles. Cinzel, smaller than Display.
+interface Props {
+  as?: 'h2' | 'h3' | 'h4';
+  class?: string;
+}
+const { as = 'h2', class: className } = Astro.props;
+const Tag = as;
+---
+<Tag class:list={['heading', className]}><slot /></Tag>
+
+<style>
+  .heading {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--type-heading);
+    line-height: 1.2;
+    letter-spacing: var(--tracking-display);
+    color: inherit;
+    text-wrap: balance;
+  }
+</style>

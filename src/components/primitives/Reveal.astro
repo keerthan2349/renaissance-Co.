@@ -1,0 +1,15 @@
+---
+// Reveal — wraps content so it rises + fades in on scroll (§4.2).
+// `index` staggers children at --stagger (80ms). The observer in reveal.ts
+// adds .is-in. Under prefers-reduced-motion everything shows immediately.
+interface Props {
+  as?: 'div' | 'li' | 'span' | 'p';
+  index?: number;
+  class?: string;
+}
+const { as = 'div', index = 0, class: className } = Astro.props;
+const Tag = as;
+---
+<Tag class:list={['reveal', className]} style={`--i:${index}`}>
+  <slot />
+</Tag>

@@ -1,0 +1,29 @@
+---
+// Homepage. Renders exactly the modules named in page-order.ts, in order.
+// Order is data (§ architecture): to reorder or drop a section, edit that list.
+import Base from '@/layouts/Base.astro';
+import Hero from '@/components/modules/M01-Hero/Hero.astro';
+import Founder from '@/components/modules/M03-Founder/Founder.astro';
+import Refusal from '@/components/modules/M04-Refusal/Refusal.astro';
+import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+import Contact from '@/components/modules/M09-Contact/Contact.astro';
+import { pageOrder } from '@/data/page-order';
+
+// Registry: maps a page-order id to its module. Add an id here only once its
+// module exists (and to page-order.ts to make it render).
+const registry = {
+  hero: Hero,
+  founder: Founder,
+  refusal: Refusal,
+  'what-we-do': WhatWeDo,
+  contact: Contact,
+} as const;
+---
+<Base>
+  {
+    pageOrder.map((id) => {
+      const Module = registry[id as keyof typeof registry];
+      return Module ? <Module /> : null;
+    })
+  }
+</Base>

@@ -1,7 +1,9 @@
 ---
-// M05 · What we do. Ivory ground. The closing argument before Contact: the firm
-// stays for the hard part after the money moves. Assembled only from primitives
-// + its own content.
+// M05 · What we do. DARK (navy) ground since 28 Jul 2026, client's call — it sits
+// after the gradient projects section, so the page alternates gradient → flat
+// navy → ivory rather than running two ivory sections together.
+// The firm stays for the hard part after the money moves. Assembled only from
+// primitives + its own content.
 import Section from '@/components/primitives/Section.astro';
 import Rule from '@/components/primitives/Rule.astro';
 import Eyebrow from '@/components/primitives/Eyebrow.astro';
@@ -12,7 +14,7 @@ import { whatWeDoContent } from './content';
 
 const { eyebrow, heading, paras } = whatWeDoContent;
 ---
-<Section id="what-we-do">
+<Section id="what-we-do" dark>
   <Rule />
   <Reveal index={0}><Eyebrow>{eyebrow}</Eyebrow></Reveal>
   <Reveal index={1}><Heading>{heading}</Heading></Reveal>

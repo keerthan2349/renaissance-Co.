@@ -6,6 +6,7 @@ import { Image } from 'astro:assets';
 import LegalBlock from '@/components/primitives/LegalBlock.astro';
 import { site } from '@/data/site';
 import { legalPages } from '@/data/legal';
+import { footerLinks } from '@/data/nav';
 import logoColor from '@/assets/logo-color.png';
 
 const year = new Date().getFullYear();
@@ -25,6 +26,14 @@ const year = new Date().getFullYear();
     <p class="footer__partner">{site.partner.line}</p>
 
     <LegalBlock />
+
+    {/* Site pages. Carries everything the header does PLUS the quieter pages —
+        'Judgment' is reachable from here and nowhere else (client, 28 Jul). */}
+    {footerLinks.length > 0 && (
+      <nav class="footer__site" aria-label="Pages">
+        {footerLinks.map((p) => <a href={p.href}>{p.label}</a>)}
+      </nav>
+    )}
 
     <nav class="footer__legal" aria-label="Legal">
       {legalPages.map((p) => <a href={p.href}>{p.label}</a>)}
@@ -61,6 +70,20 @@ const year = new Date().getFullYear();
     max-width: 46rem;
     color: var(--text);
   }
+  /* Site pages sit above the legal links and carry a touch more weight — they
+     are somewhere to go, not fine print. */
+  .footer__site {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .footer__site a { position: relative; }
+  .footer__site a:hover { color: var(--text-gold-safe); }
+
   .footer__legal {
     display: flex;
     flex-wrap: wrap;

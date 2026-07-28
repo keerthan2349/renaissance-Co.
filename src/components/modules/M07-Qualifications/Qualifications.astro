@@ -1,0 +1,47 @@
+---
+// M07 · The qualifications. Ivory ground, between M06 (dark) and contact (dark).
+// Corrects the two things every Dubai seller says loosely, and names the one thing
+// none of them mention. Built under the no-CA policy — see content.ts for exactly
+// what was kept, cut, and why.
+//
+// Assembled only from primitives + its own content. No cross-module imports.
+import Section from '@/components/primitives/Section.astro';
+import Rule from '@/components/primitives/Rule.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+import Heading from '@/components/primitives/Heading.astro';
+import Body from '@/components/primitives/Body.astro';
+import Caption from '@/components/primitives/Caption.astro';
+import Reveal from '@/components/primitives/Reveal.astro';
+import { qualificationsContent } from './content';
+
+const { eyebrow, heading, points, source } = qualificationsContent;
+---
+<Section id="qualifications">
+  <Rule />
+  <Reveal index={0}><Eyebrow>{eyebrow}</Eyebrow></Reveal>
+  <Reveal index={1}><Heading>{heading}</Heading></Reveal>
+  {points.map((p, i) => (
+    <Reveal index={2 + i}>
+      <Body><strong>{p.label}</strong> {p.text}</Body>
+    </Reveal>
+  ))}
+  <Reveal index={2 + points.length}><Caption>{source}</Caption></Reveal>
+</Section>
+
+<style>
+  /* EB Garamond is self-hosted at 400 and 500 only — no 700 is loaded, so a plain
+     <strong> would be synthesised (smeared) bold. 500 is a real weight in the
+     bundled font: emphasis that stays a serif. The <strong> is written in THIS
+     module's template, so it carries this module's scope and the rule applies. */
+  strong {
+    font-weight: 500;
+  }
+
+  /* The source line is set to the same reading measure as the paragraphs above it.
+     Caption renders its own <p> in its own scope, and the <Reveal> around it isn't
+     ours either, so this reaches it through the section's unique id — contained,
+     and it can't leak to another section's captions. */
+  :global(#qualifications .caption) {
+    max-width: var(--measure);
+  }
+</style>

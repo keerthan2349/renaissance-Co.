@@ -1,0 +1,51 @@
+---
+// /projects and /projects/<slug> — the projects module's own pages (M10).
+//
+// One route file serves both: no slug renders the full shelf, a slug renders
+// that project's detail page.
+//
+// WHY A DYNAMIC ROUTE: getStaticPaths returns an empty array while there are no
+// projects, so Astro generates NO pages at all — not the list, not a detail
+// page. That makes it structurally impossible to ship a blank "coming soon"
+// shelf. The URLs come into existence with the first project.
+//
+// These pages must never be merged into the homepage: M10 may not share a page
+// with M04 'refusal' (blueprint §6 build rule). Since 28 Jul the carousel is on
+// the homepage and the refusal has moved to /judgment, which keeps that rule.
+import Base from '@/layouts/Base.astro';
+import Shelf from '@/components/modules/M10-Projects/Shelf.astro';
+import Detail from '@/components/modules/M10-Projects/Detail.astro';
+// M06 sits under the shelf: everything on it is off-plan, so the escrow/Oqood
+// mechanics and the four risks belong where someone is browsing off-plan units
+// (client decision, 28 Jul — moved off the homepage, and deliberately not to
+// /judgment, so the honest part stays in the commercial path). A PAGE composing
+// two modules is fine; the modules still never import each other.
+import OffPlan from '@/components/modules/M06-OffPlan/OffPlan.astro';
+import { projects, projectsContent } from '@/data/projects';
+
+export function getStaticPaths() {
+  if (projects.length === 0) return [];
+  return [
+    // The list itself.
+    { params: { slug: undefined }, props: { project: null } },
+    // One page per project.
+    ...projects.map((p) => ({ params: { slug: p.slug }, props: { project: p } })),
+  ];
+}
+
+const { project } = Astro.props;
+
+const title = project
+  ? `${project.project} — Renaissance & Co.`
+  : `${projectsContent.shelfHeading} — Renaissance & Co.`;
+const description = project
+  ? `${project.project} by ${project.developer} — ${project.area}, handover ${project.handover}.`
+  : 'A short list of Dubai projects, and the reason each one is on it.';
+---
+<Base title={title} description={description}>
+  {project ? <Detail project={project} /> : <Shelf />}
+  {/* On the list only. Repeating a long risk section on every property page
+      would read as boilerplate and dilute it; the list is where someone is
+      choosing between off-plan units. */}
+  {!project && <OffPlan />}
+</Base>

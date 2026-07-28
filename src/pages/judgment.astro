@@ -1,0 +1,26 @@
+---
+// /judgment — the walk-away story's own page (M04).
+//
+// It lived on the homepage until 28 Jul 2026, when the projects carousel took
+// that spot. The two may not share a page (blueprint §6): an unnamed developer
+// as the cautionary tale sitting beside named partner developers is a collision.
+// Client's decision was to keep the carousel on the homepage and move this here.
+//
+// HONEST NOTE: this page is thin — one section — and far fewer people will read
+// it here than saw it on the homepage. That is the real cost of the trade and it
+// is recorded rather than papered over. The natural fix later is to fold it into
+// a fuller "how we work" page rather than leave it standing alone.
+//
+// Contact follows it so the page has somewhere to go, and so the grounds
+// alternate (refusal ivory → contact dark) as they do everywhere else.
+import Base from '@/layouts/Base.astro';
+import Refusal from '@/components/modules/M04-Refusal/Refusal.astro';
+import Contact from '@/components/modules/M09-Contact/Contact.astro';
+---
+<Base
+  title="Judgment — Renaissance & Co."
+  description="The last time we said no: a deal we walked away from, and why."
+>
+  <Refusal dark={false} headTop />
+  <Contact />
+</Base>

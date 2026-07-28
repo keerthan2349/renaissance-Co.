@@ -1,0 +1,122 @@
+---
+// M06 · Off-plan. The mechanics that protect the buyer, then the risks — stated
+// by the firm that sells the product. The risk list is the section; everything
+// above it is setup.
+//
+// WHERE IT LIVES (changed 28 Jul 2026, client's decision): the BOTTOM OF
+// /projects — not the homepage. Every project on that shelf is off-plan, so the
+// escrow/Oqood mechanics and the four risks now land exactly where someone is
+// browsing off-plan units: the truth at the point of decision rather than a
+// section a visitor scrolls past. It was moved there rather than to /judgment
+// specifically so it stays in the commercial path instead of being exiled to a
+// page reached only from the footer. It is no longer in page-order.ts; the page
+// composes it (a page may compose modules — modules still never import
+// each other).
+//
+// STYLING: set in the projects area's own voice — Inter, no drawn gold rule —
+// because that area is deliberately a different surface from the homepage
+// (client instruction, 28 Jul). See vault/website/m10-projects-module.md. The
+// module renders its own typographic elements rather than the Eyebrow/Heading/
+// Body primitives, which are Cinzel/Garamond and belong to the homepage's voice.
+//
+// GROUND: dark. On /projects the page then reads navy head → ivory grid → navy
+// off-plan → ivory footer, so it alternates and the risk list keeps the emphasis
+// of a dark band. The gold list markers use --gold-highlight on navy (9.0:1).
+import Section from '@/components/primitives/Section.astro';
+import Reveal from '@/components/primitives/Reveal.astro';
+import { offPlanContent } from './content';
+
+const { eyebrow, heading, paras, hinge, risks } = offPlanContent;
+---
+<Section id="off-plan" dark>
+  <Reveal index={0}><p class="op__eyebrow">{eyebrow}</p></Reveal>
+  <Reveal index={1}><h2 class="op__title">{heading}</h2></Reveal>
+  {paras.map((p, i) => (
+    <Reveal index={2 + i}><p class="op__body">{p}</p></Reveal>
+  ))}
+
+  {/* The hinge and the list are one unit, so they sit closer than the section's
+      2rem rhythm. The wrapper is an element this module renders itself — a class
+      handed to <Reveal class="…"> would land in Reveal's scope, not ours. */}
+  <div class="op__risk-block">
+    <Reveal index={2 + paras.length}><p class="op__body">{hinge}</p></Reveal>
+    {/* role="list" is deliberate: base.css sets `list-style: none` globally, which
+        makes Safari/VoiceOver stop announcing this as a list. This restores it. */}
+    <ul class="op__risks" role="list">
+      {risks.map((r, i) => (
+        <Reveal as="li" index={3 + paras.length + i}>{r}</Reveal>
+      ))}
+    </ul>
+  </div>
+</Section>
+
+<style>
+  /* Inter throughout — the projects area's voice, not the homepage's serifs. */
+  .op__eyebrow {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--gold-highlight);
+    margin: 0;
+  }
+  .op__title {
+    font-family: var(--font-util);
+    font-weight: 600;
+    font-size: clamp(1.6rem, 3.4vw, 2.15rem);
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .op__body {
+    font-family: var(--font-util);
+    font-size: var(--type-body);
+    line-height: 1.65;
+    max-width: 40rem;
+    color: inherit;
+    margin: 0;
+  }
+
+  .op__risk-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .op__risks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 40rem;
+  }
+
+  /* :global is required, not lazy — the <li> is rendered by <Reveal>, so it carries
+     Reveal's scope hash and not this module's. Scoping it under .op__risks (an
+     element this module DOES render) keeps it contained to this section. */
+  .op__risks :global(li) {
+    position: relative;
+    padding-left: var(--space-3);
+    font-family: var(--font-util);
+    font-size: var(--type-body);
+    line-height: 1.65;
+    color: inherit;
+  }
+
+  /* The marker is a drawn gold bar, never a gold glyph — as a background it is a
+     rule, the one thing gold is allowed to be. On this dark ground it uses
+     --gold-highlight (9.0:1 on navy). --rule is the fallback if this section is
+     ever placed on ivory again. */
+  .op__risks :global(li)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.8em;
+    width: 0.75rem;
+    height: 1px;
+    background: var(--rule);
+  }
+  :global(.section--dark) .op__risks :global(li)::before {
+    background: var(--gold-highlight);
+  }
+</style>

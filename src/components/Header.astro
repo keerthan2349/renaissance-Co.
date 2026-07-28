@@ -1,16 +1,39 @@
 ---
-// Header — logo left, phone right. No navigation (nowhere to navigate yet, §4.3).
-// Transparent over the hero, then settles into an ivory bar with a hairline
-// beneath once scrolled past the hero. On pages without a hero it is solid.
+// Header — brand left, page navigation, contact channels right.
 //
-// LOGO: the real raster lockup isn't dropped in yet. Until it is, the wordmark
-// is a TEMPORARY typographic stand-in (Cinzel), which also lets it sit in ivory
-// over the dark hero — the real colour lockup can't go on a dark ground (§8.5).
-// When color_logo.jpg lands in assets-incoming/, this swaps to the image lockup.
+// REDESIGNED 28 Jul 2026. It previously carried no navigation (§4.3: none until
+// there is somewhere to navigate) and a single wide phone pill. Now:
+//   · page NAV, driven by src/data/nav.ts — add a page there, it appears here;
+//   · INSTAGRAM alongside the phone as a contact channel (client, 28 Jul);
+//   · the phone shows its number on desktop and becomes an icon-only tap target
+//     on phones. The number matters most where it cannot be tapped; on a phone
+//     people tap rather than read digits, and the reclaimed width is what stops
+//     the wordmark wrapping to two lines (a cosmetic bug logged on 24 Jul).
+//
+// LAYOUT: ONE nav element, re-laid-out by CSS grid — never duplicated markup,
+// which would put every link in the accessibility tree twice.
+//   phones : row 1 = brand + contact, row 2 = nav
+//   ≥52rem : a single row, brand | nav | contact
+//
+// STATES (unchanged): transparent at the very top of the hero → solid navy while
+// scrolling THROUGH the dark hero (so hero text passing underneath is hidden,
+// not collided with) → ivory bar with a hairline once past it. Pages with no
+// hero are solid ivory from the top.
+//
+// It also publishes its own height as `--header-h` so pages that must clear a
+// fixed header can do so from a live measurement instead of a hardcoded guess
+// (those guesses broke once already when the header's height changed).
+//
+// LOGO: still the TEMPORARY typographic wordmark. The real colour lockup has a
+// navy wordmark and cannot sit on the dark hero (§8.5); it returns here when a
+// reversed or horizontal variant exists.
 import Icon from '@/components/primitives/Icon.astro';
 import { site } from '@/data/site';
-const phoneDisplay = site.contact.phoneDisplay;
-const phoneDial = site.contact.phone;
+// Header nav is top-level destinations only. 'Judgment' is intentionally absent
+// — it lives in the footer alone (client, 28 Jul 2026). See nav.ts.
+import { headerLinks } from '@/data/nav';
+
+const { phone, phoneDisplay, instagramUrl } = site.contact;
 ---
 <header class="header" data-header>
   <div class="header__inner">
@@ -20,17 +43,47 @@ const phoneDial = site.contact.phone;
     </a>
 
     {
-      phoneDisplay && phoneDial ? (
-        <a href={`tel:${phoneDial}`} class="header__phone" aria-label={`Call ${phoneDisplay}`}>
-          <Icon name="phone" />
-          <span>{phoneDisplay}</span>
-        </a>
-      ) : (
-        <span class="header__phone header__phone--todo" title="Add a business phone number in src/data/site.ts">
-          TODO&nbsp;· phone
-        </span>
+      headerLinks.length > 0 && (
+        <nav class="header__nav" aria-label="Pages">
+          {headerLinks.map((l) => (
+            <a href={l.href} class="header__nav-link">{l.label}</a>
+          ))}
+        </nav>
       )
     }
+
+    {/* The `data-track` attributes below are the stable hooks M17 (Meta
+        plumbing) attaches to — inert until that module exists.
+        See vault/website/m17-meta-plumbing.md. */}
+    <div class="header__contact">
+      {
+        instagramUrl && (
+          <a
+            href={instagramUrl}
+            class="header__icon-btn"
+            aria-label="Instagram"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-track="instagram"
+          >
+            <Icon name="instagram" />
+          </a>
+        )
+      }
+
+      {
+        phone && phoneDisplay ? (
+          <a href={`tel:${phone}`} class="header__phone" aria-label={`Call ${phoneDisplay}`} data-track="call">
+            <Icon name="phone" />
+            <span class="header__phone-num">{phoneDisplay}</span>
+          </a>
+        ) : (
+          <span class="header__phone header__phone--todo" title="Add a business phone number in src/data/site.ts">
+            TODO&nbsp;· phone
+          </span>
+        )
+      }
+    </div>
   </div>
   <span class="header__rule" aria-hidden="true"></span>
 </header>
@@ -43,15 +96,60 @@ const phoneDial = site.contact.phone;
     background: transparent;
     transition: background var(--dur-element) var(--ease);
   }
+
+  /* One nav element, two layouts. Phones stack it under the brand; from 52rem
+     everything sits on one line. */
   .header__inner {
     max-width: 72rem;
     margin-inline: auto;
-    padding: var(--space-3) var(--gutter);
-    display: flex;
+    padding: 0.7rem var(--gutter) 0.55rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'logo contact'
+      'nav  nav';
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
+    column-gap: var(--space-2);
+    row-gap: 0.4rem;
   }
+  .header__logo { grid-area: logo; }
+  .header__nav { grid-area: nav; }
+  .header__contact { grid-area: contact; }
+
+  /* Very narrow screens (Galaxy Fold cover screen and similar, under 320px):
+     the non-wrapping wordmark plus two 44px buttons cannot share one row, and
+     the buttons were being pushed off the right edge — the phone, which is the
+     conversion, disappearing entirely. Give the brand its own row and put the
+     contact beside the nav instead. Measured, not assumed. */
+  @media (max-width: 319px) {
+    .header__inner {
+      /* minmax(0, 1fr), not 1fr: a grid track defaults to a min-content floor,
+         so the nav refused to shrink and pushed the contact off the edge even
+         after it got its own row. */
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'logo logo'
+        'nav  contact';
+      /* Tighter side padding buys the room the 44px tap targets need. The
+         gutter token stays untouched — this is a local override. */
+      padding-inline: var(--space-1);
+    }
+    /* Let the links wrap rather than force the row wide. */
+    .header__nav { flex-wrap: wrap; column-gap: var(--space-2); }
+    /* And let the non-wrapping wordmark shrink to fit the narrowest screens. */
+    .wordmark { font-size: 0.92rem; letter-spacing: 0.05em; }
+  }
+
+  @media (min-width: 52rem) {
+    .header__inner {
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas: 'logo nav contact';
+      padding-block: var(--space-2);
+      column-gap: var(--space-4);
+    }
+    .header__nav { justify-self: end; }
+  }
+
   .header__rule {
     display: block;
     height: 1px;
@@ -61,38 +159,106 @@ const phoneDial = site.contact.phone;
     transition: transform var(--dur-element) var(--ease);
   }
 
+  /* ---- Brand ---- */
   /* Colours default to ivory (over the dark hero). */
   .wordmark {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: 1.25rem;
-    letter-spacing: 0.08em;
+    font-size: 1.05rem;
+    letter-spacing: 0.07em;
     color: var(--ivory);
     display: block;
     line-height: 1;
+    /* Never wrap: it used to break to three lines on narrow phones. The phone
+       button giving up its digits below 52rem is what buys the room. */
+    white-space: nowrap;
     transition: color var(--dur-element) var(--ease);
   }
   .wordmark__sub {
     font-family: var(--font-util);
-    font-size: 0.6rem;
-    letter-spacing: 0.32em;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--gold-highlight);
     display: block;
-    margin-top: 0.35rem;
+    margin-top: 0.3rem;
     transition: color var(--dur-element) var(--ease);
   }
+  @media (min-width: 52rem) {
+    .wordmark { font-size: 1.25rem; letter-spacing: 0.08em; }
+    .wordmark__sub { font-size: 0.6rem; letter-spacing: 0.32em; margin-top: 0.35rem; }
+  }
+
+  /* ---- Page navigation ---- */
+  .header__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .header__nav-link {
+    position: relative;
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--ivory) 82%, transparent);
+    padding-block: 0.35rem;
+    transition: color var(--dur-micro) var(--ease);
+  }
+  /* Underlines draw from the left (§4.2 hover) — no lift, no scale. */
+  .header__nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--gold-highlight);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-micro) var(--ease);
+  }
+  .header__nav-link:hover { color: var(--ivory); }
+  .header__nav-link:hover::after { transform: scaleX(1); }
+
+  /* ---- Contact channels ---- */
+  .header__contact {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    justify-self: end;
+  }
+
+  /* Icon-only buttons keep a 44px tap target even though the glyph is small. */
+  .header__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.05rem;
+    color: var(--ivory);
+    border-radius: 2px;
+    transition:
+      color var(--dur-element) var(--ease),
+      background var(--dur-micro) var(--ease);
+  }
+  .header__icon-btn:hover { background: color-mix(in srgb, var(--ivory) 12%, transparent); }
+
   .header__phone {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5em;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    padding-inline: 0.7rem;
     font-family: var(--font-util);
     font-size: var(--type-caption);
     letter-spacing: 0.04em;
     color: var(--ivory);
     white-space: nowrap;
     border: 1px solid color-mix(in srgb, var(--ivory) 36%, transparent);
-    padding: 0.55em 0.95em;
     border-radius: 2px;
     transition:
       color var(--dur-element) var(--ease),
@@ -100,37 +266,63 @@ const phoneDial = site.contact.phone;
       background var(--dur-micro) var(--ease);
   }
   .header__phone:hover { border-color: var(--ivory); }
+
+  /* The digits are desktop-only: on a phone people tap, and the width is worth
+     more to the wordmark. The link keeps its aria-label, so assistive tech still
+     announces the full number at every size. */
+  .header__phone-num { display: none; }
+  @media (min-width: 52rem) {
+    .header__phone-num { display: inline; }
+    .header__phone { padding-inline: 0.95rem; }
+  }
+
   .header__phone--todo {
     opacity: 0.6;
     border: 1px dashed currentColor;
-    padding: 0.35em 0.7em;
-    border-radius: 2px;
     text-transform: uppercase;
     font-size: var(--type-eyebrow);
     letter-spacing: 0.1em;
   }
 
-  /* Scrolling through the dark hero: solid navy bar so hero text passing
-     underneath is hidden, not collided with. Text stays ivory (the default). */
+  /* ---- State: scrolling through the dark hero ---- */
+  /* Solid navy so hero text passing underneath is hidden, not collided with.
+     Text stays ivory (the default). */
   .header.is-dark { background: var(--navy); }
 
-  /* Settled state: ivory bar, navy text, hairline drawn beneath. */
+  /* ---- State: settled (past the hero, or any page without one) ---- */
   .header.is-solid { background: var(--ivory); }
   .header.is-solid .wordmark { color: var(--navy); }
   .header.is-solid .wordmark__sub { color: var(--text-gold-safe); }
-  .header.is-solid .header__phone { color: var(--navy); border-color: color-mix(in srgb, var(--navy) 22%, transparent); }
+  .header.is-solid .header__nav-link { color: var(--text-muted); }
+  .header.is-solid .header__nav-link:hover { color: var(--navy); }
+  .header.is-solid .header__nav-link::after { background: var(--gold); }
+  .header.is-solid .header__icon-btn { color: var(--navy); }
+  .header.is-solid .header__icon-btn:hover { background: color-mix(in srgb, var(--navy) 8%, transparent); }
+  .header.is-solid .header__phone {
+    color: var(--navy);
+    border-color: color-mix(in srgb, var(--navy) 22%, transparent);
+  }
   .header.is-solid .header__phone:hover { border-color: var(--navy); }
   .header.is-solid .header__rule { transform: scaleX(1); }
 </style>
 
 <script>
   function initHeader() {
-    teardownHeader(); // avoid stacking scroll listeners across re-inits
+    teardownHeader(); // avoid stacking listeners across re-inits
     const header = document.querySelector<HTMLElement>('[data-header]');
     if (!header) return;
     const hero = document.querySelector<HTMLElement>('[data-hero]');
 
-    // No hero on this page (e.g. legal pages): solid ivory from the top.
+    // Publish the live height so pages can clear the fixed header from a real
+    // measurement rather than a hardcoded number. Consumers read
+    // var(--header-h, <fallback>), so this is an improvement, never a dependency.
+    const setHeight = () =>
+      document.documentElement.style.setProperty('--header-h', `${header.offsetHeight}px`);
+    setHeight();
+    window.addEventListener('resize', setHeight, { passive: true });
+    (header as any).__setHeight = setHeight;
+
+    // No hero on this page (projects, judgment, legal): solid ivory from the top.
     if (!hero) {
       header.classList.add('is-solid');
       header.classList.remove('is-dark');
@@ -153,8 +345,11 @@ const phoneDial = site.contact.phone;
 
   function teardownHeader() {
     const header = document.querySelector<HTMLElement>('[data-header]');
-    const fn = header && (header as any).__onScroll;
-    if (fn) { window.removeEventListener('scroll', fn); (header as any).__onScroll = null; }
+    if (!header) return;
+    const onScroll = (header as any).__onScroll;
+    if (onScroll) { window.removeEventListener('scroll', onScroll); (header as any).__onScroll = null; }
+    const setHeight = (header as any).__setHeight;
+    if (setHeight) { window.removeEventListener('resize', setHeight); (header as any).__setHeight = null; }
   }
 
   document.addEventListener('astro:page-load', initHeader);

@@ -5,7 +5,20 @@
 
 /* ---- Reset ---- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 5rem; }
+/* NOTE: `scroll-behavior: smooth` was REMOVED here on 28 Jul 2026. It made the
+   browser ANIMATE every jump, not just deliberate ones — so landing on a URL
+   that carried a #hash, or a browser restoring a previous scroll position on
+   reload, played a visible ~1.5s scroll from the top of the page to the target.
+   It read as the page racing to the bottom on open/refresh, and it is
+   scroll-jacking, which the motion rules ban outright (§4.2). Jumps are now
+   instant, which is the browser's own correct behaviour.
+   `scroll-padding-top` stays: it keeps an anchor's target clear of the fixed
+   header, sized from the header's own published height. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h, 6rem) + var(--space-2));
+}
 img, picture, video, canvas, svg { display: block; max-width: 100%; }
 input, button, textarea, select { font: inherit; color: inherit; }
 button { background: none; border: none; cursor: pointer; }

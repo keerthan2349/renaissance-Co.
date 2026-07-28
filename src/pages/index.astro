@@ -1,11 +1,17 @@
 ---
 // Homepage. Renders exactly the modules named in page-order.ts, in order.
 // Order is data (§ architecture): to reorder or drop a section, edit that list.
+//
+// Two modules are deliberately absent: M04 Refusal moved to /judgment when the
+// projects carousel took the homepage (they may not share a page, blueprint §6),
+// and M06 Off-plan moved to the bottom of /projects, where the shelf it explains
+// actually is. Both are client decisions, 28 Jul 2026.
 import Base from '@/layouts/Base.astro';
 import Hero from '@/components/modules/M01-Hero/Hero.astro';
 import Founder from '@/components/modules/M03-Founder/Founder.astro';
-import Refusal from '@/components/modules/M04-Refusal/Refusal.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
 import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
 import Contact from '@/components/modules/M09-Contact/Contact.astro';
 import { pageOrder } from '@/data/page-order';
 
@@ -14,8 +20,9 @@ import { pageOrder } from '@/data/page-order';
 const registry = {
   hero: Hero,
   founder: Founder,
-  refusal: Refusal,
+  projects: Carousel,
   'what-we-do': WhatWeDo,
+  qualifications: Qualifications,
   contact: Contact,
 } as const;
 ---

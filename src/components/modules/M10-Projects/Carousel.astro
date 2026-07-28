@@ -1,0 +1,439 @@
+---
+// M10 · Projects — the homepage carousel. Dark ground.
+//
+// A preview of /projects: swipeable cards, each linking to that project's own
+// detail page. Renders nothing at all when there are no projects, so the
+// homepage simply doesn't have this section until the client supplies the list.
+//
+// MOTION: it advances slowly on its own, yields to the visitor the instant they
+// touch it, and resumes once they have left it alone (client's instruction,
+// 28 Jul 2026). This DELIBERATELY OVERRIDES the motion rule against looping
+// movement — recorded in the vault and the repo rulebook, not an oversight.
+// Movement is still native CSS scroll-snap (so a phone swipe is the real thing);
+// the script only nudges the track. No library.
+// The safeguards are not optional — see the script block at the bottom.
+//
+// TYPE ON IMAGES (§8.5): text never sits on image detail. Each card carries a
+// navy scrim that the type sits on, so it stays legible over any photograph.
+//
+// NOTE ON THE PAGE IT SITS IN: M04 'refusal' was moved OFF the homepage to
+// /judgment when this went on, because the two may not share a page (§6 build
+// rule) — an unnamed developer as the cautionary tale beside named partner
+// developers is a collision. Client decision, 28 Jul 2026.
+import Section from '@/components/primitives/Section.astro';
+import Rule from '@/components/primitives/Rule.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+import Heading from '@/components/primitives/Heading.astro';
+import Reveal from '@/components/primitives/Reveal.astro';
+import { projects, projectsContent } from '@/data/projects';
+
+const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsContent;
+---
+{projects.length > 0 && (
+  <Section id="projects" dark class="projects--feature">
+    <Rule />
+    <Reveal index={0}><Eyebrow>{carouselEyebrow}</Eyebrow></Reveal>
+    <Reveal index={1}><Heading>{carouselHeading}</Heading></Reveal>
+
+    <Reveal index={2}>
+      <div class="carousel" data-carousel>
+        {/* `data-carousel-track`, NOT `data-track`: the latter is the Meta
+            plumbing hook (data-track="call" etc.), and the two collided — a bare
+            [data-track] query matched the header's phone button instead of this
+            list, which silently killed the arrows. Keep the names distinct. */}
+        <ul class="carousel__track" role="list" data-carousel-track tabindex="0" aria-label={carouselHeading}>
+          {projects.map((p) => (
+            <li class="carousel__item">
+              <a class="card" href={`/projects/${p.slug}`}>
+                <div class="card__media">
+                  {p.image ? (
+                    <img class="card__img" src={p.image} alt={p.imageAlt ?? ''} loading="lazy" decoding="async" />
+                  ) : (
+                    <span class="card__blank" aria-hidden="true"></span>
+                  )}
+                  <span class="card__scrim" aria-hidden="true"></span>
+
+                  {/* Completion badge, top-left — a navy chip, not a colour pop:
+                      the reference card's pill, in this brand's palette. */}
+                  <p class="card__badge">{labels.completion}: {p.handover}</p>
+
+                  <div class="card__text">
+                    <p class="card__developer">{p.developer}</p>
+                    <h3 class="card__project">{p.project}</h3>
+                    <p class="card__meta">
+                      <svg class="card__pin" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                        <path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11Z" />
+                        <circle cx="12" cy="10" r="2.6" />
+                      </svg>
+                      {p.area}
+                    </p>
+
+                    {/* NO price on the card — client's call (28 Jul): the carousel
+                        stays clean; the price appears on the property's own page
+                        (and the /projects list) once clicked through. */}
+                  </div>
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <div class="carousel__foot">
+          <div class="carousel__arrows">
+            <button type="button" class="arrow" data-prev aria-label="Previous projects">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M15 5 8 12l7 7" stroke-linecap="square" />
+              </svg>
+            </button>
+            <button type="button" class="arrow" data-next aria-label="Next projects">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="m9 5 7 7-7 7" stroke-linecap="square" />
+              </svg>
+            </button>
+          </div>
+          <a class="carousel__all" href="/projects">{carouselAll}</a>
+        </div>
+      </div>
+    </Reveal>
+  </Section>
+)}
+
+<style>
+  /* THE FEATURE GROUND (client, 28 Jul): this section carries a gradient rather
+     than the flat navy every other dark section uses, because it is the one the
+     client most wants clients to land on.
+     Built ONLY from the fixed palette — no colour is added (§4.1): a warm
+     gold-deep tint at the top-left settling into navy and then a deepened navy.
+     Gold as a background is one of the two uses gold is allowed.
+     Set through the --ground-dark TOKEN, not a background override: Section's
+     own `.section--dark { background: var(--ground-dark) }` is a scoped rule
+     that outranks anything reachable from here, so a direct background would
+     silently lose. Overriding the token means Section's own declaration
+     resolves to this. (Same technique as M04's page-top padding.) */
+  :global(.projects--feature) {
+    --ground-dark: radial-gradient(
+      125% 105% at 8% 0%,
+      color-mix(in srgb, var(--gold-deep) 26%, var(--navy)) 0%,
+      color-mix(in srgb, var(--gold-deep) 11%, var(--navy)) 38%,
+      var(--navy) 78%
+    );
+  }
+
+  /* The track sits inside the section's normal content box — deliberately NOT
+     full-bleed with negative margins. Padding on a snap container shifts where
+     the first card comes to rest, which left the track at a non-zero scroll
+     position on load and made the "previous" arrow look available at the very
+     start. Inside the content box it rests cleanly at 0. The card is still
+     narrower than the track, so a sliver of the next one shows — which is what
+     tells people it scrolls. */
+  .carousel { --card-w: min(78%, 21rem); }
+
+  .carousel__track {
+    display: flex;
+    gap: var(--space-3);
+    overflow-x: auto;
+    padding-bottom: var(--space-2);
+    /* A quiet scrollbar rather than none — hiding it removes the affordance. */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--ivory) 28%, transparent) transparent;
+  }
+
+  /* NO scroll-snap while the carousel crawls. Snapping and continuous motion are
+     incompatible: mandatory snap drags the track back to the nearest card on
+     every frame, so it either judders or never moves. Since the crawl means
+     cards are never card-aligned anyway, alignment isn't a concept here.
+     Under reduced motion nothing moves on its own, so snapping becomes useful
+     again and is restored — that is the one case it helps. */
+  @media (prefers-reduced-motion: reduce) {
+    .carousel__track { scroll-snap-type: x mandatory; }
+    .carousel__item { scroll-snap-align: start; }
+  }
+  .carousel__track:focus-visible { outline: 2px solid var(--gold-highlight); outline-offset: 4px; }
+
+  .carousel__item {
+    flex: 0 0 var(--card-w);
+  }
+
+  .card { display: block; height: 100%; }
+
+  .card__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--ivory) 8%, var(--navy));
+  }
+  .card__img,
+  .card__blank {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform var(--dur-section) var(--ease);
+  }
+  /* A restrained rise on hover — no lift, no shadow, no scale on the card itself. */
+  .card:hover .card__img { transform: scale(1.03); }
+
+  /* §8.5 — type sits on a settled navy band, never on image detail. The scrim
+     runs a little higher than before because the text block now includes the
+     price row. */
+  .card__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      var(--navy) 0%,
+      color-mix(in srgb, var(--navy) 86%, transparent) 40%,
+      transparent 72%
+    );
+  }
+
+  /* Completion chip, top-left — the reference card's pill in this palette:
+     a near-solid navy ground so the type never sits on image detail (§8.5). */
+  .card__badge {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    margin: 0;
+    padding: 0.45em 0.9em;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--navy) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ivory) 22%, transparent);
+    color: var(--ivory);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    letter-spacing: 0.03em;
+  }
+
+  .card__text {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: var(--space-3);
+    color: var(--ivory);
+  }
+  .card__developer {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--gold-highlight);
+    margin: 0 0 var(--space-1);
+  }
+  .card__project {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    font-weight: 400;
+    margin: 0 0 0.4rem;
+  }
+  .card__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: color-mix(in srgb, var(--ivory) 82%, transparent);
+    margin: 0;
+  }
+  .card__pin { flex: 0 0 auto; }
+  .card:hover .card__project { text-decoration: underline; text-underline-offset: 3px; }
+
+
+  .carousel__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+  .carousel__arrows { display: flex; gap: var(--space-1); }
+
+  .arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--ivory);
+    border: 1px solid color-mix(in srgb, var(--ivory) 36%, transparent);
+    border-radius: 2px;
+    transition:
+      border-color var(--dur-micro) var(--ease),
+      opacity var(--dur-micro) var(--ease);
+  }
+  .arrow:hover { border-color: var(--ivory); }
+  .arrow[disabled] { opacity: 0.3; cursor: default; }
+  .arrow[disabled]:hover { border-color: color-mix(in srgb, var(--ivory) 36%, transparent); }
+
+
+  .carousel__all {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    letter-spacing: 0.04em;
+    color: var(--ivory);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-color: color-mix(in srgb, var(--gold-highlight) 70%, transparent);
+  }
+  .carousel__all:hover { text-decoration-color: var(--gold-highlight); }
+</style>
+
+<script>
+  // The carousel CRAWLS: one continuous glide at a constant rate, not a jump
+  // every few seconds. It stops the instant the visitor touches it and picks up
+  // again from exactly where it stopped (client's instruction, 28 Jul 2026 —
+  // deliberately overriding the motion rule against looping movement; recorded
+  // in the vault and the repo rulebook).
+  //
+  // Constant speed means distance comes from real elapsed time, so it looks the
+  // same on a 60Hz and a 120Hz screen. Scroll-snap is off while it crawls —
+  // snapping would drag it back to the nearest card every frame.
+  //
+  // It stops itself in every situation where continuing would be wrong:
+  //   · the visitor has asked for reduced motion  → never starts at all
+  //   · the visitor swiped, clicked or keyed      → paused, resumes when idle
+  //   · keyboard focus is inside it               → paused (focus is deliberate)
+  //   · scrolled out of view                      → paused (nothing moves in
+  //     the corner of the eye while they read something else)
+  //   · browser tab is in the background          → paused (no wasted battery)
+  //
+  // NO stop/start button and NO hover-pause — both removed on the client's
+  // instruction (28 Jul). See the accessibility note in the vault module doc:
+  // reduced-motion remains the way a visitor turns this off for good.
+  function initCarousel() {
+    document.querySelectorAll<HTMLElement>('[data-carousel]').forEach((root) => {
+      const track = root.querySelector<HTMLElement>('[data-carousel-track]');
+      const prev = root.querySelector<HTMLButtonElement>('[data-prev]');
+      const next = root.querySelector<HTMLButtonElement>('[data-next]');
+      if (!track || !prev || !next) return;
+      if ((track as any).__wired) return; // survive View Transitions re-inits
+      (track as any).__wired = true;
+
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const SPEED = 26; // pixels per second — the constant crawl. Tune here.
+      const RESUME_MS = 2500; // quiet time after an interaction before it resumes
+
+      let raf: number | null = null;
+      let lastTs = 0;
+      let pos = 0; // float position: at 26px/s a frame moves <0.5px, which would
+      //              round away to nothing if we incremented scrollLeft directly
+      let dir: 1 | -1 = 1;
+      let maxScroll = 0;
+      let resumeTimer: number | null = null;
+      let busy = false; // focused, or recently interacted with
+      let onScreen = false;
+
+      // Cached so the per-frame loop never reads layout (that would thrash).
+      const measure = () => { maxScroll = Math.max(0, track.scrollWidth - track.clientWidth); };
+      measure();
+
+      const step = () => {
+        const card = track.querySelector<HTMLElement>('.carousel__item');
+        const gap = parseFloat(getComputedStyle(track).columnGap || '0') || 0;
+        return card ? card.offsetWidth + gap : track.clientWidth * 0.8;
+      };
+      const go = (d: number) =>
+        track.scrollBy({ left: d * step(), behavior: reduce.matches ? 'auto' : 'smooth' });
+
+      const mayRun = () =>
+        !busy && onScreen && !reduce.matches && !document.hidden && maxScroll > 4;
+
+      // One continuous crawl at a constant rate — distance is derived from real
+      // elapsed time, so the speed is identical on a 60Hz and a 120Hz screen and
+      // doesn't lurch after a stall. It reverses at each end rather than jumping
+      // back to the start, which would read as a glitch.
+      const frame = (ts: number) => {
+        if (!mayRun()) { raf = null; return; }
+        if (!lastTs) lastTs = ts;
+        const dt = Math.min((ts - lastTs) / 1000, 0.05); // clamp after a tab stall
+        lastTs = ts;
+
+        pos += SPEED * dt * dir;
+        if (pos >= maxScroll) { pos = maxScroll; dir = -1; }
+        else if (pos <= 0) { pos = 0; dir = 1; }
+        track.scrollLeft = pos;
+
+        raf = requestAnimationFrame(frame);
+      };
+
+      const stopAuto = () => {
+        if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
+        lastTs = 0;
+      };
+      const startAuto = () => {
+        stopAuto();
+        if (!mayRun()) return;
+        pos = track.scrollLeft; // resume from wherever it actually is now
+        raf = requestAnimationFrame(frame);
+      };
+
+      // Any deliberate interaction hands over control and restarts the idle clock.
+      const interacted = () => {
+        busy = true;
+        stopAuto();
+        if (resumeTimer !== null) clearTimeout(resumeTimer);
+        resumeTimer = window.setTimeout(() => { busy = false; startAuto(); }, RESUME_MS);
+      };
+
+      prev.addEventListener('click', () => { interacted(); go(-1); });
+      next.addEventListener('click', () => { interacted(); go(1); });
+
+      // Pointer/touch/keyboard on the track itself counts as taking control.
+      // Listening to these rather than the scroll event avoids mistaking the
+      // carousel's own programmatic scrolling for the visitor's.
+      ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach((evt) =>
+        track.addEventListener(evt, interacted, { passive: true }),
+      );
+
+      // NOTE: hovering does NOT pause. It used to, and that was a mistake — a
+      // reader's cursor commonly just sits somewhere in the middle of the page,
+      // which meant the carousel often never moved at all. "Interacts with it"
+      // means deliberately swiping, clicking or keying, not the mouse happening
+      // to rest over it. Keyboard focus still pauses, because that IS deliberate.
+      const release = () => {
+        if (resumeTimer !== null) clearTimeout(resumeTimer);
+        resumeTimer = window.setTimeout(() => { busy = false; startAuto(); }, 400);
+      };
+      root.addEventListener('focusin', () => { busy = true; stopAuto(); });
+      root.addEventListener('focusout', release);
+
+      // Only while it is actually on screen. A forgiving threshold: it should
+      // start as soon as a reasonable part of it is showing, not only when it is
+      // near-centred.
+      const io = new IntersectionObserver(
+        (entries) => {
+          onScreen = entries[0].isIntersecting;
+          if (onScreen) startAuto();
+          else stopAuto();
+        },
+        { threshold: 0.2 },
+      );
+      io.observe(root);
+
+      // Never in a background tab.
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopAuto();
+        else startAuto();
+      });
+
+      // Keep the arrows' enabled state honest. Reads no layout — maxScroll is
+      // cached — because this fires on every frame while the crawl runs.
+      const sync = () => {
+        prev.disabled = track.scrollLeft <= 1;
+        next.disabled = track.scrollLeft >= maxScroll - 1;
+      };
+      sync();
+      track.addEventListener('scroll', sync, { passive: true });
+      window.addEventListener('resize', () => { measure(); sync(); startAuto(); }, { passive: true });
+
+      // If the visitor turns reduced motion on mid-visit, stop immediately.
+      reduce.addEventListener?.('change', () => { if (reduce.matches) stopAuto(); else startAuto(); });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initCarousel);
+  document.addEventListener('DOMContentLoaded', initCarousel);
+  initCarousel();
+</script>

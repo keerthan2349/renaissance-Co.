@@ -14,7 +14,7 @@ import Reveal from '@/components/primitives/Reveal.astro';
 import Icon from '@/components/primitives/Icon.astro';
 import { site } from '@/data/site';
 
-const { phone, phoneDisplay, whatsapp, hours, email } = site.contact;
+const { phone, phoneDisplay, whatsapp, hours, email, instagramUrl, instagramLabel } = site.contact;
 ---
 <Section id="contact" dark>
   <Rule />
@@ -22,10 +22,20 @@ const { phone, phoneDisplay, whatsapp, hours, email } = site.contact;
   <Reveal index={1}><Heading>Call us</Heading></Reveal>
   <Reveal index={2}><Lead>We would rather talk than exchange forms.</Lead></Reveal>
 
+  {/* The `data-track` attributes below are the stable hooks M17 (Meta plumbing)
+      attaches to. Inert until that module exists — see
+      vault/website/m17-meta-plumbing.md. Marking them now means the tracking
+      module never has to edit this file, so modules stay independent. */}
   <div class="contact__actions reveal" style="--i:3">
     {
       phone && phoneDisplay ? (
-        <Button href={`tel:${phone}`} variant="primary" weight="heavy" aria-label={`Call ${phoneDisplay}`}>
+        <Button
+          href={`tel:${phone}`}
+          variant="primary"
+          weight="heavy"
+          aria-label={`Call ${phoneDisplay}`}
+          data-track="call"
+        >
           <Icon name="phone" /> {phoneDisplay}
         </Button>
       ) : (
@@ -37,7 +47,13 @@ const { phone, phoneDisplay, whatsapp, hours, email } = site.contact;
 
     {
       whatsapp ? (
-        <Button href={`https://wa.me/${whatsapp}`} variant="ghost" rel="noopener" target="_blank">
+        <Button
+          href={`https://wa.me/${whatsapp}`}
+          variant="ghost"
+          rel="noopener"
+          target="_blank"
+          data-track="whatsapp"
+        >
           <Icon name="whatsapp" /> WhatsApp
         </Button>
       ) : (
@@ -49,12 +65,36 @@ const { phone, phoneDisplay, whatsapp, hours, email } = site.contact;
   </div>
 
   <Reveal index={4}><Caption>{hours}</Caption></Reveal>
+
+  {/* Quiet channels beneath the two buttons — the phone stays the conversion.
+      Instagram sits with the email rather than as a third button, so it reads as
+      "another way to reach us", not a competing call to action. It reads as the
+      word "Instagram" rather than the @handle (client's call, 28 Jul) — change
+      `instagramLabel` in site.ts to show the handle. If the handle is unset the
+      link is absent entirely. */}
   {
     email && (
       <Reveal index={5}>
         <Caption>
-          <a class="contact__email" href={`mailto:${email}`}>
+          <a class="contact__quiet" href={`mailto:${email}`} data-track="email">
             <Icon name="mail" /> {email}
+          </a>
+        </Caption>
+      </Reveal>
+    )
+  }
+  {
+    instagramUrl && (
+      <Reveal index={6}>
+        <Caption>
+          <a
+            class="contact__quiet"
+            href={instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-track="instagram"
+          >
+            <Icon name="instagram" /> {instagramLabel}
           </a>
         </Caption>
       </Reveal>
@@ -82,8 +122,8 @@ const { phone, phoneDisplay, whatsapp, hours, email } = site.contact;
     border-radius: 2px;
   }
 
-  /* Email fallback — quiet, tappable, and never wider than the screen. */
-  .contact__email {
+  /* Quiet channels (email, Instagram) — tappable, and never wider than the screen. */
+  .contact__quiet {
     display: inline-flex;
     align-items: center;
     gap: 0.5em;
@@ -91,8 +131,8 @@ const { phone, phoneDisplay, whatsapp, hours, email } = site.contact;
     color: inherit;
     overflow-wrap: anywhere;
   }
-  .contact__email > :global(.icon) { opacity: 0.85; }
-  .contact__email:hover { text-decoration: underline; }
+  .contact__quiet > :global(.icon) { opacity: 0.85; }
+  .contact__quiet:hover { text-decoration: underline; }
 
   /* Narrow screens: stack the actions so nothing overflows the edge. */
   @media (max-width: 30rem) {

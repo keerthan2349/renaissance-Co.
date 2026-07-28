@@ -26,6 +26,17 @@ const Tag = as;
     background: var(--ground-dark);
     color: var(--text-on-dark);
   }
+
+  /* Two sections sharing a ground have no colour change to mark the boundary,
+     so the two facing paddings read as one empty void instead of a section
+     break — the same measurement that looks correct between an ivory and a navy
+     section looks like a mistake between two ivory ones. Tighten the second
+     one's top padding; the drawn gold rule it opens with is what separates them.
+     Applies to ivory-after-ivory and navy-after-navy alike. */
+  .section:not(.section--dark) + .section:not(.section--dark),
+  .section--dark + .section--dark {
+    padding-top: calc(var(--section-y) * 0.45);
+  }
   .section__inner {
     max-width: 72rem;
     margin-inline: auto;

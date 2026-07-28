@@ -3,9 +3,16 @@
 // strongest asset (the walk-away) between the ivory sections around it. Assembled
 // only from primitives + its own content.
 //
-// BUILD RULE (§6): M04 and M10 (curated shelf) must NEVER appear on the same page
-// — an unnamed cautionary developer beside a named partner is a collision. M10 is
-// Wave 4 and not built, so no conflict now; keep this in mind when ordering later.
+// BUILD RULE (§6): M04 and M10 (projects) must NEVER appear on the same page — an
+// unnamed cautionary developer beside named partner developers is a collision.
+// ENFORCED SINCE 28 JUL 2026: the projects carousel took the homepage, so this
+// module MOVED OFF the homepage to its own page at /judgment. It is no longer in
+// page-order.ts. Do not put it back on the homepage while the carousel is there.
+//
+// GROUND: dark by default (how it shipped on the homepage — a navy band between
+// ivory sections). On /judgment it opens the page directly under the ivory header
+// and is rendered ivory instead, so the page reads like the legal pages and the
+// following contact section keeps the dark/ivory alternation.
 import Section from '@/components/primitives/Section.astro';
 import Rule from '@/components/primitives/Rule.astro';
 import Eyebrow from '@/components/primitives/Eyebrow.astro';
@@ -14,9 +21,14 @@ import Body from '@/components/primitives/Body.astro';
 import Reveal from '@/components/primitives/Reveal.astro';
 import { refusalContent } from './content';
 
+interface Props {
+  dark?: boolean;
+  headTop?: boolean;
+}
+const { dark = true, headTop = false } = Astro.props;
 const { eyebrow, heading, paras } = refusalContent;
 ---
-<Section id="refusal" dark>
+<Section id="refusal" dark={dark} class={headTop ? 'refusal--top' : undefined}>
   <Rule />
   <Reveal index={0}><Eyebrow>{eyebrow}</Eyebrow></Reveal>
   <Reveal index={1}><Heading>{heading}</Heading></Reveal>
@@ -24,3 +36,16 @@ const { eyebrow, heading, paras } = refusalContent;
     <Reveal index={2 + i}><Body>{p}</Body></Reveal>
   ))}
 </Section>
+
+<style>
+  /* When this section opens a page it must clear the fixed header.
+     Overriding the --section-y TOKEN rather than padding-top is deliberate:
+     Section sets `padding-block: var(--section-y)` from its own scoped rule,
+     whose scope attribute gives it higher specificity than anything reachable
+     from here — a plain padding-top override silently lost, leaving 11px of air
+     on a phone. A custom property sidesteps specificity entirely, because
+     Section's own declaration then resolves to this value.
+     Driven by the header's live published height, with a fallback for the frame
+     before its script runs. */
+  :global(.refusal--top) { --section-y: calc(var(--header-h, 6rem) + var(--space-6)); }
+</style>

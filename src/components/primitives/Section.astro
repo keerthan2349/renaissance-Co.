@@ -9,8 +9,24 @@ interface Props {
 }
 const { id, dark = false, class: className, as = 'section' } = Astro.props;
 const Tag = as;
+
+// Optional full-bleed layer BEHIND the section's content, for a section that
+// wants a decorative ground of its own (M10's marquee is the only user).
+// Rendered outside `.section__inner` on purpose: the inner column is width-
+// capped and gutter-padded, so anything placed in it could never reach the
+// screen edges. Purely additive — a section that doesn't fill this slot is
+// byte-for-byte what it was before.
+const hasBackdrop = Astro.slots.has('backdrop');
 ---
-<Tag id={id} class:list={['section', { 'section--dark': dark }, className]}>
+<Tag
+  id={id}
+  class:list={['section', { 'section--dark': dark, 'section--backdrop': hasBackdrop }, className]}
+>
+  {hasBackdrop && (
+    <div class="section__backdrop" aria-hidden="true">
+      <slot name="backdrop" />
+    </div>
+  )}
   <div class="section__inner">
     <slot />
   </div>
@@ -37,6 +53,29 @@ const Tag = as;
   .section--dark + .section--dark {
     padding-top: calc(var(--section-y) * 0.45);
   }
+  /* Only a section that actually fills the backdrop slot is positioned and
+     clipped, so no existing section's rendering changes. */
+  .section--backdrop {
+    position: relative;
+    overflow: hidden;
+  }
+  .section__backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    /* The backdrop must never take a click. On M10 the carousel sits directly
+       on top of it, and swallowing card taps or arrow presses would break the
+       section outright. */
+    pointer-events: none;
+  }
+  /* Without this the in-flow content would paint BENEATH the positioned
+     backdrop — a positioned element outranks static siblings in the same
+     stacking context regardless of source order. */
+  .section--backdrop .section__inner {
+    position: relative;
+    z-index: 1;
+  }
+
   .section__inner {
     max-width: 72rem;
     margin-inline: auto;

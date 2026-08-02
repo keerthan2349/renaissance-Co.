@@ -1,0 +1,136 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// Same guard as /lab/marquee and as the real /projects shelf: getStaticPaths
+// returns an empty array outside `astro dev`, so a production build generates
+// no page and the URL simply does not exist.
+//
+// Shows the showcase in its intended position — after "Call us", before the
+// footer — with the real Qualifications and Contact sections above it so the
+// scroll into and out of it is the real thing, not an isolated demo.
+import Base from '@/layouts/Base.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
+import Contact from '@/components/modules/M09-Contact/Contact.astro';
+// The REAL module — promoted 2 Aug. This page is now just a tuning surface
+// over it (rail length + frame shape for the future replacement film).
+import Showcase from '@/components/modules/M18-Showcase/Showcase.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+---
+
+<Base title="LAB · Showcase — Renaissance & Co. (dev only)">
+  <div class="note">
+    <p class="note__tag">Lab · not on the site</p>
+    <h1 class="note__h">Scroll showcase</h1>
+    <p class="note__p">
+      This section is now <b>live on the homepage</b> (locally) as its own module, M18 — what you see
+      here is the same component. This page remains as the tuning bench: use the sliders when the
+      replacement film arrives, tell me the numbers, and I bake them into the module.
+    </p>
+    <div class="note__ctl">
+      <label for="rail">How long it holds <b id="rail-v">420vh</b></label>
+      <input type="range" id="rail" min="200" max="650" step="10" value="420" />
+      <div class="note__chips">
+        <span>Frame shape</span>
+        <button type="button" class="chip is-on" data-ratio="16 / 9">16:9</button>
+        <button type="button" class="chip" data-ratio="21 / 9">21:9</button>
+        <button type="button" class="chip" data-ratio="4 / 3">4:3</button>
+        <button type="button" class="chip" data-ratio="1 / 1">1:1</button>
+        <button type="button" class="chip" data-ratio="9 / 16">9:16</button>
+      </div>
+    </div>
+    <p class="note__p note__p--quiet">
+      Frame shape must match your footage — anything else and the edges get cropped away.
+    </p>
+  </div>
+
+  <Qualifications />
+  <Contact />
+
+  <Showcase class="sc-lab" />
+</Base>
+
+<style>
+  .note {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: calc(var(--header-h, 110px) + var(--space-6)) var(--gutter) var(--space-8);
+    background: var(--ivory);
+  }
+  .note__tag {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0 0 var(--space-1);
+  }
+  .note__h {
+    font-family: var(--font-display);
+    font-size: var(--type-display-2);
+    font-weight: 400;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    max-width: 44rem;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p--warn { color: var(--text-gold-safe); }
+  .note__p--quiet { color: var(--text-muted); font-size: var(--type-caption); }
+  .note__ctl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 var(--space-2);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+  }
+  .note__ctl input[type='range'] { width: 14rem; accent-color: var(--gold-antique); }
+  .note__ctl b { color: var(--text-gold-safe); }
+  .note__chips { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>
+
+<script>
+  function initShowcaseLab() {
+    const rail = document.getElementById('rail') as HTMLInputElement | null;
+    const sc = document.querySelector<HTMLElement>('.sc-lab');
+    if (!rail || !sc || (rail as any).__wired) return;
+    (rail as any).__wired = true;
+
+    const out = document.getElementById('rail-v');
+    const apply = () => {
+      sc.style.setProperty('--sc-rail', `${rail.value}vh`);
+      if (out) out.textContent = `${rail.value}vh`;
+    };
+    rail.addEventListener('input', apply);
+    apply();
+
+    document.querySelectorAll<HTMLElement>('.chip[data-ratio]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-ratio]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        sc.style.setProperty('--sc-ratio', btn.dataset.ratio!);
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initShowcaseLab);
+  document.addEventListener('DOMContentLoaded', initShowcaseLab);
+  initShowcaseLab();
+</script>

@@ -13,6 +13,13 @@ export const pageOrder = [
   'what-we-do', // M05  — DARK navy · Wave 2
   'qualifications', // M07  — ivory · Wave 3
   'contact', // M09  — dark
+  'showcase', // M18 — dark · the scroll-driven film (client green-light, 2 Aug)
+  //
+  // 'showcase' sits AFTER contact deliberately (client's placement): the film
+  // is the close of the page, between "Call us" and the footer. It is a full-
+  // height pinned section, not a Section primitive, so the same-ground
+  // tightening rule doesn't apply — contact's navy runs straight into it,
+  // which is the seamless hand-off the client approved in the lab.
   //
   // Grounds (28 Jul, client): hero(dark) founder(ivory) projects(GRADIENT)
   // what-we-do(navy) qualifications(ivory) contact(navy). The projects section

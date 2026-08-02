@@ -1,0 +1,305 @@
+---
+// ⚠️ LAB COMPONENT — NOT WIRED INTO THE SITE. Lives under components/lab/ and is
+// only rendered by src/pages/lab/[view].astro, which builds NOTHING in
+// production. Nothing here reaches a visitor until the client green-lights it
+// and it is promoted into a real module.
+//
+// A seamless infinite horizontal marquee, built as a tunable component.
+//
+// HOW THE SEAM IS MATHEMATICALLY EXACT (not eyeballed):
+// each row's track holds EXACTLY TWO identical groups side by side and animates
+// translate3d(0) → translate3d(-50%). Half the track is precisely one group, so
+// the instant the animation restarts, the pixel under every point is the one
+// that was already there. There is no jump to hide because there is no jump.
+// Spacing lives INSIDE each item (padding-inline-end), never as a flex gap on
+// the group — a gap would not be reproduced across the join between the two
+// groups, and the seam would show as one wide space every loop.
+//
+// WHY PURE CSS AND NO GSAP: the brief allowed GSAP as a fallback; it is both
+// banned here (repo rulebook: "No animation libraries") and the worse option.
+// A CSS transform animation is handed to the compositor and runs off the main
+// thread — it cannot be stuttered by JavaScript, and it survives a busy tab.
+// GSAP animates from the main thread on every frame, so it is strictly more
+// fragile here, plus ~70kB against a hard 150kB/LCP-2s budget. Zero JS is used.
+//
+// EVERY KNOB IS A CSS CUSTOM PROPERTY so the lab page can retune it live
+// without a rebuild. Whatever numbers the client settles on get baked in as the
+// defaults when this is promoted.
+
+export interface MarqueeRow {
+  /** Phrases repeated across the row. Sourced copy only — never invent. */
+  text: string[];
+  /** Seconds for one complete loop. The brief's range is 18–30. */
+  duration?: number;
+  /** Travel direction of the TEXT. 'ltr' = text moves left → right. */
+  direction?: 'ltr' | 'rtl';
+  variant?: 'fill' | 'outline';
+  /** Any CSS length — a clamp() is what keeps it responsive. */
+  size?: string;
+  opacity?: number;
+  font?: 'display' | 'body' | 'util';
+  weight?: number;
+  /** Palette only. No colour may be added (brand §8.2). */
+  tone?: 'ivory' | 'gold';
+}
+
+interface Props {
+  rows: MarqueeRow[];
+  /** Copies of the phrase set inside EACH group. Must keep one group wider
+      than the widest viewport or a bare patch appears at the join. */
+  repeat?: number;
+  gap?: string;
+  /** What trails each phrase. See the ™ note in the lab page. */
+  separator?: 'none' | 'tm' | 'dot';
+  /** Only honoured when background=false — see the pointer-events note below. */
+  pauseOnHover?: boolean;
+  /** Width of the soft edge mask at each side. '0' disables it. */
+  fade?: string;
+  /** Hide the whole thing from screen readers. True whenever it is decoration. */
+  decorative?: boolean;
+  /** Absolute-fill mode, for sitting behind another section's content. */
+  background?: boolean;
+  class?: string;
+}
+
+const {
+  rows,
+  repeat = 3,
+  gap,
+  separator,
+  pauseOnHover = false,
+  fade,
+  decorative = true,
+  background = false,
+  class: className,
+} = Astro.props;
+
+// Non-monotonic on purpose: 18,20,22,24… would read as a mechanical ramp. These
+// are mutually non-harmonic, so rows drift apart instead of syncing up.
+const DEFAULT_DURATIONS = [24, 19, 28, 21, 30, 23, 26, 20];
+
+const FONTS = {
+  display: 'var(--font-display)',
+  body: 'var(--font-body)',
+  util: 'var(--font-util)',
+} as const;
+
+// Palette tokens only. --gold-highlight is the gold that belongs on a dark
+// ground (9.0:1); --gold itself is never let near text.
+const TONES = {
+  ivory: 'var(--ivory)',
+  gold: 'var(--gold-highlight)',
+} as const;
+
+// Carried as a CSS string so the lab can swap it live by overriding one custom
+// property, with no rebuild and no re-render. The prop still sets the default,
+// so the promoted version bakes in whatever the client settles on.
+const SEPARATORS = { none: '""', tm: '"™"', dot: '"·"' } as const;
+
+// EVERY TUNABLE IS A var(name, fallback) AT ITS POINT OF USE, and an inline
+// custom property is emitted ONLY for a prop that was actually passed.
+//
+// This is deliberate and was a real bug first. Declaring the defaults inside
+// `.marquee { --mq-opacity-base: 1; … }` looks equivalent and is not: Astro
+// scopes that to `.marquee[data-astro-cid-…]`, which outranks any plain class
+// an outside stylesheet can use, so every external override lost silently and
+// the backdrop rendered at full strength instead of 7%. Inline styles are worse
+// again — they beat every stylesheet rule outright. Same family as the
+// `Section` / `--ground-dark` and `--header-h` traps already in the rulebook:
+// a component's own defaults must never be able to outrank its caller.
+const rootStyle: Record<string, string> = {};
+if (gap) rootStyle['--mq-gap'] = gap;
+if (fade) rootStyle['--mq-fade'] = fade;
+if (separator) rootStyle['--mq-sep'] = SEPARATORS[separator];
+
+const resolved = rows.map((row, i) => {
+  const duration = row.duration ?? DEFAULT_DURATIONS[i % DEFAULT_DURATIONS.length];
+  // Row 1 travels left → right, then alternate — exactly as briefed.
+  const direction = row.direction ?? (i % 2 === 0 ? 'ltr' : 'rtl');
+  const items = Array.from({ length: repeat }, () => row.text).flat();
+  return {
+    items,
+    direction,
+    variant: row.variant ?? 'fill',
+    style: {
+      // The lab's speed slider scales every row at once through --mq-dur-scale,
+      // which keeps the relative parallax intact while the overall pace changes.
+      '--mq-dur': `calc(var(--mq-dur-scale, 1) * ${duration}s)`,
+      // Per-row value if given, otherwise defer to the shared base — which an
+      // ancestor may set, and which falls back to the built-in default.
+      '--mq-size': row.size ?? 'var(--mq-size-base, clamp(2.75rem, 8vw, 7rem))',
+      '--mq-opacity': String(row.opacity ?? 'var(--mq-opacity-base, 1)'),
+      '--mq-font': FONTS[row.font ?? 'display'],
+      '--mq-weight': String(row.weight ?? 400),
+      '--mq-tone': TONES[row.tone ?? 'ivory'],
+    },
+  };
+});
+---
+
+<div
+  class:list={[
+    'marquee',
+    { 'marquee--background': background, 'marquee--hoverpause': pauseOnHover && !background },
+    className,
+  ]}
+  style={rootStyle}
+  aria-hidden={decorative ? 'true' : undefined}
+>
+  {
+    resolved.map((row) => (
+      <div class="marquee__row" data-dir={row.direction} style={row.style}>
+        <div class:list={['marquee__track', `marquee__track--${row.variant}`]}>
+          {/* Group A — the readable one when decorative=false. */}
+          <div class="marquee__group">
+            {row.items.map((phrase) => (
+              <span class="marquee__item">{phrase}</span>
+            ))}
+          </div>
+          {/* Group B — pixel-identical to A. This is what makes the loop
+              seamless, and it is always hidden from screen readers so the
+              phrases are never announced twice. */}
+          <div class="marquee__group" aria-hidden="true">
+            {row.items.map((phrase) => (
+              <span class="marquee__item">{phrase}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  /* NOTE: this block deliberately declares NO --mq-* custom properties. Every
+     default lives as the second argument of a var() where it is used, so an
+     ancestor or a caller can always override it. See the note in the script
+     block above for the bug that taught this. */
+  .marquee {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mq-row-gap, 0.1em);
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* Backdrop mode — fills the section it is placed in and sits behind its
+     content.
+     pointer-events:none is NOT optional here. The projects carousel is directly
+     on top; without this the marquee would swallow card clicks, arrow clicks
+     and swipes. It is also why hover-pause cannot exist in this mode — an
+     element that ignores the pointer cannot know the pointer is there. */
+  .marquee--background {
+    position: absolute;
+    inset: 0;
+    justify-content: space-around;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .marquee__row {
+    /* The clip and the edge mask sit on the ROW, which never moves. The track
+       inside it is the only thing animating, so the compositor keeps the mask
+       as a static layer instead of repainting it every frame. */
+    overflow: hidden;
+    opacity: var(--mq-opacity);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--mq-fade, 14%),
+      #000 calc(100% - var(--mq-fade, 14%)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--mq-fade, 14%),
+      #000 calc(100% - var(--mq-fade, 14%)),
+      transparent 100%
+    );
+  }
+
+  .marquee__track {
+    display: flex;
+    width: max-content;
+    /* translate3d, never left/margin: a transform is composited, so these rows
+       never touch layout or paint once the first frame is up. */
+    animation: mq-scroll var(--mq-dur) linear infinite;
+    will-change: transform;
+  }
+
+  /* data-dir is the text's travel direction. The keyframes always run the track
+     leftward; reversing the animation is what sends the text rightward, and it
+     reuses the identical keyframes so both directions are exactly as smooth. */
+  .marquee__row[data-dir='ltr'] .marquee__track {
+    animation-direction: reverse;
+  }
+
+  .marquee__group {
+    display: flex;
+    flex: 0 0 auto;
+  }
+
+  .marquee__item {
+    /* Spacing belongs to the ITEM, not to a flex gap on the group — a gap is
+       not reproduced across the join between the two groups, which would open
+       one double-width space at the seam on every loop. */
+    padding-inline-end: var(--mq-gap, 2.5rem);
+    font-family: var(--mq-font);
+    font-size: var(--mq-size);
+    font-weight: var(--mq-weight);
+    line-height: 1.05;
+    letter-spacing: var(--mq-tracking, 0.06em);
+    color: var(--mq-tone);
+    white-space: nowrap;
+  }
+
+  /* Trails each phrase, deliberately smaller and lifted. Generated rather than
+     marked up so the lab can swap it live through --mq-sep; it sits inside an
+     aria-hidden subtree in decorative mode, so nothing announces it. */
+  .marquee__item::after {
+    content: var(--mq-sep, '·');
+    font-size: 0.4em;
+    vertical-align: super;
+    margin-inline-start: 0.35em;
+    color: var(--gold-highlight);
+    letter-spacing: 0;
+    -webkit-text-stroke: 0;
+  }
+
+  /* Outline variant — the luxury-fashion look, and the one that works best as a
+     backdrop: it reads as texture rather than as words competing with the cards.
+     Guarded, because with no text-stroke support the transparent fill would
+     leave the row invisible rather than merely unstyled. */
+  @supports (-webkit-text-stroke: 1px currentColor) {
+    .marquee__track--outline .marquee__item {
+      -webkit-text-stroke: var(--mq-stroke, 1px) var(--mq-tone);
+      color: transparent;
+    }
+  }
+
+  @keyframes mq-scroll {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      /* Exactly one group. Two groups → -50%. */
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  /* Standalone mode only — see the pointer-events note above for why this can
+     never apply to the backdrop. */
+  .marquee--hoverpause:hover .marquee__track {
+    animation-play-state: paused;
+  }
+
+  /* Nothing moves, and will-change is dropped so no compositor layers are held
+     for an animation that will never run. The rows stay as static clipped text. */
+  @media (prefers-reduced-motion: reduce) {
+    .marquee__track {
+      animation: none;
+      will-change: auto;
+    }
+  }
+</style>

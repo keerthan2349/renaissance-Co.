@@ -21,17 +21,35 @@
 // rule) — an unnamed developer as the cautionary tale beside named partner
 // developers is a collision. Client decision, 28 Jul 2026.
 import Section from '@/components/primitives/Section.astro';
-import Rule from '@/components/primitives/Rule.astro';
 import Eyebrow from '@/components/primitives/Eyebrow.astro';
 import Heading from '@/components/primitives/Heading.astro';
 import Reveal from '@/components/primitives/Reveal.astro';
+import Marquee from './Marquee.astro';
 import { projects, projectsContent } from '@/data/projects';
+import { backdropRows, BACKDROP_REPEAT } from './backdrop';
 
 const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsContent;
 ---
 {projects.length > 0 && (
   <Section id="projects" dark class="projects--feature">
-    <Rule />
+    {/* The marquee backdrop (client-approved 2 Aug 2026). It rides in
+        Section's `backdrop` slot, which renders full-bleed behind the content
+        column and takes no pointer events, so the carousel above it keeps
+        every tap, swipe and arrow click. Settings live in ./backdrop.ts. */}
+    <Marquee
+      slot="backdrop"
+      rows={backdropRows}
+      repeat={BACKDROP_REPEAT}
+      background
+      class="projects__marquee"
+    />
+
+    {/* NO <Rule /> here (client, 2 Aug 2026). The drawn gold hairline opens
+        every other section — it is the site's signature (blueprint §5) — but
+        this is the one section with a marquee behind it, and a gold line laid
+        across moving text reads as two ornaments fighting rather than as one.
+        The ivory → gradient colour change still marks the section boundary on
+        its own. Do not re-add it without the client asking. */}
     <Reveal index={0}><Eyebrow>{carouselEyebrow}</Eyebrow></Reveal>
     <Reveal index={1}><Heading>{carouselHeading}</Heading></Reveal>
 
@@ -117,6 +135,32 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
       color-mix(in srgb, var(--gold-deep) 11%, var(--navy)) 38%,
       var(--navy) 78%
     );
+  }
+
+  /* THE MARQUEE BACKDROP — the client's approved settings, 2 Aug 2026.
+     Reasoning for each number, and why three of them are not the literal value
+     they set on desktop, is written up in ./backdrop.ts.
+
+     Everything is expressed relative to the type size (em) or to the viewport
+     (vw/%) so the whole thing scales as one object. The one width the client
+     actually judged it at is 1280px, where 3.3vw resolves to exactly the
+     2.65rem they chose. */
+  :global(.projects__marquee) {
+    --mq-size-base: clamp(1.6rem, 3.3vw, 2.65rem);
+    --mq-gap: 1.23em;
+    --mq-tracking: 0.02em;
+    --mq-row-gap: 0.6em;
+    --mq-fade: 3%;
+    /* Dialled back from 0.38 on 2 Aug — the client asked for the navy ground to
+       carry more and the text to sit further back. At 20 rows there is roughly
+       three times the ink of the sparse field 0.38 was first judged against,
+       so the same number reads much louder than it did. */
+    --mq-opacity-base: 0.24;
+    --mq-sep: '·';
+    /* 1px at the desktop size they approved. In em so it thins with the type
+       rather than turning the outline solid on a phone — floored at 0.7px,
+       below which a hairline stroke starts dropping out on 1x screens. */
+    --mq-stroke: max(0.7px, 0.024em);
   }
 
   /* The track sits inside the section's normal content box — deliberately NOT

@@ -13,6 +13,7 @@ import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
 import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
 import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
 import Contact from '@/components/modules/M09-Contact/Contact.astro';
+import Showcase from '@/components/modules/M18-Showcase/Showcase.astro';
 import { pageOrder } from '@/data/page-order';
 
 // Registry: maps a page-order id to its module. Add an id here only once its
@@ -24,6 +25,7 @@ const registry = {
   'what-we-do': WhatWeDo,
   qualifications: Qualifications,
   contact: Contact,
+  showcase: Showcase,
 } as const;
 ---
 <Base>

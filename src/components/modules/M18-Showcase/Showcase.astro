@@ -1,0 +1,355 @@
+---
+// M18 · Showcase — the scroll-driven film between Contact and the footer.
+// Client-approved 2 Aug 2026, built in the lab first (/lab/showcase/) and
+// promoted on their green light. Settings and copy slots: ./content.ts.
+//
+// ── HOW IT WORKS, AND WHY THERE IS NO JAVASCRIPT DRIVING IT ─────────────────
+// Every movement is a CSS scroll-driven animation (`animation-timeline`) tied
+// to a named `view-timeline` on the tall outer section. The browser runs these
+// on the compositor, OFF the main thread — the motion cannot be stuttered by
+// other scripts. The only JS is ~40 lines that lazy-load the film and pause it
+// off-screen. A scroll handler (or GSAP/Lenis, both banned) would recalculate
+// on the main thread on every scroll event and is strictly worse here.
+//
+// ── "SLOW, WEIGHTED" WITHOUT SCROLL-JACKING ─────────────────────────────────
+// The section is TALL (--sc-rail) and the stage is `position: sticky`, so the
+// visitor scrolls a long way while the frame holds still. Their scroll input
+// is never intercepted, altered or delayed — actually slowing the scroll is
+// scroll-jacking, banned in the rulebook, and it already caused one real
+// reported bug (the 28 Jul smooth-scroll race). This is the Apple technique.
+//
+// ── THE CHOREOGRAPHY (client's corrections, 2 Aug — final) ──────────────────
+// The screen must never sit as empty navy. Fades SPAN the travel: entrances
+// begin at cover 0% (the moment the section's top edge appears) and ramp
+// across the whole ride in; the film's exit fade stretches to 96%, still
+// finishing as the section hands off to the footer. The only still stretch is
+// cover ~44–52%, where everything is fully formed. Verified with a 21-point
+// opacity sweep: zero blank-screen moments. Pin window at 420vh: ~19%–81%.
+//
+// ── ACCESSIBILITY, AND ONE KNOWN TRADE-OFF ──────────────────────────────────
+// ⚠️ There is NO pause control — removed at the client's request (2 Aug), the
+// same call they made on the carousel's stop button. WCAG 2.2.2 asks that
+// anything auto-moving for >5s be stoppable; a looping film qualifies. What
+// still protects people: under `prefers-reduced-motion` the film NEVER
+// autoplays (the poster stands, the section un-pins and collapses), it pauses
+// whenever it is off-screen or the tab is hidden, and it is silent by
+// construction. If the site is formally audited, this and the carousel are
+// the findings that will come up. Do not re-add the button without the client.
+//
+// While the copy slots in content.ts are empty the section renders no text and
+// is marked decorative (aria-hidden) — screen readers skip it entirely. Supply
+// copy and the type block plus its choreography return automatically.
+//
+// ── SHARPNESS ───────────────────────────────────────────────────────────────
+// The film scales 0.9 → 1.0 and never beyond, so it is only ever displayed at
+// or below its native size. It rests at exactly scale(1), no filter, no blend,
+// no tint — the colours are the file's own.
+import { showcase } from './content';
+
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+
+const { webm, mp4, poster, ratio, rail, eyebrow, heading, caption } = showcase;
+const hasWords = Boolean(eyebrow || heading || caption);
+---
+
+<section
+  class:list={['showcase', className]}
+  style={{ '--sc-rail': rail, '--sc-ratio': ratio }}
+  aria-hidden={hasWords ? undefined : 'true'}
+>
+  <div class="showcase__stage">
+    {(eyebrow || heading) && (
+      <div class="showcase__type showcase__type--lead">
+        {eyebrow && <p class="showcase__eyebrow">{eyebrow}</p>}
+        {heading && <h2 class="showcase__heading">{heading}</h2>}
+      </div>
+    )}
+
+    <!-- Entrance on .showcase__frame, exit on this wrapper — NEVER both on one
+         element. Both are fill-mode:both, so on a shared element the later
+         animation's backwards fill pins the property at its resting value and
+         the entrance silently never runs. That bug shipped twice in the lab
+         (first the frame, then the type). Keep the split. -->
+    <div class="showcase__media">
+      <figure class="showcase__frame">
+        <video
+          class="showcase__video"
+          muted
+          loop
+          playsinline
+          preload="none"
+          poster={poster}
+          disablepictureinpicture
+          data-showcase-video
+          data-webm={webm}
+          data-mp4={mp4}
+        ></video>
+      </figure>
+    </div>
+
+    {caption && (
+      <p class="showcase__caption"><span class="showcase__caption-inner">{caption}</span></p>
+    )}
+  </div>
+</section>
+
+<style>
+  .showcase {
+    /* The scroll distance the pinned stage is held for — the slow, weighted
+       feel comes from this, never from interfering with scrolling. */
+    height: var(--sc-rail, 420vh);
+    position: relative;
+    background: var(--ground-dark);
+    color: var(--text-on-dark);
+    view-timeline-name: --sc;
+    view-timeline-axis: block;
+  }
+
+  .showcase__stage {
+    position: sticky;
+    top: 0;
+    /* svh, not vh: mobile browser chrome collapses while scrolling; vh would
+       make the stage taller than the visible area and shift everything. */
+    height: 100svh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    align-content: center;
+    justify-items: center;
+    gap: clamp(1rem, 2.5vh, 2rem);
+    /* Clears the fixed header via the height it publishes — hardcoded numbers
+       here have broken twice before (--header-h rule). */
+    padding: calc(var(--header-h, 110px) + clamp(0.5rem, 2vh, 1.5rem)) var(--gutter)
+      clamp(2rem, 5vh, 3.5rem);
+    overflow: hidden;
+  }
+
+  /* ---- the media frame ---- */
+  .showcase__media {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    align-self: center;
+    grid-row: 2;
+  }
+
+  .showcase__frame {
+    position: relative;
+    margin: 0;
+    width: min(100%, 68rem);
+    aspect-ratio: var(--sc-ratio, 16 / 9);
+    max-height: 62svh;
+    border-radius: clamp(0.5rem, 1.2vw, 1.1rem);
+    overflow: hidden;
+    /* Own compositing layer so the rounded corners stay clean mid-transform
+       (Safari otherwise leaks square corners). */
+    isolation: isolate;
+    background: color-mix(in srgb, var(--ivory) 6%, var(--navy));
+  }
+
+  .showcase__video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* No filter, no blend mode, no tint — the colours are the file's own. */
+    border-radius: inherit;
+  }
+
+  /* ---- typography (renders only when content.ts supplies words) ---- */
+  .showcase__type--lead {
+    text-align: center;
+    max-width: 44rem;
+  }
+  .showcase__eyebrow {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--gold-highlight);
+    margin: 0 0 var(--space-1);
+  }
+  .showcase__heading {
+    font-family: var(--font-display);
+    font-size: var(--type-display-2);
+    font-weight: 400;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    margin: 0;
+  }
+  .showcase__caption {
+    /* Explicit row: the media is pinned to row 2, so with the heading absent
+       auto-placement would seat the caption in the EMPTY ROW 1 — above the
+       film. Caught by measurement; keep this pinned. */
+    grid-row: 3;
+    font-family: var(--font-body);
+    font-size: var(--type-lead);
+    line-height: var(--leading-body);
+    text-align: center;
+    max-width: 34rem;
+    margin: 0;
+    color: color-mix(in srgb, var(--ivory) 78%, transparent);
+  }
+
+  /* ════════════════════════════════════════════════════════════════════════
+     SCROLL-DRIVEN MOTION — inside @supports, so a browser without
+     scroll-driven animations gets the section fully formed and static rather
+     than blank. Range numbers are the client-approved choreography; the
+     reasoning lives in the header comment.
+     ════════════════════════════════════════════════════════════════════════ */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .showcase__frame {
+        animation: sc-frame linear both;
+        animation-timeline: --sc;
+        animation-range: cover 2% cover 42%;
+        will-change: transform, opacity;
+      }
+      .showcase__media {
+        animation: sc-frame-out linear both;
+        animation-timeline: --sc;
+        animation-range: cover 60% cover 96%;
+        will-change: transform, opacity;
+      }
+
+      .showcase__eyebrow {
+        animation: sc-rise linear both;
+        animation-timeline: --sc;
+        animation-range: cover 0% cover 30%;
+      }
+      .showcase__heading {
+        animation: sc-rise linear both;
+        animation-timeline: --sc;
+        animation-range: cover 4% cover 36%;
+      }
+      .showcase__type--lead {
+        animation: sc-lift linear both;
+        animation-timeline: --sc;
+        animation-range: cover 56% cover 82%;
+      }
+
+      /* The caption rides IN SYNC WITH THE FILM (client, 3 Aug): its entrance
+         window matches .showcase__frame exactly and its exit window matches
+         .showcase__media exactly, so the line and the film arrive, hold and
+         recede as one object. (The eyebrow/heading above keep their own
+         staggered windows for whenever those slots are filled.) */
+      .showcase__caption-inner {
+        display: block;
+        animation: sc-rise linear both;
+        animation-timeline: --sc;
+        animation-range: cover 2% cover 42%;
+      }
+      .showcase__caption {
+        animation: sc-lift-soft linear both;
+        animation-timeline: --sc;
+        animation-range: cover 60% cover 96%;
+      }
+    }
+  }
+
+  @keyframes sc-frame {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  /* Leaves by receding into depth rather than simply fading. */
+  @keyframes sc-frame-out {
+    from { transform: scale(1) translateY(0); opacity: 1; }
+    to   { transform: scale(0.94) translateY(-4svh); opacity: 0.35; }
+  }
+  @keyframes sc-rise {
+    from { opacity: 0; transform: translateY(2.5rem); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes sc-lift {
+    from { transform: translateY(0); opacity: 1; }
+    to   { transform: translateY(-6svh); opacity: 0; }
+  }
+  @keyframes sc-lift-soft {
+    from { transform: translateY(0); opacity: 1; }
+    to   { transform: translateY(-3svh); opacity: 0; }
+  }
+
+  /* Nothing pins, nothing moves, the film never autoplays (script side), and
+     the section collapses to its natural height so it cannot leave a long
+     empty scroll with a still image in it. */
+  @media (prefers-reduced-motion: reduce) {
+    .showcase { height: auto; }
+    .showcase__stage { position: static; height: auto; min-height: 0; }
+  }
+</style>
+
+<script>
+  // The only JavaScript in this module: fetch the film lazily, and never burn
+  // battery decoding frames nobody can see. No scroll listener — the motion is
+  // the browser's own.
+  function initShowcase() {
+    document.querySelectorAll<HTMLVideoElement>('[data-showcase-video]').forEach((video) => {
+      if ((video as any).__wired) return;
+      (video as any).__wired = true;
+
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      // LAZY LOAD: nothing is fetched until the section is about one viewport
+      // away. The film is by far the heaviest thing on this site, against a
+      // hard LCP floor on Indian mobile networks — it must never be in the
+      // critical path, and a visitor who never scrolls down never pays for it.
+      let loaded = false;
+      const load = () => {
+        if (loaded) return;
+        loaded = true;
+        const add = (src: string | undefined, type: string) => {
+          if (!src) return;
+          const s = document.createElement('source');
+          s.src = src;
+          s.type = type;
+          video.append(s);
+        };
+        add(video.dataset.webm, 'video/webm');
+        add(video.dataset.mp4, 'video/mp4');
+        video.load();
+        if (!reduce.matches) video.play().catch(() => {});
+      };
+
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (!entries[0].isIntersecting) return;
+          load();
+          io.disconnect();
+        },
+        // 100%, not more: at 200% the section was already inside the margin on
+        // first paint and the file downloaded immediately — measured, not
+        // assumed. One viewport of warning; the poster covers the gap.
+        { rootMargin: '100% 0px' },
+      );
+      io.observe(video);
+
+      // Pause while off-screen or in a background tab; resume when back.
+      const vis = new IntersectionObserver(
+        (entries) => {
+          if (!loaded || reduce.matches) return;
+          if (entries[0].isIntersecting && !document.hidden) video.play().catch(() => {});
+          else video.pause();
+        },
+        { threshold: 0.05 },
+      );
+      vis.observe(video);
+      document.addEventListener('visibilitychange', () => {
+        if (!loaded || reduce.matches) return;
+        if (document.hidden) video.pause();
+        else video.play().catch(() => {});
+      });
+
+      // Respect a mid-visit change to the reduced-motion setting.
+      reduce.addEventListener?.('change', () => {
+        if (reduce.matches) video.pause();
+        else if (loaded) video.play().catch(() => {});
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initShowcase);
+  document.addEventListener('DOMContentLoaded', initShowcase);
+  initShowcase();
+</script>

@@ -1,0 +1,694 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+//
+// getStaticPaths returns an empty array outside `astro dev`, so a production
+// build generates zero pages from this file and the URL simply does not exist.
+// It is the same mechanism the real site already uses to guarantee a blank
+// /projects shelf can never ship — proven, rather than relying on someone
+// remembering to delete this before a deploy.
+//
+// Purpose: tune the marquee to the client's eye before a single line of it
+// touches a real module. Nothing here is wired into the homepage.
+import Base from '@/layouts/Base.astro';
+// The SAME engine the live site uses — the lab is a tuning surface over the
+// real component, never a second implementation that could drift from it.
+import Marquee from '@/components/modules/M10-Projects/Marquee.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
+import { PRESETS, MAX_ROWS, buildRows } from '@/components/lab/marquee-content';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: 'marquee' } }];
+}
+
+// These mirror WHAT IS LIVE on the homepage (see M10-Projects/backdrop.ts and
+// the .projects__marquee block in Carousel.astro), so the lab opens on the real
+// thing rather than on a stale tuning session. Keep the two in step whenever
+// the shipped settings change.
+const START = {
+  preset: 'mixed',
+  rows: 20,
+  speed: 2.16, // → loop 41–65s
+  size: 2.65, // shipped as clamp(1.6rem, 3.3vw, 2.65rem) — this is its value at 1280px
+  gap: 3.25, // shipped as 1.23em, which is 3.25rem at the size above
+  track: 0.02,
+  rowgap: 0.6,
+  fade: 3,
+  stroke: 1,
+  backop: 24, // dialled back from 38 on the client's note that it read too loud
+  variant: 'outline',
+  sep: 'dot',
+  layout: 'spread',
+  hover: 'on',
+};
+const startNote = PRESETS.find((p) => p.id === START.preset)!.note;
+---
+
+<Base title="LAB · Marquee — Renaissance & Co. (dev only)">
+  <div class="lab">
+    <header class="lab__head">
+      <p class="lab__tag">Lab · not on the site</p>
+      <h1 class="lab__title">Marquee</h1>
+      <p class="lab__intro">
+        Nothing here is wired into the homepage, and this page cannot be published — it exists only
+        while the site is running on your machine. Move the controls until it looks right, then tell
+        me the settings and I'll build it in properly.
+      </p>
+    </header>
+
+    <!-- ── Controls ───────────────────────────────────────────────────── -->
+    <div class="panel" id="panel">
+      <button type="button" class="panel__toggle" id="toggle" aria-expanded="true">
+        Hide controls
+      </button>
+      <div class="panel__grid" id="grid">
+        <div class="ctl ctl--wide">
+          <label class="ctl__label">Words</label>
+          <div class="chips" id="presets">
+            {
+              PRESETS.map((p) => (
+                <button
+                  type="button"
+                  class:list={['chip', { 'is-on': p.id === START.preset }]}
+                  data-preset={p.id}
+                >
+                  {p.label}
+                </button>
+              ))
+            }
+          </div>
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="rows">Rows <b id="rows-v">{START.rows}</b></label>
+          <input type="range" id="rows" min="2" max={MAX_ROWS} step="1" value={START.rows} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="speed">Loop <b id="speed-v">—</b></label>
+          <input type="range" id="speed" min="0.35" max="2.5" step="0.01" value={START.speed} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="size">Text size <b id="size-v">—</b></label>
+          <input type="range" id="size" min="0.5" max="14" step="0.05" value={START.size} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="gap">Word spacing <b id="gap-v">—</b></label>
+          <input type="range" id="gap" min="0.15" max="9" step="0.05" value={START.gap} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="track">Letter spacing <b id="track-v">—</b></label>
+          <input type="range" id="track" min="-0.02" max="0.3" step="0.01" value={START.track} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="rowgap">Row spacing <b id="rowgap-v">—</b></label>
+          <input type="range" id="rowgap" min="-0.45" max="0.6" step="0.01" value={START.rowgap} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="fade">Edge fade <b id="fade-v">—</b></label>
+          <input type="range" id="fade" min="0" max="40" step="1" value={START.fade} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="stroke">Outline weight <b id="stroke-v">—</b></label>
+          <input type="range" id="stroke" min="0.25" max="4" step="0.05" value={START.stroke} />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="backop">Backdrop strength <b id="backop-v">—</b></label>
+          <input type="range" id="backop" min="1" max="60" step="1" value={START.backop} />
+        </div>
+
+        <div class="ctl ctl--wide">
+          <label class="ctl__label">Style</label>
+          <div class="chips">
+            <button type="button" class:list={['chip', { 'is-on': START.variant === 'fill' }]} data-variant="fill">Solid</button>
+            <button type="button" class:list={['chip', { 'is-on': START.variant === 'outline' }]} data-variant="outline">Outline</button>
+          </div>
+        </div>
+
+        <div class="ctl ctl--wide">
+          <label class="ctl__label">Backdrop rows <span class="ctl__hint">section B only</span></label>
+          <div class="chips">
+            <button type="button" class:list={['chip', { 'is-on': START.layout === 'spread' }]} data-layout="spread">Spread out</button>
+            <button type="button" class:list={['chip', { 'is-on': START.layout === 'stacked' }]} data-layout="stacked">Stacked block</button>
+          </div>
+        </div>
+
+        <div class="ctl ctl--wide">
+          <label class="ctl__label">After each phrase</label>
+          <div class="chips">
+            <button type="button" class:list={['chip', { 'is-on': START.sep === 'none' }]} data-sep="none">Nothing</button>
+            <button type="button" class:list={['chip', { 'is-on': START.sep === 'dot' }]} data-sep="dot">·</button>
+            <button type="button" class:list={['chip', { 'is-on': START.sep === 'tm' }]} data-sep="tm">™</button>
+          </div>
+        </div>
+
+        <div class="ctl ctl--wide">
+          <label class="ctl__label">Pause on hover <span class="ctl__hint">standalone only</span></label>
+          <div class="chips">
+            <button type="button" class:list={['chip', { 'is-on': START.hover === 'on' }]} data-hover="on">On</button>
+            <button type="button" class:list={['chip', { 'is-on': START.hover === 'off' }]} data-hover="off">Off</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="panel__read">
+        <span>measured in-page:</span>
+        <b id="fps">— fps</b>
+        <span id="fps-note"></span>
+        <button type="button" class="panel__reset" id="reset">reset</button>
+      </p>
+    </div>
+
+    <!-- ── A · Standalone ─────────────────────────────────────────────── -->
+    <section class="demo">
+      <h2 class="demo__h">A · On its own</h2>
+      <p class="demo__p">
+        Full strength, as its own band. This is the luxury-fashion reference look — and the honest
+        alternative to using it as a backdrop, since a band like this can sit between two sections
+        without anything competing with it.
+      </p>
+      <div class="stage stage--solo">
+        {
+          PRESETS.map((p) => (
+            <div class="preset" data-preset-pane={p.id} hidden={p.id !== START.preset}>
+              {/* repeat={2} keeps the initial markup small; the lab tops each
+                  row up to the screen width at runtime anyway. */}
+              <Marquee rows={buildRows(p, MAX_ROWS)} repeat={2} class="mq mq--solo" pauseOnHover />
+            </div>
+          ))
+        }
+      </div>
+      <p class="demo__note" id="preset-note">{startNote}</p>
+    </section>
+
+    <!-- ── B · Behind the real carousel ───────────────────────────────── -->
+    <section class="demo">
+      <h2 class="demo__h">B · Behind the projects section</h2>
+      <p class="demo__p">
+        What you actually asked for. This is the <b>real</b> projects carousel — same cards, same
+        crawl, same gradient — with the marquee sitting behind it. Use the “Backdrop strength”
+        slider: the question is where it stops fighting the cards.
+      </p>
+      <div class="stage stage--back">
+        {
+          PRESETS.map((p) => (
+            <div class="preset" data-preset-pane-b={p.id} hidden={p.id !== START.preset}>
+              <Marquee rows={buildRows(p, MAX_ROWS)} repeat={2} class="mq mq--back" background />
+            </div>
+          ))
+        }
+        <Carousel />
+      </div>
+    </section>
+
+    <p class="lab__foot">
+      Dev-only page · <code>/lab/marquee</code> · a production build generates no page here (verified:
+      still 10 pages, no <code>/lab</code> directory). It does leave one 6.9 kB stylesheet that no page
+      links to; these files are also uncommitted, so nothing can deploy either way.
+    </p>
+
+    <div hidden>
+      {/* Preset notes, parked out of view so the script can swap them in
+          without the copy being duplicated in JavaScript. */}
+      {PRESETS.map((p) => <span data-note={p.id}>{p.note}</span>)}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .lab {
+    padding-top: calc(var(--header-h, 110px) + var(--space-6));
+    padding-bottom: var(--space-12);
+    background: var(--ivory);
+  }
+  .lab__head,
+  .demo__h,
+  .demo__p,
+  .demo__note,
+  .lab__foot {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .lab__tag {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0 0 var(--space-1);
+  }
+  .lab__title {
+    font-family: var(--font-display);
+    font-size: var(--type-display-2);
+    font-weight: 400;
+    margin: 0 0 var(--space-2);
+  }
+  .lab__intro {
+    font-family: var(--font-body);
+    font-size: var(--type-lead);
+    line-height: var(--leading-body);
+    max-width: 44rem;
+    margin: 0;
+  }
+
+  /* ---- panel ---- */
+  .panel {
+    /* sticky is itself a positioned value, so the absolute toggle anchors here */
+    position: sticky;
+    top: var(--header-h, 110px);
+    z-index: 20;
+    margin: var(--space-6) auto var(--space-8);
+    max-width: 72rem;
+    background: var(--navy);
+    color: var(--ivory);
+    padding: var(--space-3);
+  }
+  .panel__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--space-2) var(--space-3);
+  }
+  .panel__grid[hidden] { display: none; }
+
+  /* The panel is sticky, so at full height it sits over the artwork it is
+     meant to be used to judge. Collapsing it leaves a one-line strip. */
+  .panel__toggle {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-3);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--navy);
+    background: var(--gold-highlight);
+    border: 0;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+    cursor: pointer;
+    z-index: 1;
+  }
+  .ctl--wide { grid-column: span 2; }
+  @media (max-width: 40rem) {
+    .ctl--wide { grid-column: span 1; }
+  }
+  .ctl__label {
+    display: block;
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--ivory) 72%, transparent);
+    margin-bottom: 0.4rem;
+  }
+  .ctl__label b {
+    color: var(--gold-highlight);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .ctl__hint {
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.55;
+  }
+  .ctl input[type='range'] {
+    width: 100%;
+    accent-color: var(--gold-highlight);
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.35rem 0.7rem;
+    color: var(--ivory);
+    border: 1px solid color-mix(in srgb, var(--ivory) 30%, transparent);
+    border-radius: 2px;
+    cursor: pointer;
+    background: none;
+  }
+  .chip.is-on {
+    background: var(--gold-highlight);
+    border-color: var(--gold-highlight);
+    color: var(--navy);
+  }
+  .panel__read {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: var(--space-2) 0 0;
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: color-mix(in srgb, var(--ivory) 65%, transparent);
+  }
+  .panel__read b { color: var(--gold-highlight); font-weight: 500; }
+  .panel__reset {
+    margin-left: auto;
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--ivory);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    background: none;
+    border: 0;
+  }
+
+  /* ---- demos ---- */
+  .demo { margin-bottom: var(--space-12); }
+  .demo__h {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 var(--space-2);
+  }
+  .demo__p,
+  .demo__note {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    max-width: 44rem;
+    margin: 0 0 var(--space-3);
+  }
+  .demo__note {
+    margin: var(--space-3) auto 0;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .stage--solo {
+    background: var(--navy);
+    padding-block: var(--space-8);
+    overflow: hidden;
+  }
+
+  /* The backdrop stage carries the projects section's own feature gradient, and
+     the Section inside it is made transparent so the marquee shows through.
+     Both are done by overriding the --ground-dark TOKEN rather than the
+     background property, because Section's own scoped rule outranks anything
+     reachable from out here — the same trap already logged twice in the vault.
+     The gradient is duplicated from Carousel.astro on purpose: this is a lab,
+     and the real integration will simply layer inside that component. */
+  .stage--back {
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(
+      125% 105% at 8% 0%,
+      color-mix(in srgb, var(--gold-deep) 26%, var(--navy)) 0%,
+      color-mix(in srgb, var(--gold-deep) 11%, var(--navy)) 38%,
+      var(--navy) 78%
+    );
+  }
+  .stage--back :global(.projects--feature) {
+    --ground-dark: transparent;
+    position: relative;
+    z-index: 1;
+  }
+
+  .lab__foot {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--text-muted);
+  }
+</style>
+
+<style is:global>
+  /* Live overrides the control panel writes to. Global because they target the
+     Marquee component's own scoped elements from outside it. */
+  .mq--solo {
+    --mq-size-base: var(--lab-size, clamp(2.75rem, 8vw, 7rem));
+    --mq-gap: var(--lab-gap, 2.5rem);
+    --mq-tracking: var(--lab-track, 0.06em);
+    --mq-row-gap: var(--lab-rowgap, 0.1em);
+    --mq-fade: var(--lab-fade, 14%);
+    --mq-stroke: var(--lab-stroke, 1px);
+    --mq-dur-scale: var(--lab-speed, 1);
+    --mq-sep: var(--lab-sep, '·');
+  }
+  .mq--back {
+    --mq-size-base: var(--lab-size, clamp(2.75rem, 8vw, 7rem));
+    --mq-gap: var(--lab-gap, 2.5rem);
+    --mq-tracking: var(--lab-track, 0.06em);
+    --mq-row-gap: var(--lab-rowgap, 0.1em);
+    --mq-fade: var(--lab-fade, 14%);
+    --mq-stroke: var(--lab-stroke, 1px);
+    --mq-dur-scale: var(--lab-speed, 1);
+    --mq-sep: var(--lab-sep, '·');
+    --mq-opacity-base: var(--lab-backop, 0.07);
+  }
+
+  /* Style switch, applied to every row at once. */
+  @supports (-webkit-text-stroke: 1px currentColor) {
+    .mq[data-variant='outline'] .marquee__item {
+      -webkit-text-stroke: var(--mq-stroke, 1px) var(--mq-tone);
+      color: transparent;
+    }
+    .mq[data-variant='fill'] .marquee__item {
+      -webkit-text-stroke: 0;
+      color: var(--mq-tone);
+    }
+  }
+  .mq[data-hover='off'] .marquee__track { animation-play-state: running !important; }
+
+  /* In backdrop mode the rows are spread down the whole section by
+     `justify-content: space-around`, which makes the free space — not the row
+     spacing — decide where they sit. That is why the Row spacing slider looks
+     dead on section B. Centring them instead hands control back to the gap, so
+     the rows become one dense block, which is a genuinely different look once
+     the text is small. */
+  .mq--back[data-layout='stacked'] { justify-content: center; }
+</style>
+
+<script>
+  // Lab wiring only — the Marquee component itself uses ZERO JavaScript.
+  function initLab() {
+    const panel = document.getElementById('panel');
+    if (!panel || (panel as any).__wired) return;
+    (panel as any).__wired = true;
+
+    const root = document.documentElement;
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+    // Baked-in default loop durations, so the readout can show the real
+    // seconds rather than an abstract multiplier.
+    const BASE_DURATIONS = [24, 19, 28, 21, 30, 23, 26, 20];
+
+    const setVar = (name: string, value: string) => root.style.setProperty(name, value);
+
+    const sliders: Record<string, (v: number) => [string, string, string]> = {
+      // id → [css var, css value, label]
+      size: (v) => ['--lab-size', `${v}rem`, `${v}rem`],
+      gap: (v) => ['--lab-gap', `${v}rem`, `${v}rem`],
+      track: (v) => ['--lab-track', `${v}em`, `${v.toFixed(2)}em`],
+      rowgap: (v) => ['--lab-rowgap', `${v}em`, `${v.toFixed(2)}em`],
+      fade: (v) => ['--lab-fade', `${v}%`, `${v}%`],
+      stroke: (v) => ['--lab-stroke', `${v}px`, `${v}px`],
+      backop: (v) => ['--lab-backop', String(v / 100), `${v}%`],
+      speed: (v) => {
+        // Show the true range the rows now loop over, not the multiplier.
+        const lo = Math.round(Math.min(...BASE_DURATIONS) * v);
+        const hi = Math.round(Math.max(...BASE_DURATIONS) * v);
+        return ['--lab-speed', String(v), `${lo}–${hi}s`];
+      },
+    };
+
+    Object.entries(sliders).forEach(([id, fn]) => {
+      const el = $<HTMLInputElement>(id);
+      const out = $(`${id}-v`);
+      if (!el) return;
+      const apply = () => {
+        const [name, value, label] = fn(parseFloat(el.value));
+        setVar(name, value);
+        if (out) out.textContent = label;
+      };
+      el.addEventListener('input', apply);
+      apply();
+    });
+
+    // Rows: hide the surplus rather than re-rendering.
+    const rowsEl = $<HTMLInputElement>('rows');
+    const applyRows = () => {
+      const n = parseInt(rowsEl.value, 10);
+      $('rows-v').textContent = String(n);
+      document.querySelectorAll<HTMLElement>('.mq').forEach((mq) => {
+        mq.querySelectorAll<HTMLElement>('.marquee__row').forEach((row, i) => {
+          row.hidden = i >= n;
+        });
+      });
+    };
+    rowsEl.addEventListener('input', applyRows);
+    applyRows();
+
+    // ── Keep the loop seamless at ANY text size ─────────────────────────
+    // The seam only works while ONE group is wider than the screen. The
+    // component ships three copies of each phrase set, which is plenty at 7rem
+    // and NOT enough at 1rem — one copy becomes narrower than the viewport and
+    // a bare gap opens at the join. So after any change that alters width, top
+    // both groups up with whole extra copies until one group comfortably
+    // exceeds the screen.
+    //
+    // Both groups are always grown by the SAME number of copies. If they ever
+    // differed the -50% translate would stop landing on an identical pixel and
+    // the loop would visibly jump — the one invariant this whole thing rests on.
+    const SEED = new WeakMap<HTMLElement, Node[]>();
+    const refill = () => {
+      document
+        .querySelectorAll<HTMLElement>('.preset:not([hidden]) .marquee__row')
+        .forEach((row) => {
+          if (row.hidden) return;
+          const track = row.querySelector<HTMLElement>('.marquee__track');
+          if (!track) return;
+          const groups = track.querySelectorAll<HTMLElement>('.marquee__group');
+          if (groups.length !== 2) return;
+          const [a, b] = groups;
+
+          if (!SEED.has(a)) SEED.set(a, [...a.children].map((n) => n.cloneNode(true)));
+          const seed = SEED.get(a)!;
+          const fresh = () => seed.map((n) => n.cloneNode(true));
+
+          // Back to the seed first, so shrinking the text removes copies too
+          // instead of only ever growing.
+          a.replaceChildren(...fresh());
+          b.replaceChildren(...fresh());
+
+          const target = window.innerWidth * 1.5;
+          let guard = 0;
+          while (a.getBoundingClientRect().width < target && guard++ < 60) {
+            a.append(...fresh());
+            b.append(...fresh());
+          }
+        });
+    };
+    let refillTimer: number | null = null;
+    const refillSoon = () => {
+      if (refillTimer !== null) clearTimeout(refillTimer);
+      refillTimer = window.setTimeout(refill, 90);
+    };
+    window.addEventListener('resize', refillSoon, { passive: true });
+
+    // Anything that changes how wide the text runs has to re-check the fill.
+    // These are attached here rather than inside the slider setup above,
+    // because refillSoon is not in scope yet at that point.
+    ['size', 'gap', 'track', 'rows'].forEach((id) =>
+      $<HTMLInputElement>(id)?.addEventListener('input', refillSoon),
+    );
+    // Fonts land after first paint and change every measurement, so the first
+    // real fill has to wait for them — the same trap that once left the hero
+    // headline invisible.
+    refill();
+    document.fonts?.ready.then(refill);
+
+    // Chip groups. Scoped to `.chip[data-x]` deliberately: the marquee roots
+    // themselves carry data-variant and data-hover, so a bare [data-variant]
+    // query would also match them and wire click handlers onto the artwork.
+    const chipGroup = (attr: string, onPick: (value: string) => void) => {
+      document.querySelectorAll<HTMLElement>(`.chip[data-${attr}]`).forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const scope = btn.closest('.chips');
+          scope?.querySelectorAll('.chip').forEach((c) => c.classList.remove('is-on'));
+          btn.classList.add('is-on');
+          onPick(btn.dataset[attr] as string);
+        });
+      });
+    };
+
+    chipGroup('variant', (v) =>
+      document.querySelectorAll<HTMLElement>('.mq').forEach((mq) => (mq.dataset.variant = v)),
+    );
+    chipGroup('sep', (v) =>
+      setVar('--lab-sep', v === 'none' ? '""' : v === 'tm' ? '"™"' : '"·"'),
+    );
+    chipGroup('hover', (v) =>
+      document.querySelectorAll<HTMLElement>('.mq').forEach((mq) => (mq.dataset.hover = v)),
+    );
+    chipGroup('layout', (v) =>
+      document.querySelectorAll<HTMLElement>('.mq--back').forEach((mq) => (mq.dataset.layout = v)),
+    );
+
+    chipGroup('preset', (id) => {
+      document
+        .querySelectorAll<HTMLElement>('[data-preset-pane]')
+        .forEach((p) => (p.hidden = p.dataset.presetPane !== id));
+      document
+        .querySelectorAll<HTMLElement>('[data-preset-pane-b]')
+        .forEach((p) => (p.hidden = p.dataset.presetPaneB !== id));
+      applyRows();
+      refillSoon();
+      const note = document.querySelector<HTMLElement>(`[data-note='${id}']`);
+      const target = $('preset-note');
+      if (note && target) target.textContent = note.textContent;
+    });
+
+    // Defaults for the two chip-driven attributes.
+    // Mirror the markup's starting chip states onto the marquees themselves.
+    const onChip = (attr: string, fallback: string) =>
+      (document.querySelector<HTMLElement>(`.chip.is-on[data-${attr}]`)?.dataset[attr] ?? fallback);
+    const startVariant = onChip('variant', 'fill');
+    const startHover = onChip('hover', 'on');
+    const startLayout = onChip('layout', 'spread');
+    document.querySelectorAll<HTMLElement>('.mq').forEach((mq) => {
+      mq.dataset.variant = startVariant;
+      mq.dataset.hover = startHover;
+    });
+    document.querySelectorAll<HTMLElement>('.mq--back').forEach((mq) => (mq.dataset.layout = startLayout));
+    const SEP_CSS: Record<string, string> = { none: '""', tm: '"™"', dot: '"·"' };
+    setVar('--lab-sep', SEP_CSS[onChip('sep', 'dot')]);
+
+    // Collapse, so the sticky panel stops covering the thing being judged.
+    const grid = $('grid');
+    const toggle = $<HTMLButtonElement>('toggle');
+    toggle.addEventListener('click', () => {
+      const open = !grid.hidden;
+      grid.hidden = open;
+      toggle.textContent = open ? 'Show controls' : 'Hide controls';
+      toggle.setAttribute('aria-expanded', String(!open));
+    });
+
+    $('reset').addEventListener('click', () => {
+      ['--lab-size', '--lab-gap', '--lab-track', '--lab-rowgap', '--lab-fade', '--lab-stroke',
+       '--lab-backop', '--lab-speed', '--lab-sep'].forEach((v) => root.style.removeProperty(v));
+      location.reload();
+    });
+
+    // ── Frame rate, measured INSIDE the page ────────────────────────────
+    // The vault's hard-won rule: polling the browser from outside over the
+    // automation protocol produced fake stalls once. This counts real frames
+    // in the same thread the animation composites against.
+    const fpsOut = $('fps');
+    const fpsNote = $('fps-note');
+    let frames = 0;
+    let mark = performance.now();
+    let worst = Infinity;
+    const tick = (now: number) => {
+      frames++;
+      if (now - mark >= 1000) {
+        const fps = Math.round((frames * 1000) / (now - mark));
+        if (fps > 5) worst = Math.min(worst, fps);
+        fpsOut.textContent = `${fps} fps`;
+        fpsNote.textContent = worst < Infinity ? `· lowest seen ${worst}` : '';
+        frames = 0;
+        mark = now;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  document.addEventListener('astro:page-load', initLab);
+  document.addEventListener('DOMContentLoaded', initLab);
+  initLab();
+</script>
+
+<div hidden>
+  {/* Preset notes, parked out of view so the script can swap them in without
+      duplicating the copy in JavaScript. */}
+  {PRESETS.map((p) => <span data-note={p.id}>{p.note}</span>)}
+</div>

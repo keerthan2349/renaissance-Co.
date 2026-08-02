@@ -12,29 +12,31 @@
 // so the one human sentence still reads warm against the functional grid.
 //
 // Renders nothing when there are no projects; the route generates no page then.
-import Reveal from '@/components/primitives/Reveal.astro';
+//
+// REBUILT ON THE PAGE-BAND TEMPLATE (client, 3 Aug): the navy head band —
+// marquee behind "N properties / The shelf" — is now templates/PageBand.astro,
+// shared with every future page. The cards enter with the CURTAIN system
+// (base.css + scripts/curtain.ts): revealed bottom-to-top, re-animating every
+// time they leave the screen and return — the client's chosen entrance,
+// deliberately different from the homepage's fire-once reveal.
+import PageBand from '@/components/templates/PageBand.astro';
 import { projects, projectsContent } from '@/data/projects';
 
 const { shelfHeading, shelfIntro, labels } = projectsContent;
 const count = projects.length;
+const countLine = `${count} ${count === 1 ? 'property' : 'properties'}`;
 ---
 {count > 0 && (
   <div class="browse">
-    {/* Navy page-header band — the projects area's own device; the homepage
-        never opens a page this way. */}
-    <header class="browse__head">
-      <div class="browse__head-inner">
-        {/* One template string — adjacent expressions lose the space between them. */}
-        <p class="browse__count">{`${count} ${count === 1 ? 'project' : 'projects'}`}</p>
-        <h1 class="browse__title">{shelfHeading}</h1>
-        <p class="browse__intro">{shelfIntro}</p>
-      </div>
-    </header>
+    <PageBand eyebrow={countLine} title={shelfHeading} intro={shelfIntro} />
 
     <div class="browse__body">
-      <ul class="grid" role="list">
+      {/* data-curtain contract: direct children are the items; each clips its
+          first element child (the card). --i staggers — modulo 6 so items deep
+          in the grid don't queue a second of delay on every re-entry. */}
+      <ul class="grid" role="list" data-curtain>
         {projects.map((p, i) => (
-          <Reveal as="li" index={i}>
+          <li style={`--i:${i % 6}`}>
             <a class="gcard" href={`/projects/${p.slug}`}>
               <div class="gcard__media">
                 {p.image ? (
@@ -63,7 +65,7 @@ const count = projects.length;
                 )}
               </div>
             </a>
-          </Reveal>
+          </li>
         ))}
       </ul>
     </div>
@@ -71,46 +73,11 @@ const count = projects.length;
 )}
 
 <style>
-  /* ---- The navy head band ---- */
-  .browse__head {
-    background: var(--ground-dark);
-    color: var(--text-on-dark);
-    /* Clearance for the fixed header, from the header's OWN live measurement
-       (it publishes --header-h). The fallback covers the frame before the script
-       runs and any no-JS case. Hardcoded guesses lived here previously and broke
-       the moment the header was redesigned. */
-    padding: calc(var(--header-h, 6rem) + var(--space-4)) 0 var(--space-6);
-  }
-  .browse__head-inner,
+  /* The head band's markup and styles live in templates/PageBand.astro now. */
   .browse__body {
     max-width: 72rem;
     margin-inline: auto;
     padding-inline: var(--gutter);
-  }
-  .browse__count {
-    font-family: var(--font-util);
-    font-size: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--gold-highlight);
-    margin: 0 0 var(--space-2);
-  }
-  /* Inter, not Cinzel — the projects area's own voice. */
-  .browse__title {
-    font-family: var(--font-util);
-    font-weight: 600;
-    font-size: clamp(1.9rem, 4.5vw, 2.75rem);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-    margin: 0 0 var(--space-2);
-  }
-  .browse__intro {
-    font-family: var(--font-util);
-    font-size: var(--type-body);
-    line-height: 1.55;
-    color: color-mix(in srgb, var(--ivory) 78%, transparent);
-    max-width: 38rem;
-    margin: 0;
   }
 
   /* ---- The grid ---- */

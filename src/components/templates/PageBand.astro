@@ -1,0 +1,122 @@
+---
+// PageBand — THE PAGE TEMPLATE (client's instruction, 3 Aug 2026: "create this
+// as a one template page for any other future pages we will create").
+//
+// The navy page-opening band the projects area introduced on 28 Jul — eyebrow,
+// title, intro — now with the marquee riding behind it at the client-approved
+// numbers (strength 28%, text 1.2rem, the shared dark-ground word recipe).
+// Any future page opens with this and automatically matches: properties today;
+// a market page or a how-we-work page tomorrow.
+//
+// HOW TO USE, on any page or module:
+//   import PageBand from '@/components/templates/PageBand.astro';
+//   <PageBand eyebrow="4 properties" title="The shelf" intro="…" />
+// All three strings come from the CALLER's content file — this template owns
+// layout only, never words (architecture rule 1). `marquee={false}` gives the
+// plain band. Tunables are var()-with-fallback (--band-mq-strength,
+// --band-mq-size) so a lab can drive the shipped component live — a
+// component's defaults must never outrank its caller.
+//
+// Templates sit BETWEEN primitives and modules: built from primitives + shared
+// data only, allowed to be used by any module or page, and never import from a
+// module (module isolation holds).
+import Marquee from '@/components/primitives/Marquee.astro';
+import { darkGroundRows } from '@/data/marquee';
+
+interface Props {
+  /** Small gold line above the title, e.g. "4 properties". Optional. */
+  eyebrow?: string;
+  title: string;
+  /** A sentence under the title. Optional. */
+  intro?: string;
+  /** The moving-text backdrop. On by default; false gives the plain band. */
+  marquee?: boolean;
+  class?: string;
+}
+const { eyebrow, title, intro, marquee = true, class: className } = Astro.props;
+
+// The band is short — 8 rows cover it at every width, the surplus clips.
+const rows = marquee ? darkGroundRows(8) : [];
+---
+
+<header class:list={['band', className]}>
+  {marquee && (
+    <div class="band__backdrop" aria-hidden="true">
+      <Marquee rows={rows} repeat={2} background class="band__mq" />
+    </div>
+  )}
+  <div class="band__inner">
+    {eyebrow && <p class="band__eyebrow">{eyebrow}</p>}
+    <h1 class="band__title">{title}</h1>
+    {intro && <p class="band__intro">{intro}</p>}
+    <slot />
+  </div>
+</header>
+
+<style>
+  .band {
+    position: relative;
+    /* clip, NOT hidden: overflow:hidden creates a scroll container, which
+       silently becomes every descendant's `view()` timeline reference — the
+       trap that froze scroll-driven card entrances in the lab. */
+    overflow: clip;
+    background: var(--ground-dark);
+    color: var(--text-on-dark);
+    /* Clearance for the fixed header from its OWN live measurement
+       (--header-h). Hardcoded guesses lived in this band once and broke the
+       moment the header was redesigned. */
+    padding: calc(var(--header-h, 6rem) + var(--space-4)) 0 var(--space-6);
+  }
+
+  .band__backdrop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  /* The client-approved band recipe (3 Aug): 28% strength, 1.2rem text, the
+     homepage marquee's spacing/fade/stroke numbers. */
+  :global(.band__mq) {
+    --mq-size-base: var(--band-mq-size, 1.2rem);
+    --mq-opacity-base: var(--band-mq-strength, 0.28);
+    --mq-gap: 1.23em;
+    --mq-tracking: 0.02em;
+    --mq-row-gap: 0.6em;
+    --mq-fade: 13%;
+    --mq-sep: '·';
+    --mq-stroke: max(0.7px, 0.024em);
+  }
+
+  .band__inner {
+    /* Above the backdrop. */
+    position: relative;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .band__eyebrow {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--gold-highlight);
+    margin: 0 0 var(--space-2);
+  }
+  /* Inter, not Cinzel — the browsing surfaces' own voice (28 Jul decision). */
+  .band__title {
+    font-family: var(--font-util);
+    font-weight: 600;
+    font-size: clamp(1.9rem, 4.5vw, 2.75rem);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    margin: 0 0 var(--space-2);
+  }
+  .band__intro {
+    font-family: var(--font-util);
+    font-size: var(--type-body);
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--ivory) 78%, transparent);
+    max-width: 38rem;
+    margin: 0;
+  }
+</style>

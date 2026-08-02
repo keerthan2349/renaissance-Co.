@@ -9,7 +9,10 @@ import { projects } from '@/data/projects';
 
 type Link = { label: string; href: string };
 
-const projectsLink: Link[] = projects.length > 0 ? [{ label: 'Projects', href: '/projects' }] : [];
+// "Properties", never "Projects", in anything the client's clients see
+// (client, 3 Aug 2026). The href stays /projects until they decide on the
+// URL rename.
+const projectsLink: Link[] = projects.length > 0 ? [{ label: 'Properties', href: '/projects' }] : [];
 
 /**
  * HEADER — top-level destinations only.

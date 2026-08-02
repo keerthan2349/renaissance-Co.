@@ -64,6 +64,35 @@ body {
 .reveal.is-in { opacity: 1; transform: none; }
 
 /* ============================================================
+   THE CURTAIN (client-chosen, 3 Aug 2026) — the grid-item entrance for
+   browsing surfaces. Items are revealed bottom-to-top and RE-ANIMATE every
+   time they leave the screen and return (scripts/curtain.ts toggles .is-in
+   both ways — unlike .reveal, which fires once by design).
+
+   Contract: put `data-curtain` on the container; its DIRECT children are the
+   items, each clipping its OWN first element child. The clip must sit on that
+   inner child, never on the item itself: IntersectionObserver intersects the
+   target's VISIBLE box, so an item clipped to nothing never intersects and
+   the entrance that would unclip it never fires (found the hard way).
+   Stagger rides --i, set inline by the container's markup.
+   ============================================================ */
+/* The doubled [data-curtain][data-curtain] is deliberate, not a typo: it lifts
+   specificity above an item's own single-class styles. Without it, a card's
+   own `transition: border-color …` hover rule (equal specificity, later in
+   the bundle) REPLACED this whole transition set — shorthand resets every
+   transition property — and the entrance snapped with no animation at all.
+   border-color rides in this list so that displaced hover keeps working. */
+[data-curtain][data-curtain] > * > :first-child {
+  clip-path: inset(100% 0 0 0);
+  transition:
+    clip-path var(--dur-section) var(--ease) calc(var(--i, 0) * var(--stagger)),
+    border-color var(--dur-micro) var(--ease);
+}
+[data-curtain][data-curtain] > .is-in > :first-child {
+  clip-path: inset(0 0 0 0);
+}
+
+/* ============================================================
    THE DRAWN RULE (§5) — gold hairlines draw, never fade.
    scaleX 0 -> 1 from the left. The brand's only permitted ornament.
    ============================================================ */
@@ -93,4 +122,5 @@ body {
   }
   .reveal { opacity: 1; transform: none; }
   .drawn-rule { transform: scaleX(1); }
+  [data-curtain][data-curtain] > * > :first-child { clip-path: none; }
 }

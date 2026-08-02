@@ -1,31 +1,31 @@
-// ⚠️ LAB CONTENT — used only by the dev-only lab page. Nothing here ships.
+﻿// âš ï¸ LAB CONTENT â€” used only by the dev-only lab page. Nothing here ships.
 //
 // EVERY PHRASE IS SOURCED. Nothing on this list was written for the marquee.
 // The "never invent" rule applies to decoration exactly as it applies to body
-// copy — arguably harder, because a phrase repeated forty times across a screen
+// copy â€” arguably harder, because a phrase repeated forty times across a screen
 // is the most-read text on the page even when nobody consciously reads it.
 //
-//   RENAISSANCE & CO.        the firm's name — logo wordmark, brand §8.1
-//   INVESTMENTS              the logo's subline, brand §8.1
-//   ADVISED, NOT SOLD        blueprint §7.1 Option B hero headline
-//   OFF-PLAN SPECIALIST      brand §5.2, verbatim
-//   STRATEGY, NOT JUST SALE  brand §5.3, verbatim
-//   END TO END               blueprint §7.5 "We work end to end"
-//   AFTER THE KEYS           M05's live heading "End to end — and after the keys"
-//   WE STAY                  §7.5 "We stay for that part" / brand §5.8
-//   DUBAI · ABU DHABI ·
-//   RAS AL KHAIMAH           brand §9, the stated UAE geography
-//   HYDERABAD                brand §9, the primary market
+//   RENAISSANCE & CO.        the firm's name â€” logo wordmark, brand Â§8.1
+//   INVESTMENTS              the logo's subline, brand Â§8.1
+//   ADVISED, NOT SOLD        blueprint Â§7.1 Option B hero headline
+//   OFF-PLAN SPECIALIST      brand Â§5.2, verbatim
+//   STRATEGY, NOT JUST SALE  brand Â§5.3, verbatim
+//   END TO END               blueprint Â§7.5 "We work end to end"
+//   AFTER THE KEYS           M05's live heading "End to end â€” and after the keys"
+//   WE STAY                  Â§7.5 "We stay for that part" / brand Â§5.8
+//   DUBAI Â· ABU DHABI Â·
+//   RAS AL KHAIMAH           brand Â§9, the stated UAE geography
+//   HYDERABAD                brand Â§9, the primary market
 //
 // NOT eligible, and deliberately absent: any figure, yield, price or percentage
 // (they need a source + verified date through the content schema), anything
 // about returns or recovery, the word "guaranteed", and any claim of registered
 // or licensed status.
 
-import type { MarqueeRow } from '@/components/modules/M10-Projects/Marquee.astro';
+import type { MarqueeRow } from '@/components/primitives/Marquee.astro';
 
 /** Ceiling for the lab's Rows slider. Rows are generated, not hand-written, so
-    this can be raised freely — the only real cost is one composited layer per
+    this can be raised freely â€” the only real cost is one composited layer per
     row, which is what the in-page frame counter is there to watch. */
 export const MAX_ROWS = 20;
 
@@ -36,7 +36,7 @@ export interface Preset {
   /** One pool per row-in-the-repeating-pattern. Row i draws from
       pools[i % pools.length], so a two-pool preset alternates by row. */
   pools: string[][];
-  /** Per-row look, by row index — used to alternate voice as well as speed. */
+  /** Per-row look, by row index â€” used to alternate voice as well as speed. */
   rowStyle?: (i: number) => Partial<MarqueeRow>;
 }
 
@@ -44,14 +44,14 @@ export const PRESETS: Preset[] = [
   {
     id: 'wordmark',
     label: 'The wordmark',
-    note: 'The name and the subline only. The most restrained option, and the closest to the fashion-house references — those are almost always the brand name alone.',
+    note: 'The name and the subline only. The most restrained option, and the closest to the fashion-house references â€” those are almost always the brand name alone.',
     pools: [['RENAISSANCE & CO.', 'INVESTMENTS']],
   },
   {
     id: 'position',
     label: 'The position',
     note: "The firm's actual argument, in its own approved words. Says more, and asks the eye to read rather than to register a texture.",
-    // "ADVISED, NOT SOLD" removed at the client's request, 2 Aug 2026 — kept out
+    // "ADVISED, NOT SOLD" removed at the client's request, 2 Aug 2026 â€” kept out
     // of the lab too, so it cannot creep back in during a future retune.
     pools: [
       ['OFF-PLAN SPECIALIST', 'STRATEGY, NOT JUST SALE', 'END TO END', 'AFTER THE KEYS', 'WE STAY'],
@@ -60,7 +60,7 @@ export const PRESETS: Preset[] = [
   {
     id: 'geography',
     label: 'The geography',
-    note: 'Cities only. Reads as reach, carries no claim at all, and is the safest of the three — there is nothing in it that could ever go stale.',
+    note: 'Cities only. Reads as reach, carries no claim at all, and is the safest of the three â€” there is nothing in it that could ever go stale.',
     pools: [['DUBAI', 'ABU DHABI', 'RAS AL KHAIMAH', 'HYDERABAD']],
   },
   {
@@ -79,7 +79,7 @@ export const PRESETS: Preset[] = [
  * Build any number of rows from a preset.
  *
  * Row i takes the pool for its position in the pattern, then rotates that pool
- * by how many times the pattern has already come round — so no two rows start
+ * by how many times the pattern has already come round â€” so no two rows start
  * on the same phrase until the pool is exhausted. Without the rotation, a
  * 12-row wordmark backdrop would be six identical pairs, and the repetition
  * reads as a rendering fault rather than as texture.

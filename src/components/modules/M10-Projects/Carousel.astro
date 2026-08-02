@@ -24,7 +24,7 @@ import Section from '@/components/primitives/Section.astro';
 import Eyebrow from '@/components/primitives/Eyebrow.astro';
 import Heading from '@/components/primitives/Heading.astro';
 import Reveal from '@/components/primitives/Reveal.astro';
-import Marquee from './Marquee.astro';
+import Marquee from '@/components/primitives/Marquee.astro';
 import { projects, projectsContent } from '@/data/projects';
 import { backdropRows, BACKDROP_REPEAT } from './backdrop';
 
@@ -50,8 +50,15 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
         across moving text reads as two ornaments fighting rather than as one.
         The ivory → gradient colour change still marks the section boundary on
         its own. Do not re-add it without the client asking. */}
-    <Reveal index={0}><Eyebrow>{carouselEyebrow}</Eyebrow></Reveal>
-    <Reveal index={1}><Heading>{carouselHeading}</Heading></Reveal>
+    {/* .carousel__head groups the eyebrow + heading so a single panel can sit
+        behind them (the lab is trialling a backdrop blur there — the marquee
+        was overlapping the heading text). The wrapper is PIXEL-NEUTRAL here:
+        it recreates section__inner's own flex gap, and carries no visual style
+        of its own on the live site. */}
+    <div class="carousel__head">
+      <Reveal index={0}><Eyebrow>{carouselEyebrow}</Eyebrow></Reveal>
+      <Reveal index={1}><Heading>{carouselHeading}</Heading></Reveal>
+    </div>
 
     <Reveal index={2}>
       <div class="carousel" data-carousel>
@@ -150,17 +157,54 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     --mq-gap: 1.23em;
     --mq-tracking: 0.02em;
     --mq-row-gap: 0.6em;
-    --mq-fade: 3%;
-    /* Dialled back from 0.38 on 2 Aug — the client asked for the navy ground to
-       carry more and the text to sit further back. At 20 rows there is roughly
-       three times the ink of the sparse field 0.38 was first judged against,
-       so the same number reads much louder than it did. */
-    --mq-opacity-base: 0.24;
+    /* 13%, up from 3% (client's final numbers, 3 Aug) — a wider soft fade at
+       the screen edges. */
+    --mq-fade: 13%;
+    /* 0.23 (client's final numbers, 3 Aug; was 0.38 → 0.24 → this). At 20 rows
+       there is roughly three times the ink of the sparse field 0.38 was first
+       judged against, so small steps read larger than they sound. */
+    --mq-opacity-base: 0.23;
     --mq-sep: '·';
     /* 1px at the desktop size they approved. In em so it thins with the type
        rather than turning the outline solid on a phone — floored at 0.7px,
        below which a hairline stroke starts dropping out on 1x screens. */
     --mq-stroke: max(0.7px, 0.024em);
+  }
+
+  /* THE HEADING PANEL (client-approved 3 Aug, tuned in the lab): a gentle
+     backdrop blur behind CURATED → "On the shelf", because the marquee text
+     behind was overlapping the heading text. 2px is deliberate — enough to
+     soften the collision, not enough to read as frosted glass.
+     The panel bleeds outward via padding + equal negative margins (net-zero
+     to layout), its top/bottom edges FADE via the mask ("seamless"), and its
+     corners are slightly rounded (client's ask). Horizontal bleed stays at
+     1.25rem — the gutter's minimum — so it can never poke past the section
+     edge on a narrow phone; the section's own overflow:hidden backstops it.
+     Tunables are var()-with-fallback so the lab can drive them live — a
+     component's defaults must never outrank its caller (the marquee bug). */
+  .carousel__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    backdrop-filter: blur(var(--head-blur, 2px));
+    -webkit-backdrop-filter: blur(var(--head-blur, 2px));
+    padding: 1.5rem 1.25rem 2rem;
+    margin: -1.5rem -1.25rem -2rem;
+    border-radius: 1rem;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 1.25rem,
+      #000 calc(100% - 1.6rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 1.25rem,
+      #000 calc(100% - 1.6rem),
+      transparent 100%
+    );
   }
 
   /* The track sits inside the section's normal content box — deliberately NOT
@@ -205,6 +249,12 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     aspect-ratio: 4 / 5;
     overflow: hidden;
     background: color-mix(in srgb, var(--ivory) 8%, var(--navy));
+    /* Thin gold outline (client-approved 3 Aug): the palette's on-dark gold —
+       the same gold as the CURATED eyebrow — at 0.5px/65%. Hairline, not a
+       frame; hi-dpi screens render the true half-pixel, 1x rounds it. Gold as
+       a border is one of the two uses gold is allowed (§8.2). */
+    border: var(--card-line, 0.5px) solid
+      color-mix(in srgb, var(--gold-highlight) var(--card-line-strength, 65%), transparent);
   }
   .card__img,
   .card__blank {

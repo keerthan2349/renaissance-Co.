@@ -1,0 +1,169 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+//
+// The properties experiments SHIPPED on 3 Aug (wording, the band marquee at
+// 28%/1.2rem via templates/PageBand.astro, and the re-triggering curtain
+// entrance). This page is now just the tuning bench over the real thing:
+// the sliders drive the shipped template's own variables, and Replay re-runs
+// the curtain without scrolling away and back.
+import Base from '@/layouts/Base.astro';
+import Shelf from '@/components/modules/M10-Projects/Shelf.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+---
+
+<Base title="LAB · Properties — Renaissance & Co. (dev only)">
+  <div class="note">
+    <p class="note__tag">Lab · not on the site</p>
+    <h1 class="note__h">Properties page — tuning bench</h1>
+    <p class="note__p">
+      Everything below is the <b>real, shipped</b> properties page: “properties” wording, the marquee
+      behind the band at your approved 28% / 1.2rem, and the curtain entrance that replays every time
+      cards leave the screen and return. Move the sliders and tell me new numbers; I bake them in.
+    </p>
+    <p class="note__p note__p--quiet">
+      Still open: the web address itself (<code>/projects</code> → <code>/properties</code>) — old
+      links break unless redirected. Say the word either way.
+    </p>
+  </div>
+
+  <div class="panel">
+    <div class="ctl">
+      <label class="ctl__label" for="bstr">Marquee strength <b id="bstr-v">28%</b></label>
+      <input type="range" id="bstr" min="5" max="45" step="1" value="28" />
+    </div>
+    <div class="ctl">
+      <label class="ctl__label" for="bsize">Marquee text size <b id="bsize-v">1.2rem</b></label>
+      <input type="range" id="bsize" min="0.8" max="3" step="0.1" value="1.2" />
+    </div>
+    <div class="ctl ctl--btn">
+      <button type="button" class="chip" id="replay">↻ Replay the curtain</button>
+    </div>
+  </div>
+
+  <Shelf />
+</Base>
+
+<style>
+  .note {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: calc(var(--header-h, 110px) + var(--space-4)) var(--gutter) var(--space-4);
+    background: var(--ivory);
+  }
+  .note__tag {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0 0 var(--space-1);
+  }
+  .note__h {
+    font-family: var(--font-display);
+    font-size: var(--type-heading);
+    font-weight: 400;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    max-width: 46rem;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p--quiet { color: var(--text-muted); font-size: var(--type-caption); }
+
+  .panel {
+    position: sticky;
+    top: var(--header-h, 110px);
+    z-index: 20;
+    max-width: 72rem;
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-2) var(--space-3);
+    background: var(--navy);
+    color: var(--ivory);
+    padding: var(--space-3);
+  }
+  .ctl__label {
+    display: block;
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--ivory) 72%, transparent);
+    margin-bottom: 0.4rem;
+  }
+  .ctl__label b { color: var(--gold-highlight); font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .ctl input[type='range'] { width: 100%; accent-color: var(--gold-highlight); }
+  .ctl--btn { display: flex; align-items: end; }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.45rem 0.8rem;
+    color: var(--ivory);
+    border: 1px dashed color-mix(in srgb, var(--ivory) 40%, transparent);
+    border-radius: 2px;
+    cursor: pointer;
+    background: none;
+  }
+  .chip:hover { border-color: var(--ivory); }
+</style>
+
+<style is:global>
+  /* Replay helper: snap to the hidden state without animating, then release. */
+  .curtain-snap [data-curtain] > * > :first-child {
+    transition: none !important;
+  }
+</style>
+
+<script>
+  function initBench() {
+    const panel = document.querySelector('.panel');
+    if (!panel || (panel as any).__wired) return;
+    (panel as any).__wired = true;
+
+    const root = document.documentElement;
+    const wire = (id: string, name: string, unit: string) => {
+      const el = document.getElementById(id) as HTMLInputElement;
+      const out = document.getElementById(`${id}-v`)!;
+      const go = () => {
+        const v = parseFloat(el.value);
+        root.style.setProperty(name, id === 'bstr' ? String(v / 100) : `${v}${unit}`);
+        out.textContent = `${v}${id === 'bstr' ? '%' : unit}`;
+      };
+      el.addEventListener('input', go);
+      go();
+    };
+    wire('bstr', '--band-mq-strength', '%');
+    wire('bsize', '--band-mq-size', 'rem');
+
+    // Replay: strip .is-in with transitions off (so the hidden state commits
+    // instantly), then let the shipped curtain observer re-reveal on its own —
+    // in-view items get a nudge because observers only fire on crossings.
+    document.getElementById('replay')?.addEventListener('click', () => {
+      const items = [...document.querySelectorAll<HTMLElement>('[data-curtain] > *')];
+      document.body.classList.add('curtain-snap');
+      items.forEach((c) => c.classList.remove('is-in'));
+      void document.body.offsetHeight;
+      document.body.classList.remove('curtain-snap');
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const vh = window.innerHeight;
+          items.forEach((c) => {
+            const r = c.getBoundingClientRect();
+            if (r.top < vh * 0.95 && r.bottom > 0) c.classList.add('is-in');
+          });
+        }),
+      );
+    });
+  }
+  document.addEventListener('astro:page-load', initBench);
+  document.addEventListener('DOMContentLoaded', initBench);
+  initBench();
+</script>

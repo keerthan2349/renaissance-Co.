@@ -39,8 +39,11 @@ export interface MarqueeRow {
   opacity?: number;
   font?: 'display' | 'body' | 'util';
   weight?: number;
-  /** Palette only. No colour may be added (brand §8.2). */
-  tone?: 'ivory' | 'gold';
+  /** Palette only. No colour may be added (brand §8.2). ivory/gold are the
+      dark-ground pair; navy/deep are the LIGHT-ground pair (navy on ivory, and
+      gold-deep — the one warm dark §8.2 sanctions on ivory. Plain --gold never
+      goes near ivory, even decoratively). */
+  tone?: 'ivory' | 'gold' | 'navy' | 'deep';
 }
 
 interface Props {
@@ -89,6 +92,8 @@ const FONTS = {
 const TONES = {
   ivory: 'var(--ivory)',
   gold: 'var(--gold-highlight)',
+  navy: 'var(--navy)',
+  deep: 'var(--gold-deep)',
 } as const;
 
 // Carried as a CSS string so the lab can swap it live by overriding one custom

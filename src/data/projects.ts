@@ -87,11 +87,11 @@ export const projects: Project[] = [
   {
     slug: 'example-project-one',
     developer: 'EXAMPLE DEVELOPER — NOT REAL',
-    project: 'Example Project One',
+    project: 'Example Property One',
     area: 'Example area',
     handover: 'Q0 0000',
     unitTypes: 'Example unit types',
-    why: 'EXAMPLE PLACEHOLDER — this is where your one line goes: the actual reason this project is on your shelf. It is the only thing here a competitor cannot copy, so it carries the whole section.',
+    why: 'EXAMPLE PLACEHOLDER — this is where your one line goes: the actual reason this property is on your shelf. It is the only thing here a competitor cannot copy, so it carries the whole section.',
     priceFrom: 'AED 0,000,000',
     priceAsOf: 'EXAMPLE MONTH 0000',
     detail: [
@@ -102,18 +102,18 @@ export const projects: Project[] = [
   {
     slug: 'example-project-two',
     developer: 'EXAMPLE DEVELOPER TWO — NOT REAL',
-    project: 'Example Project Two',
+    project: 'Example Property Two',
     area: 'Example area',
     handover: 'Q0 0000',
     unitTypes: 'Example unit types',
-    why: 'EXAMPLE PLACEHOLDER — a second card, so you can see how the carousel moves and how two projects sit apart in the full list.',
+    why: 'EXAMPLE PLACEHOLDER — a second card, so you can see how the carousel moves and how two properties sit apart in the full list.',
     priceFrom: 'AED 0,000,000',
     priceAsOf: 'EXAMPLE MONTH 0000',
   },
   {
     slug: 'example-project-three',
     developer: 'EXAMPLE DEVELOPER THREE — NOT REAL',
-    project: 'Example Project Three',
+    project: 'Example Property Three',
     area: 'Example area',
     handover: 'Q0 0000',
     unitTypes: 'Example unit types',
@@ -123,27 +123,31 @@ export const projects: Project[] = [
   {
     slug: 'example-project-four',
     developer: 'EXAMPLE DEVELOPER FOUR — NOT REAL',
-    project: 'Example Project Four',
+    project: 'Example Property Four',
     area: 'Example area',
     handover: 'Q0 0000',
     unitTypes: 'Example unit types',
-    why: 'EXAMPLE PLACEHOLDER — a fourth card, so the carousel has something to scroll to on a wide screen. This one and project three carry NO price, to show that the price row simply drops away rather than leaving a blank.',
+    why: 'EXAMPLE PLACEHOLDER — a fourth card, so the carousel has something to scroll to on a wide screen. This one and property three carry NO price, to show that the price row simply drops away rather than leaving a blank.',
   },
 ];
 
-/** Copy for the projects module. Draft, subject to the client's confirmation. */
+/** Copy for the projects module.
+ *  WORDING (client, 3 Aug 2026): the client-facing word is "properties", never
+ *  "projects" — they dislike how "projects" sounds when presenting. Internal
+ *  names (this file, fields, slugs, the /projects URL) are unchanged; the URL
+ *  rename is a separately-pending client decision. */
 export const projectsContent = {
   // Homepage carousel
   carouselEyebrow: 'Curated',
   carouselHeading: 'On the shelf',
-  carouselAll: 'See all projects',
+  carouselAll: 'See all properties',
   // /projects listing
   shelfEyebrow: 'Curated',
   shelfHeading: 'The shelf',
   shelfIntro:
-    'A short list, not a catalogue. Four to six projects at a time, and next to each one the reason it is on the list.',
+    'A short list, not a catalogue. Four to six properties at a time, and next to each one the reason it is on the list.',
   // Detail pages
-  detailBack: 'All projects',
+  detailBack: 'All properties',
   labels: {
     area: 'Area',
     handover: 'Handover',

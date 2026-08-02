@@ -12,7 +12,7 @@
 import Base from '@/layouts/Base.astro';
 // The SAME engine the live site uses — the lab is a tuning surface over the
 // real component, never a second implementation that could drift from it.
-import Marquee from '@/components/modules/M10-Projects/Marquee.astro';
+import Marquee from '@/components/primitives/Marquee.astro';
 import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
 import { PRESETS, MAX_ROWS, buildRows } from '@/components/lab/marquee-content';
 
@@ -33,9 +33,9 @@ const START = {
   gap: 3.25, // shipped as 1.23em, which is 3.25rem at the size above
   track: 0.02,
   rowgap: 0.6,
-  fade: 3,
+  fade: 13, // client's final numbers, 3 Aug
   stroke: 1,
-  backop: 24, // dialled back from 38 on the client's note that it read too loud
+  backop: 23, // client's final numbers, 3 Aug (38 → 24 → 23)
   variant: 'outline',
   sep: 'dot',
   layout: 'spread',
@@ -130,6 +130,21 @@ const startNote = PRESETS.find((p) => p.id === START.preset)!.note;
             <button type="button" class:list={['chip', { 'is-on': START.variant === 'fill' }]} data-variant="fill">Solid</button>
             <button type="button" class:list={['chip', { 'is-on': START.variant === 'outline' }]} data-variant="outline">Outline</button>
           </div>
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="headblur">Heading blur <b id="headblur-v">2px</b> <span class="ctl__hint">section B</span></label>
+          <input type="range" id="headblur" min="0" max="16" step="0.5" value="2" />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="cardline">Card outline <b id="cardline-v">0.5px</b> <span class="ctl__hint">section B</span></label>
+          <input type="range" id="cardline" min="0" max="3" step="0.25" value="0.5" />
+        </div>
+
+        <div class="ctl">
+          <label class="ctl__label" for="cardstr">Outline strength <b id="cardstr-v">65%</b></label>
+          <input type="range" id="cardstr" min="10" max="100" step="5" value="65" />
         </div>
 
         <div class="ctl ctl--wide">
@@ -412,6 +427,24 @@ const startNote = PRESETS.find((p) => p.id === START.preset)!.note;
     position: relative;
     z-index: 1;
   }
+  /* Since M18's promotion the Carousel carries its OWN shipped backdrop
+     marquee in Section's slot — inside this stage that doubled up with the
+     lab's tunable one. Hide the shipped copy here so the sliders drive the
+     single marquee you see. */
+  .stage--back :global(.projects--feature .section__backdrop) {
+    display: none;
+  }
+
+  /* ── Heading blur + card outline: SHIPPED (client green-light, 3 Aug) ──
+     The effects now live in Carousel.astro itself with the approved numbers
+     (blur 2px, outline 0.5px @ 65%). These lines just hand the lab sliders
+     control of the component's own variables — no duplicate effect here, so
+     the lab can never drift from what actually ships. */
+  .stage--back {
+    --head-blur: var(--lab-headblur, 2px);
+    --card-line: var(--lab-cardline, 0.5px);
+    --card-line-strength: var(--lab-cardstr, 65%);
+  }
 
   .lab__foot {
     font-family: var(--font-util);
@@ -492,6 +525,9 @@ const startNote = PRESETS.find((p) => p.id === START.preset)!.note;
       fade: (v) => ['--lab-fade', `${v}%`, `${v}%`],
       stroke: (v) => ['--lab-stroke', `${v}px`, `${v}px`],
       backop: (v) => ['--lab-backop', String(v / 100), `${v}%`],
+      headblur: (v) => ['--lab-headblur', `${v}px`, `${v}px`],
+      cardline: (v) => ['--lab-cardline', `${v}px`, `${v}px`],
+      cardstr: (v) => ['--lab-cardstr', `${v}%`, `${v}%`],
       speed: (v) => {
         // Show the true range the rows now loop over, not the multiplier.
         const lo = Math.round(Math.min(...BASE_DURATIONS) * v);

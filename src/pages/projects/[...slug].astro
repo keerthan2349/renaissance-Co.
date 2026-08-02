@@ -40,7 +40,7 @@ const title = project
   : `${projectsContent.shelfHeading} — Renaissance & Co.`;
 const description = project
   ? `${project.project} by ${project.developer} — ${project.area}, handover ${project.handover}.`
-  : 'A short list of Dubai projects, and the reason each one is on it.';
+  : 'A short list of Dubai properties, and the reason each one is on it.';
 ---
 <Base title={title} description={description}>
   {project ? <Detail project={project} /> : <Shelf />}

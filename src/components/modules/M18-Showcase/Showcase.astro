@@ -48,16 +48,20 @@ import { showcase } from './content';
 
 interface Props {
   class?: string;
+  /** Layout override. Defaults to the control room's choice (content.ts) —
+      'background' since the client's green light on 3 Aug. 'framed' is the
+      previous centred-frame look, kept for the lab's comparison chip. */
+  layout?: 'framed' | 'background';
 }
-const { class: className } = Astro.props;
+const { class: className, layout = showcase.layout } = Astro.props;
 
-const { webm, mp4, poster, ratio, rail, eyebrow, heading, caption } = showcase;
+const { webm, mp4, poster, ratio, rail, hold, captionAlign, eyebrow, heading, caption } = showcase;
 const hasWords = Boolean(eyebrow || heading || caption);
 ---
 
 <section
-  class:list={['showcase', className]}
-  style={{ '--sc-rail': rail, '--sc-ratio': ratio }}
+  class:list={['showcase', className, layout === 'background' && 'showcase--bg']}
+  style={{ '--sc-rail': rail, '--sc-ratio': ratio, '--sc-hold': hold, '--sc-cap-align': captionAlign }}
   aria-hidden={hasWords ? undefined : 'true'}
 >
   <div class="showcase__stage">
@@ -193,6 +197,96 @@ const hasWords = Boolean(eyebrow || heading || caption);
     color: color-mix(in srgb, var(--ivory) 78%, transparent);
   }
 
+  /* ---- BACKGROUND LAYOUT (layout="background") ----
+     The film pins as a full-screen background and the FOOTER rides up over
+     it. Three parts to the trick, no scroll-jacking:
+     1. The rail: 100svh (the screen the stage occupies) + --sc-hold (how long
+        the film holds solo) + --footer-h (the footer's ride window).
+     2. margin-bottom: -var(--footer-h) pulls the footer up over the rail's
+        last stretch — WHILE the stage is still pinned — so it slides over the
+        film instead of pushing it away. The overlap must be the footer's REAL
+        height (published live by M15, the --header-h pattern): a fixed guess
+        overshot by (viewport − footer) and the page kept scrolling after the
+        footer had landed, sliding it up past the bottom with film showing
+        underneath. Sized exactly, the document's scroll ends the moment the
+        footer's bottom lands flush — that is what makes it seamless. The
+        margin sits on <main>'s last child and collapses through it; relied
+        on, not accidental. No JS ⇒ --footer-h is 0 ⇒ normal flow, no harm.
+     3. The footer paints ABOVE the pinned stage because M15 raises itself
+        (position: relative + z-index — see Footer.astro). The stage is
+        positioned (sticky), so an unraised static footer would lose.
+     The stage stays pinned to the document's very end — the film never
+     scrolls away; the page ENDS with the footer resting over it. That is the
+     client's reference behaviour.
+
+     THE ENTRANCE IS A REVEAL (client, 3 Aug, third correction): the page's
+     content scrolls away naturally and UNCOVERS the film already pinned
+     beneath it — the film moves at neither end: revealed, holds, covered.
+     Two parts:
+     - margin-top: -100svh slides this section's box up UNDER the content
+       before it, so the stage pins one full viewport before its flow
+       position. The pin lands exactly when the previous section's bottom
+       edge reaches the viewport bottom — from that moment, everything above
+       lifts off the film like a curtain.
+     - z-index: -1 seats the film BENEATH the page: every in-flow section's
+       opaque ground covers it, so it only shows where content has scrolled
+       away. It still paints above the page background, because the ivory
+       ground lives on <body> and propagates to the canvas, which is behind
+       negative layers — do not move the ground onto <main>, that would
+       blank the film. (An earlier pass pinned the previous section and slid
+       the film over it; the client corrected the direction.) */
+  .showcase--bg {
+    height: calc(200svh + var(--sc-hold, 150svh) + var(--footer-h, 0px));
+    margin-top: -100svh;
+    margin-bottom: calc(-1 * var(--footer-h, 0px));
+    z-index: -1;
+  }
+  .showcase--bg .showcase__stage {
+    padding: 0;
+  }
+  /* Only matters if the eyebrow/heading slots are ever filled — they overlay
+     the film's top, clear of the fixed header. */
+  .showcase--bg .showcase__type--lead {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 1;
+    padding: calc(var(--header-h, 110px) + 1.5rem) var(--gutter) 0;
+    max-width: none;
+  }
+  .showcase--bg .showcase__media {
+    position: absolute;
+    inset: 0;
+    /* Explicit, because a grid's rules still reach absolutely-positioned
+       children: the inherited align-self:center made inset:0 shrink-wrap and
+       centre this box instead of stretching it, and the inherited grid-row:2
+       made that row's start line the containing block's TOP edge — which
+       silently shaved one grid gap off the height. Both measured, then
+       cleared. (grid-row:auto ⇒ the containing block is the stage's own
+       padding box, which is what "full screen" means.) */
+    width: 100%;
+    height: 100%;
+    align-self: auto;
+    grid-row: auto;
+  }
+  .showcase--bg .showcase__frame {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    /* The frame IS the screen; the film cover-crops into it. */
+    aspect-ratio: auto;
+    border-radius: 0;
+  }
+  .showcase--bg .showcase__caption {
+    position: absolute;
+    inset: auto 0 clamp(2rem, 6vh, 4rem);
+    z-index: 1;
+    max-width: none;
+    padding-inline: var(--gutter);
+    text-align: var(--sc-cap-align, left);
+    /* Same grid-placement trap as the media above. */
+    grid-row: auto;
+  }
+
   /* ════════════════════════════════════════════════════════════════════════
      SCROLL-DRIVEN MOTION — inside @supports, so a browser without
      scroll-driven animations gets the section fully formed and static rather
@@ -246,6 +340,17 @@ const hasWords = Boolean(eyebrow || heading || caption);
         animation-timeline: --sc;
         animation-range: cover 60% cover 96%;
       }
+
+      /* Background mode has NO scroll-driven animation at all. The entrance
+         is the page content lifting off the already-pinned film, the exit is
+         the footer sliding over it — reveals and covers ARE the
+         choreography, and they are pure sticky geometry. The film is fully
+         formed throughout. (Killing every animation here also means the
+         fill-mode trap cannot exist in this mode.) */
+      .showcase--bg .showcase__frame { animation: none; }
+      .showcase--bg .showcase__media { animation: none; }
+      .showcase--bg .showcase__caption-inner { animation: none; }
+      .showcase--bg .showcase__caption { animation: none; }
     }
   }
 
@@ -277,6 +382,17 @@ const hasWords = Boolean(eyebrow || heading || caption);
   @media (prefers-reduced-motion: reduce) {
     .showcase { height: auto; }
     .showcase__stage { position: static; height: auto; min-height: 0; }
+    /* Background mode must fully un-trick itself here: no pin means the
+       negative margins would just bury the static section under its
+       neighbours (and z-index -1 would hide it behind them), and absolutely-
+       positioned children of a collapsed static stage render 0px tall. Back
+       to a plain flowing block at the film's own ratio. */
+    .showcase--bg { margin-top: 0; margin-bottom: 0; z-index: auto; }
+    .showcase--bg .showcase__stage { padding: 0; }
+    .showcase--bg .showcase__media { position: static; }
+    .showcase--bg .showcase__frame { height: auto; aspect-ratio: var(--sc-ratio, 16 / 9); }
+    .showcase--bg .showcase__type--lead { position: static; padding: var(--space-3) var(--gutter) 0; }
+    .showcase--bg .showcase__caption { position: static; padding: var(--space-2) var(--gutter) var(--space-4); }
   }
 </style>
 

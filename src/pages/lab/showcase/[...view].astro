@@ -25,31 +25,39 @@ export function getStaticPaths() {
     <p class="note__tag">Lab · not on the site</p>
     <h1 class="note__h">Scroll showcase</h1>
     <p class="note__p">
-      This section is now <b>live on the homepage</b> (locally) as its own module, M18 — what you see
-      here is the same component. This page remains as the tuning bench: use the sliders when the
-      replacement film arrives, tell me the numbers, and I bake them into the module.
+      This page opens on the <b>background layout</b> (your ask, 3 Aug): the film is already
+      waiting full-screen <b>underneath the page</b> — as Call us scrolls away it <b>uncovers the
+      film</b>, the film holds the screen as the background, then <b>the footer rises up and over
+      it</b>. The film itself never moves: revealed, held, covered. The scroll ends the moment the
+      footer lands. Tune it below, flip back to the current homepage look to compare, and tell me
+      what to promote.
     </p>
     <div class="note__ctl">
-      <label for="rail">How long it holds <b id="rail-v">420vh</b></label>
-      <input type="range" id="rail" min="200" max="650" step="10" value="420" />
       <div class="note__chips">
-        <span>Frame shape</span>
-        <button type="button" class="chip is-on" data-ratio="16 / 9">16:9</button>
-        <button type="button" class="chip" data-ratio="21 / 9">21:9</button>
-        <button type="button" class="chip" data-ratio="4 / 3">4:3</button>
-        <button type="button" class="chip" data-ratio="1 / 1">1:1</button>
-        <button type="button" class="chip" data-ratio="9 / 16">9:16</button>
+        <span>Layout</span>
+        <button type="button" class="chip is-on" data-layout="bg">Background + footer over it</button>
+        <button type="button" class="chip" data-layout="framed">Framed (current homepage)</button>
+      </div>
+      <div class="note__chips">
+        <span>Line on the film</span>
+        <button type="button" class="chip is-on" data-cap="left">Left, at the film's edge</button>
+        <button type="button" class="chip" data-cap="center">Centred</button>
       </div>
     </div>
+    <div class="note__ctl">
+      <label for="hold">How long the film holds alone, before the footer rises <b id="hold-v">150vh</b></label>
+      <input type="range" id="hold" min="0" max="400" step="10" value="150" />
+    </div>
     <p class="note__p note__p--quiet">
-      Frame shape must match your footage — anything else and the edges get cropped away.
+      The 9:16 portrait film for phones gets wired in properly when you send the file — until then
+      the landscape film centre-crops on mobile.
     </p>
   </div>
 
   <Qualifications />
   <Contact />
 
-  <Showcase class="sc-lab" />
+  <Showcase class="sc-lab" layout="background" />
 </Base>
 
 <style>
@@ -109,24 +117,37 @@ export function getStaticPaths() {
 
 <script>
   function initShowcaseLab() {
-    const rail = document.getElementById('rail') as HTMLInputElement | null;
+    const hold = document.getElementById('hold') as HTMLInputElement | null;
     const sc = document.querySelector<HTMLElement>('.sc-lab');
-    if (!rail || !sc || (rail as any).__wired) return;
-    (rail as any).__wired = true;
+    if (!hold || !sc || (hold as any).__wired) return;
+    (hold as any).__wired = true;
 
-    const out = document.getElementById('rail-v');
+    const out = document.getElementById('hold-v');
     const apply = () => {
-      sc.style.setProperty('--sc-rail', `${rail.value}vh`);
-      if (out) out.textContent = `${rail.value}vh`;
+      sc.style.setProperty('--sc-hold', `${hold.value}svh`);
+      if (out) out.textContent = `${hold.value}vh`;
     };
-    rail.addEventListener('input', apply);
+    hold.addEventListener('input', apply);
     apply();
 
-    document.querySelectorAll<HTMLElement>('.chip[data-ratio]').forEach((btn) => {
+    // Layout: toggles the component's own .showcase--bg class — the same class
+    // the layout="background" prop emits, so the lab exercises the exact code
+    // that would ship, never a copy.
+    document.querySelectorAll<HTMLElement>('.chip[data-layout]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.chip[data-ratio]').forEach((c) => c.classList.remove('is-on'));
+        document.querySelectorAll('.chip[data-layout]').forEach((c) => c.classList.remove('is-on'));
         btn.classList.add('is-on');
-        sc.style.setProperty('--sc-ratio', btn.dataset.ratio!);
+        sc.classList.toggle('showcase--bg', btn.dataset.layout === 'bg');
+      });
+    });
+
+    // Caption alignment (full layout only): drives the component's own
+    // --sc-cap-align custom property.
+    document.querySelectorAll<HTMLElement>('.chip[data-cap]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-cap]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        sc.style.setProperty('--sc-cap-align', btn.dataset.cap!);
       });
     });
   }

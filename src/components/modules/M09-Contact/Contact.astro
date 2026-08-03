@@ -1,14 +1,18 @@
 ---
 // M09 · Contact (§7.9). Phone is the conversion — given weight, not buried.
 // WhatsApp is the fallback, styled navy/ivory — NEVER WhatsApp green (§7.9).
-// Phone + WhatsApp are TODO until real numbers exist; the section renders
-// complete with clear placeholders and nothing invented (CLAUDE.md).
+//
+// LAYOUT: "The Invitation" (client's pick, 3 Aug 2026, chosen from four
+// candidates at /lab/contact/): the human line leads as the section's heading,
+// set in the EDITORIAL SERIF UPRIGHT (EB Garamond 500 — the client's face
+// pick, replacing both the old Cinzel "Call us" heading and the lab's italic).
+// The buttons follow, then one quiet row: hours · email · Instagram.
+// "Call us" no longer appears as a visible heading — the line IS the heading
+// (a real <h2>, so the page outline keeps a contact entry). The lab page
+// remains as the comparison bench.
 import Section from '@/components/primitives/Section.astro';
 import Rule from '@/components/primitives/Rule.astro';
 import Eyebrow from '@/components/primitives/Eyebrow.astro';
-import Heading from '@/components/primitives/Heading.astro';
-import Lead from '@/components/primitives/Lead.astro';
-import Caption from '@/components/primitives/Caption.astro';
 import Button from '@/components/primitives/Button.astro';
 import Reveal from '@/components/primitives/Reveal.astro';
 import Icon from '@/components/primitives/Icon.astro';
@@ -19,14 +23,15 @@ const { phone, phoneDisplay, whatsapp, hours, email, instagramUrl, instagramLabe
 <Section id="contact" dark>
   <Rule />
   <Reveal index={0}><Eyebrow>Contact</Eyebrow></Reveal>
-  <Reveal index={1}><Heading>Call us</Heading></Reveal>
-  <Reveal index={2}><Lead>We would rather talk than exchange forms.</Lead></Reveal>
+  <Reveal index={1}>
+    <h2 class="contact__line">We would rather talk<br />than exchange forms.</h2>
+  </Reveal>
 
   {/* The `data-track` attributes below are the stable hooks M17 (Meta plumbing)
       attaches to. Inert until that module exists — see
       vault/website/m17-meta-plumbing.md. Marking them now means the tracking
       module never has to edit this file, so modules stay independent. */}
-  <div class="contact__actions reveal" style="--i:3">
+  <div class="contact__actions reveal" style="--i:2">
     {
       phone && phoneDisplay ? (
         <Button
@@ -64,29 +69,22 @@ const { phone, phoneDisplay, whatsapp, hours, email, instagramUrl, instagramLabe
     }
   </div>
 
-  <Reveal index={4}><Caption>{hours}</Caption></Reveal>
-
-  {/* Quiet channels beneath the two buttons — the phone stays the conversion.
-      Instagram sits with the email rather than as a third button, so it reads as
-      "another way to reach us", not a competing call to action. It reads as the
-      word "Instagram" rather than the @handle (client's call, 28 Jul) — change
-      `instagramLabel` in site.ts to show the handle. If the handle is unset the
-      link is absent entirely. */}
-  {
-    email && (
-      <Reveal index={5}>
-        <Caption>
+  {/* One quiet row beneath the buttons — the phone stays the conversion.
+      Instagram reads as the word, not the @handle (client, 28 Jul) — change
+      `instagramLabel` in site.ts to show the handle. Unset a channel in
+      site.ts and it disappears from this row cleanly. */}
+  <Reveal index={3}>
+    <div class="contact__meta">
+      <span>{hours}</span>
+      {
+        email && (
           <a class="contact__quiet" href={`mailto:${email}`} data-track="email">
             <Icon name="mail" /> {email}
           </a>
-        </Caption>
-      </Reveal>
-    )
-  }
-  {
-    instagramUrl && (
-      <Reveal index={6}>
-        <Caption>
+        )
+      }
+      {
+        instagramUrl && (
           <a
             class="contact__quiet"
             href={instagramUrl}
@@ -96,13 +94,27 @@ const { phone, phoneDisplay, whatsapp, hours, email, instagramUrl, instagramLabe
           >
             <Icon name="instagram" /> {instagramLabel}
           </a>
-        </Caption>
-      </Reveal>
-    )
-  }
+        )
+      }
+    </div>
+  </Reveal>
 </Section>
 
 <style>
+  /* The invitation line — the section's heading, in the editorial serif
+     upright (client's face pick, 3 Aug). The size clamp was tuned in the lab
+     so the line carries display weight without Cinzel's formality. */
+  .contact__line {
+    font-family: var(--font-body);
+    font-style: normal;
+    font-weight: 500;
+    font-size: clamp(1.75rem, 3.6vw, 2.9rem);
+    line-height: 1.3;
+    letter-spacing: 0;
+    margin: 0;
+    max-width: 26em;
+  }
+
   .contact__actions {
     display: flex;
     flex-wrap: wrap;
@@ -122,7 +134,17 @@ const { phone, phoneDisplay, whatsapp, hours, email, instagramUrl, instagramLabe
     border-radius: 2px;
   }
 
-  /* Quiet channels (email, Instagram) — tappable, and never wider than the screen. */
+  /* The quiet row: hours, then the two soft channels, on one wrapping line. */
+  .contact__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: color-mix(in srgb, var(--ivory) 78%, transparent);
+    margin: 0;
+  }
   .contact__quiet {
     display: inline-flex;
     align-items: center;

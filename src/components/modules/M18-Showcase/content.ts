@@ -16,12 +16,30 @@ export const showcase = {
   poster: '/showcase/poster.jpg',
 
   /** MUST match the footage or object-fit:cover crops the edges away.
-      The current film is exactly 16:9. */
+      The current film is exactly 16:9. (Framed layout only — the background
+      layout fills the screen and cover-crops whatever it is given.) */
   ratio: '16 / 9',
 
-  /** How much scroll the pinned stage holds for. More = slower, heavier.
-      420vh approved by the client 2 Aug ("time spent in this section is
-      perfect"). */
+  /** 'background' (client green light, 3 Aug 2026): the film waits
+      full-screen UNDER the page — Call us scrolls away and reveals it, it
+      holds, then the footer rides up over it. 'framed' is the previous look
+      (centred rounded frame on a 420vh rail), kept for comparison in the lab.
+      ⚠️ A 9:16 portrait film for phones is promised and gets wired in when it
+      lands — until then the landscape film centre-crops on mobile (client's
+      informed call, 3 Aug). */
+  layout: 'background' as 'framed' | 'background',
+
+  /** Background layout: how long the film holds the screen ALONE, after the
+      reveal and before the footer rises, in screen-heights of scroll.
+      150svh = 1.5 screens (client-approved 3 Aug). */
+  hold: '150svh',
+
+  /** Background layout: the caption line on the film — 'left' starts at the
+      film's edge (client-approved 3 Aug); 'center' centres it. */
+  captionAlign: 'left' as 'left' | 'center',
+
+  /** Framed layout only: how much scroll the pinned stage holds for.
+      More = slower, heavier. 420vh approved by the client 2 Aug. */
   rail: '420vh',
 
   // ── The words ─────────────────────────────────────────────────────────────

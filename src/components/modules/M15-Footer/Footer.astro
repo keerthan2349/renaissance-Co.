@@ -45,8 +45,39 @@ const year = new Date().getFullYear();
   </div>
 </footer>
 
+<script>
+  // Publishes the footer's live height as --footer-h — the --header-h pattern.
+  // M18's background layout pulls the footer up over its pinned film by
+  // exactly this much, so the page's scroll ends the moment the footer lands.
+  // Consumers read var(--footer-h, 0px): without JS the fallback is 0 and the
+  // footer simply stays in normal flow — an improvement, never a dependency.
+  function publishFooterHeight() {
+    const footer = document.querySelector<HTMLElement>('.footer');
+    if (!footer || (footer as any).__measured) return;
+    (footer as any).__measured = true;
+    const set = () =>
+      document.documentElement.style.setProperty('--footer-h', `${footer.offsetHeight}px`);
+    set();
+    // ResizeObserver, not just window resize: the footer's height also moves
+    // when fonts land or its links wrap.
+    new ResizeObserver(set).observe(footer);
+  }
+  document.addEventListener('astro:page-load', publishFooterHeight);
+  document.addEventListener('DOMContentLoaded', publishFooterHeight);
+  publishFooterHeight();
+</script>
+
 <style>
-  .footer { background: var(--ivory); color: var(--text); }
+  .footer {
+    background: var(--ivory);
+    color: var(--text);
+    /* Raised so the footer can ride OVER M18's pinned film in its background
+       layout: the film's sticky stage is positioned, and a static footer
+       would paint underneath it. Inert on every page where M18 doesn't pull
+       the footer up — position:relative with no offsets moves nothing. */
+    position: relative;
+    z-index: 1;
+  }
   .footer__inner {
     max-width: 72rem;
     margin-inline: auto;

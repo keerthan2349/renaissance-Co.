@@ -1,0 +1,412 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// Same guard as every other lab: getStaticPaths returns an empty array outside
+// `astro dev`, so a production build generates no page.
+//
+// Four candidate layouts for M09 Contact ("Call us"), switchable in place,
+// riding the REAL contact data (site.ts) and the site's own primitives — with
+// the real Qualifications above and the real M18 film reveal below, because
+// Contact is now the section whose exit uncovers the film: its layout and its
+// bottom edge are judged together. The current homepage layout is untouched;
+// the green-lit variant gets rebuilt INTO M09 (with the standard reveals and
+// the data-track hooks it already carries) before anything ships.
+import Base from '@/layouts/Base.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
+import Showcase from '@/components/modules/M18-Showcase/Showcase.astro';
+import Section from '@/components/primitives/Section.astro';
+import Rule from '@/components/primitives/Rule.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+import Heading from '@/components/primitives/Heading.astro';
+import Lead from '@/components/primitives/Lead.astro';
+import Caption from '@/components/primitives/Caption.astro';
+import Button from '@/components/primitives/Button.astro';
+import Icon from '@/components/primitives/Icon.astro';
+import { site } from '@/data/site';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+
+const { phone, phoneDisplay, whatsapp, hours, email, instagramUrl, instagramLabel } = site.contact;
+---
+
+<Base title="LAB · Contact layouts — Renaissance & Co. (dev only)">
+  <div class="note">
+    <p class="note__tag">Lab · not on the site</p>
+    <h1 class="note__h">Call us — four layouts</h1>
+    <p class="note__p">
+      Four ways the contact section could read, each on your real details, each handing off to the
+      film reveal below so you feel the whole close of the page. The live site keeps the current
+      layout until you green-light one here.
+    </p>
+    <div class="note__ctl">
+      <div class="note__chips">
+        <span>Layout</span>
+        <button type="button" class="chip" data-cvar="a">A · The number leads</button>
+        <button type="button" class="chip" data-cvar="b">B · The ledger</button>
+        <button type="button" class="chip" data-cvar="c">C · Compact</button>
+        <button type="button" class="chip is-on" data-cvar="d">D · The invitation ✓</button>
+      </div>
+      <div class="note__chips">
+        <span>The line's face</span>
+        <button type="button" class="chip" data-font="display">Display serif</button>
+        <button type="button" class="chip is-on" data-font="serif">Editorial serif ✓</button>
+        <button type="button" class="chip" data-font="italic">Editorial italic</button>
+        <button type="button" class="chip" data-font="sans">Clean sans</button>
+      </div>
+    </div>
+    <p class="note__p note__p--quiet">
+      <b>Green-lit and shipped (3 Aug): D · The Invitation with the editorial serif</b> — this page
+      opens on exactly what the homepage runs. The other layouts and faces remain here for
+      comparison if the section is ever revisited.
+    </p>
+  </div>
+
+  <Qualifications />
+
+  <!-- A · THE NUMBER LEADS — centred; the phone number IS the headline. -->
+  <div class="cvar" data-cvar="a" hidden>
+    <Section dark>
+      <div class="monument">
+        <Rule />
+        <Eyebrow>Contact</Eyebrow>
+        <Lead>We would rather talk than exchange forms.</Lead>
+        <a class="monument__number" href={`tel:${phone}`} aria-label={`Call ${phoneDisplay}`} data-track="call">
+          {phoneDisplay}
+        </a>
+        <div class="monument__row">
+          <Button href={`https://wa.me/${whatsapp}`} variant="ghost" rel="noopener" target="_blank" data-track="whatsapp">
+            <Icon name="whatsapp" /> WhatsApp
+          </Button>
+          <a class="quiet" href={`mailto:${email}`} data-track="email"><Icon name="mail" /> {email}</a>
+          <a class="quiet" href={instagramUrl} target="_blank" rel="noopener noreferrer" data-track="instagram">
+            <Icon name="instagram" /> {instagramLabel}
+          </a>
+        </div>
+        <Caption>{hours}</Caption>
+      </div>
+    </Section>
+  </div>
+
+  <!-- B · THE LEDGER — editorial left, every channel ruled like a document. -->
+  <div class="cvar" data-cvar="b" hidden>
+    <Section dark>
+      <div class="ledger">
+        <div class="ledger__intro">
+          <Rule />
+          <Eyebrow>Contact</Eyebrow>
+          <Heading>Call us</Heading>
+          <Lead>We would rather talk than exchange forms.</Lead>
+        </div>
+        <dl class="ledger__list">
+          <div class="ledger__row ledger__row--lead">
+            <dt>Phone</dt>
+            <dd><a href={`tel:${phone}`} aria-label={`Call ${phoneDisplay}`} data-track="call">{phoneDisplay}</a></dd>
+          </div>
+          <div class="ledger__row">
+            <dt>WhatsApp</dt>
+            <dd><a href={`https://wa.me/${whatsapp}`} rel="noopener" target="_blank" data-track="whatsapp">Message us</a></dd>
+          </div>
+          <div class="ledger__row">
+            <dt>Email</dt>
+            <dd><a href={`mailto:${email}`} data-track="email">{email}</a></dd>
+          </div>
+          <div class="ledger__row">
+            <dt>Instagram</dt>
+            <dd><a href={instagramUrl} target="_blank" rel="noopener noreferrer" data-track="instagram">{instagramLabel}</a></dd>
+          </div>
+          <div class="ledger__row">
+            <dt>Hours</dt>
+            <dd>{hours}</dd>
+          </div>
+        </dl>
+      </div>
+    </Section>
+  </div>
+
+  <!-- C · COMPACT — the current idea, centred, at half the height. -->
+  <div class="cvar cvar--c" data-cvar="c" hidden>
+    <Section dark>
+      <div class="compact">
+        <Rule />
+        <Heading>Call us</Heading>
+        <Lead>We would rather talk than exchange forms.</Lead>
+        <div class="compact__actions">
+          <Button href={`tel:${phone}`} variant="primary" weight="heavy" aria-label={`Call ${phoneDisplay}`} data-track="call">
+            <Icon name="phone" /> {phoneDisplay}
+          </Button>
+          <Button href={`https://wa.me/${whatsapp}`} variant="ghost" rel="noopener" target="_blank" data-track="whatsapp">
+            <Icon name="whatsapp" /> WhatsApp
+          </Button>
+        </div>
+        <p class="compact__meta">
+          <span>{hours}</span>
+          <span class="compact__dot" aria-hidden="true">·</span>
+          <a class="quiet" href={`mailto:${email}`} data-track="email">{email}</a>
+          <span class="compact__dot" aria-hidden="true">·</span>
+          <a class="quiet" href={instagramUrl} target="_blank" rel="noopener noreferrer" data-track="instagram">{instagramLabel}</a>
+        </p>
+      </div>
+    </Section>
+  </div>
+
+  <!-- D · THE INVITATION — CLIENT'S PICK. The line's face is chip-switchable. -->
+  <div class="cvar" data-cvar="d">
+    <Section dark>
+      <div class="invite">
+        <Rule />
+        <Eyebrow>Contact</Eyebrow>
+        <p class="invite__line">We would rather talk<br />than exchange forms.</p>
+        <div class="invite__actions">
+          <Button href={`tel:${phone}`} variant="primary" weight="heavy" aria-label={`Call ${phoneDisplay}`} data-track="call">
+            <Icon name="phone" /> {phoneDisplay}
+          </Button>
+          <Button href={`https://wa.me/${whatsapp}`} variant="ghost" rel="noopener" target="_blank" data-track="whatsapp">
+            <Icon name="whatsapp" /> WhatsApp
+          </Button>
+        </div>
+        <p class="invite__meta">
+          <span>{hours}</span>
+          <a class="quiet" href={`mailto:${email}`} data-track="email"><Icon name="mail" /> {email}</a>
+          <a class="quiet" href={instagramUrl} target="_blank" rel="noopener noreferrer" data-track="instagram">
+            <Icon name="instagram" /> {instagramLabel}
+          </a>
+        </p>
+      </div>
+    </Section>
+  </div>
+
+  <Showcase class="sc-lab" />
+</Base>
+
+<style>
+  /* ---- shared ---- */
+  .quiet {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    color: inherit;
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+  .quiet:hover { text-decoration: underline; }
+  .quiet > :global(.icon) { opacity: 0.85; }
+
+  /* ---- A · monument ---- */
+  .monument {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-3);
+  }
+  /* The centred variant is the one place the drawn rule sits mid-axis. */
+  .monument > :global(.drawn-rule) { align-self: center; }
+  .monument__number {
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 6.5vw, 4.25rem);
+    letter-spacing: var(--tracking-display);
+    line-height: 1.1;
+    color: var(--ivory);
+    transition: color var(--dur-micro) var(--ease);
+    /* The number must never wrap into two broken halves. */
+    white-space: nowrap;
+  }
+  .monument__number:hover { color: var(--gold-highlight); }
+  .monument__row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-size: var(--type-caption);
+    font-family: var(--font-util);
+  }
+
+  /* ---- B · ledger ---- */
+  .ledger {
+    display: grid;
+    gap: var(--space-6);
+  }
+  @media (min-width: 56rem) {
+    .ledger { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; }
+  }
+  .ledger__intro { display: flex; flex-direction: column; gap: var(--space-2); }
+  .ledger__list { margin: 0; }
+  .ledger__row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid color-mix(in srgb, var(--ivory) 14%, transparent);
+  }
+  .ledger__row:first-child { border-top: 1px solid color-mix(in srgb, var(--ivory) 14%, transparent); }
+  .ledger__row dt {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--gold-highlight);
+  }
+  .ledger__row dd { margin: 0; font-family: var(--font-util); overflow-wrap: anywhere; }
+  .ledger__row dd a { color: inherit; text-underline-offset: 3px; }
+  .ledger__row dd a:hover { text-decoration: underline; }
+  .ledger__row--lead dd { font-size: var(--type-heading); font-weight: 600; }
+  @media (max-width: 30rem) {
+    .ledger__row { grid-template-columns: 1fr; gap: 0.35rem; }
+  }
+
+  /* ---- C · compact ---- */
+  .cvar--c { --section-y: clamp(3.25rem, 6.5vw, 5.5rem); }
+  .compact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-2);
+  }
+  .compact > :global(.drawn-rule) { align-self: center; }
+  .compact__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2) var(--space-3);
+    margin-top: var(--space-1);
+  }
+  .compact__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5em 0.75em;
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: color-mix(in srgb, var(--ivory) 78%, transparent);
+    margin: var(--space-1) 0 0;
+  }
+  .compact__dot { opacity: 0.5; }
+
+  /* ---- D · invitation ---- */
+  .invite { display: flex; flex-direction: column; gap: var(--space-3); }
+  /* The line's face is driven by the lab chips (--inv-*). Defaults = the
+     SHIPPED face (editorial serif upright, client's pick 3 Aug) so this page
+     opens on what the homepage runs. NOTE: Cinzel (the display option) has no
+     true lowercase — it is a titling face and sets in capitals by design. */
+  .invite__line {
+    font-family: var(--inv-font, var(--font-body));
+    font-style: var(--inv-style, normal);
+    font-weight: var(--inv-weight, 500);
+    font-size: clamp(1.6rem, var(--inv-vw, 3.6vw), var(--inv-max, 2.9rem));
+    letter-spacing: var(--inv-tracking, 0);
+    line-height: 1.3;
+    margin: 0;
+    max-width: 26em;
+  }
+  .invite__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+  }
+  .invite__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: color-mix(in srgb, var(--ivory) 78%, transparent);
+    margin: 0;
+  }
+
+  /* ---- lab chrome (matches the other labs) ---- */
+  .note {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: calc(var(--header-h, 110px) + var(--space-6)) var(--gutter) var(--space-8);
+    background: var(--ivory);
+  }
+  .note__tag {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0 0 var(--space-1);
+  }
+  .note__h {
+    font-family: var(--font-display);
+    font-size: var(--type-display-2);
+    font-weight: 400;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    max-width: 46rem;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p--quiet { color: var(--text-muted); font-size: var(--type-caption); }
+  .note__ctl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 var(--space-2);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+  }
+  .note__chips { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>
+
+<script>
+  function initContactLab() {
+    const chips = document.querySelectorAll<HTMLElement>('.chip[data-cvar]');
+    if (!chips.length || (chips[0] as any).__wired) return;
+    (chips[0] as any).__wired = true;
+    chips.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        chips.forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        document.querySelectorAll<HTMLElement>('.cvar').forEach((v) => {
+          v.hidden = v.dataset.cvar !== btn.dataset.cvar;
+        });
+      });
+    });
+
+    // The invitation line's face — drives the D variant's --inv-* variables.
+    // Each face gets its own size/tracking so all four read at the same
+    // visual weight, not the same nominal number.
+    const FACES: Record<string, Record<string, string>> = {
+      display: { '--inv-font': 'var(--font-display)', '--inv-style': 'normal', '--inv-weight': '400', '--inv-vw': '3.2vw', '--inv-max': '2.6rem', '--inv-tracking': 'var(--tracking-display)' },
+      serif:   { '--inv-font': 'var(--font-body)',    '--inv-style': 'normal', '--inv-weight': '500', '--inv-vw': '3.6vw', '--inv-max': '2.9rem', '--inv-tracking': '0' },
+      italic:  { '--inv-font': 'var(--font-body)',    '--inv-style': 'italic', '--inv-weight': '400', '--inv-vw': '3.6vw', '--inv-max': '2.9rem', '--inv-tracking': '0' },
+      sans:    { '--inv-font': 'var(--font-util)',    '--inv-style': 'normal', '--inv-weight': '600', '--inv-vw': '3.1vw', '--inv-max': '2.5rem', '--inv-tracking': '-0.01em' },
+    };
+    const dVar = document.querySelector<HTMLElement>('.cvar[data-cvar="d"]');
+    document.querySelectorAll<HTMLElement>('.chip[data-font]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-font]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        const face = FACES[btn.dataset.font!];
+        if (dVar && face) for (const [k, v] of Object.entries(face)) dVar.style.setProperty(k, v);
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initContactLab);
+  document.addEventListener('DOMContentLoaded', initContactLab);
+  initContactLab();
+</script>

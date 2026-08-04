@@ -1,0 +1,298 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// Same guard as every other lab: getStaticPaths returns an empty array outside
+// `astro dev`, so a production build generates no page.
+//
+// Liquid-glass header bench (client's ask, 4 Aug): the REAL header — this page
+// rides Base like every page — with the real Hero beneath it, so all three
+// colour states happen naturally on scroll: transparent at the top, navy
+// through the hero, ivory past it. The glass variant is the header's own
+// .header--glass class + --hdr-* variables; this panel just drives them, so
+// the lab exercises exactly the code that would ship. The homepage keeps
+// today's solid header until the client green-lights numbers.
+import Base from '@/layouts/Base.astro';
+import Hero from '@/components/modules/M01-Hero/Hero.astro';
+import Founder from '@/components/modules/M03-Founder/Founder.astro';
+import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
+import Contact from '@/components/modules/M09-Contact/Contact.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+---
+
+<Base title="LAB · Liquid-glass header — Renaissance & Co. (dev only)">
+  <Hero />
+  <Founder />
+  <WhatWeDo />
+  <Qualifications />
+  <Contact />
+
+  <aside class="glass-panel" aria-label="Lab controls">
+    <p class="glass-panel__tag">
+      Lab · glass header — editing <b id="v-mode">desktop</b> <span id="v-w"></span>
+      <button type="button" id="panel-toggle" aria-label="Collapse panel">–</button>
+    </p>
+    <div class="glass-panel__row glass-panel__chips">
+      <button type="button" class="chip is-on" data-glass="on">Glass on</button>
+      <button type="button" class="chip" data-glass="off">Old solid bar</button>
+      <button type="button" class="chip" id="copy-settings">Copy settings</button>
+    </div>
+
+    <p class="glass-panel__group">The blur</p>
+    <label class="glass-panel__row">
+      <span>Strength at the top <b id="v-blur">12px</b></span>
+      <input type="range" id="s-blur" min="0" max="48" step="1" value="12" />
+    </label>
+    <label class="glass-panel__row">
+      <span>Falloff — how fast it clears <b id="v-curve">2.5</b></span>
+      <input type="range" id="s-curve" min="10" max="60" step="1" value="25" />
+    </label>
+    <label class="glass-panel__row">
+      <span>Easing starts at <b id="v-rs">0%</b></span>
+      <input type="range" id="s-rs" min="0" max="70" step="1" value="0" />
+    </label>
+    <label class="glass-panel__row">
+      <span>Reaches zero at <b id="v-re">77%</b></span>
+      <input type="range" id="s-re" min="30" max="100" step="1" value="77" />
+    </label>
+    <label class="glass-panel__row">
+      <span>Extend below the bar <b id="v-fade">40px</b></span>
+      <input type="range" id="s-fade" min="0" max="200" step="4" value="40" />
+    </label>
+    <label class="glass-panel__row">
+      <span>Colour richness <b id="v-sat">100%</b></span>
+      <input type="range" id="s-sat" min="100" max="220" step="5" value="100" />
+    </label>
+
+    <p class="glass-panel__group">"Properties" visibility</p>
+    <div class="glass-panel__row glass-panel__chips">
+      <button type="button" class="chip is-on" data-navfix="none">None (now)</button>
+      <button type="button" class="chip" data-navfix="strong">Strong</button>
+      <button type="button" class="chip" data-navfix="halo">Halo</button>
+      <button type="button" class="chip" data-navfix="chip">Chip</button>
+      <button type="button" class="chip" data-navfix="scrim">Scrim</button>
+    </div>
+    <p class="glass-panel__hint">
+      Measured worst case across a light section, a dark section and the film:
+      <b>none 2.9:1</b> (invisible — today) · <b>strong 3.0:1</b> · <b>halo 2.1:1</b> ·
+      <b>chip 13.0:1</b> · <b>scrim 12.3:1</b>. Readable floor is 4.5:1 — only <b>chip</b> and
+      <b>scrim</b> hold up everywhere; strong and halo look fine on flat sections but lose the
+      film. My pick: <b>scrim</b> (quietest that works), chip if you want it firmer.
+    </p>
+
+    <p class="glass-panel__group">Tints — all off, as you asked</p>
+    <label class="glass-panel__row">
+      <span>Over dark sections <b id="v-dark">0%</b></span>
+      <input type="range" id="s-dark" min="0" max="100" step="1" value="0" />
+    </label>
+    <label class="glass-panel__row">
+      <span>Over light sections <b id="v-light">0%</b></span>
+      <input type="range" id="s-light" min="0" max="100" step="1" value="0" />
+    </label>
+    <label class="glass-panel__row">
+      <span>Over the film <b id="v-media">0%</b></span>
+      <input type="range" id="s-media" min="0" max="100" step="1" value="0" />
+    </label>
+    <p class="glass-panel__hint glass-panel__hint--warn">
+      ⚠️ Over the film only: at <b>0%</b> the bar's own text measures <b>1.7:1</b> against the
+      film's brightest frames — effectively invisible. 40% → 2.9:1 · 75% → 5.3:1 (the readable
+      floor is 4.5:1). Your call; the numbers are here so it's a conscious one.
+    </p>
+    <p class="glass-panel__hint">
+      <b>These are your finalised desktop settings — live on the site.</b> The sliders open on
+      exactly what ships. Keep tuning any time: set it, hit <b>Copy settings</b>, send me the line.
+      Mobile still gets its own numbers.
+    </p>
+  </aside>
+</Base>
+
+<style>
+  .glass-panel {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 60; /* above the header (50) so it never sits under the glass */
+    width: min(20rem, calc(100vw - 2rem));
+    background: var(--ivory);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: var(--space-2);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--navy) 18%, transparent);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--navy);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .glass-panel__tag {
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0;
+  }
+  .glass-panel__row { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; }
+  .glass-panel__row span { display: flex; justify-content: space-between; }
+  .glass-panel__row b { color: var(--text-gold-safe); font-weight: 600; }
+  .glass-panel__row input[type='range'] { width: 100%; accent-color: var(--gold-antique); }
+  .glass-panel__chips { flex-direction: row; gap: 0.35rem; }
+  .glass-panel__hint { margin: 0; color: var(--text-muted); line-height: 1.45; }
+  .glass-panel__hint--warn { color: var(--text-gold-safe); }
+  .glass-panel__group {
+    margin: 0.35rem 0 0;
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--navy);
+    border-top: 1px solid var(--hairline);
+    padding-top: 0.5rem;
+  }
+  /* The panel now has more controls than a short viewport can show. */
+  .glass-panel { max-height: calc(100vh - 2rem); overflow-y: auto; }
+  /* Collapsible: on a phone the panel covers most of the screen, and the
+     whole point is to watch the header while tuning. */
+  .glass-panel__tag { display: flex; align-items: center; gap: 0.4rem; }
+  #panel-toggle {
+    margin-left: auto;
+    width: 1.6rem;
+    height: 1.6rem;
+    line-height: 1;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    font-size: 1rem;
+    color: var(--navy);
+    background: none;
+  }
+  .glass-panel.is-collapsed > *:not(.glass-panel__tag) { display: none; }
+  .glass-panel.is-collapsed { width: auto; }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>
+
+<script>
+  function initGlassLab() {
+    const header = document.querySelector<HTMLElement>('[data-header]');
+    const blur = document.getElementById('s-blur') as HTMLInputElement | null;
+    if (!header || !blur || (blur as any).__wired) return;
+    (blur as any).__wired = true;
+
+    const wire = (id: string, out: string, apply: (v: string) => void, unit: string) => {
+      const input = document.getElementById(id) as HTMLInputElement;
+      const label = document.getElementById(out)!;
+      const run = () => {
+        label.textContent = `${input.value}${unit}`;
+        apply(`${input.value}${unit}`);
+      };
+      input.addEventListener('input', run);
+      run();
+    };
+    // Falloff: layer i's radius = max × ((8-i+1)/8)^curve. A low curve keeps
+    // strong blur most of the way down (uniform-looking); a high one clears
+    // early, so the change is spread across the bar instead of crammed into
+    // its bottom third.
+    const applyCurve = () => {
+      const max = Number((document.getElementById('s-blur') as HTMLInputElement).value);
+      const curve = Number((document.getElementById('s-curve') as HTMLInputElement).value) / 10;
+      const out = document.getElementById('v-curve');
+      if (out) out.textContent = curve.toFixed(1);
+      for (let i = 1; i <= 8; i++) {
+        const r = max * Math.pow((8 - i + 1) / 8, curve);
+        header.style.setProperty(`--hdr-b${i}`, `${r.toFixed(2)}px`);
+      }
+    };
+    document.getElementById('s-curve')?.addEventListener('input', applyCurve);
+    document.getElementById('s-blur')?.addEventListener('input', applyCurve);
+
+    wire('s-blur', 'v-blur', (v) => header.style.setProperty('--hdr-blur', v), 'px');
+    applyCurve();
+    wire('s-rs', 'v-rs', (v) => header.style.setProperty('--hdr-ramp-start', v), '%');
+    wire('s-re', 'v-re', (v) => header.style.setProperty('--hdr-ramp-end', v), '%');
+    wire('s-dark', 'v-dark', (v) => header.style.setProperty('--hdr-tint-dark', v), '%');
+    wire('s-light', 'v-light', (v) => header.style.setProperty('--hdr-tint-light', v), '%');
+    wire('s-media', 'v-media', (v) => header.style.setProperty('--hdr-tint-media', v), '%');
+    wire('s-sat', 'v-sat', (v) => header.style.setProperty('--hdr-sat', v), '%');
+    wire('s-fade', 'v-fade', (v) => header.style.setProperty('--hdr-fade', v), 'px');
+
+    // "Properties" visibility treatments — the header's own data-nav-fix, so
+    // the lab drives exactly what would ship.
+    document.querySelectorAll<HTMLElement>('.chip[data-navfix]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-navfix]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        const v = btn.dataset.navfix!;
+        if (v === 'none') header.removeAttribute('data-nav-fix');
+        else header.setAttribute('data-nav-fix', v);
+      });
+    });
+
+    // Which set is being edited? Mobile settings are a separate block in the
+    // component (they ship inside a max-width media query), so the panel says
+    // plainly which one the sliders represent at the current width.
+    const MOBILE_MAX = 52 * 16 - 1; // the header's own one-row breakpoint
+    const showMode = () => {
+      const w = document.documentElement.clientWidth;
+      const mode = document.getElementById('v-mode');
+      const wOut = document.getElementById('v-w');
+      if (mode) mode.textContent = w <= MOBILE_MAX ? 'MOBILE' : 'desktop';
+      if (wOut) wOut.textContent = `(${w}px)`;
+    };
+    showMode();
+    window.addEventListener('resize', showMode, { passive: true });
+
+    const panel = document.querySelector('.glass-panel');
+    const toggle = document.getElementById('panel-toggle');
+    toggle?.addEventListener('click', () => {
+      const collapsed = panel?.classList.toggle('is-collapsed');
+      toggle.textContent = collapsed ? '+' : '–';
+      toggle.setAttribute('aria-label', collapsed ? 'Expand panel' : 'Collapse panel');
+    });
+
+    // One line with every value, so the client can send settings back exactly
+    // rather than reading numbers off a screenshot.
+    const copyBtn = document.getElementById('copy-settings');
+    copyBtn?.addEventListener('click', () => {
+      const val = (id: string) => (document.getElementById(id) as HTMLInputElement).value;
+      const navfix = document.querySelector('.chip[data-navfix].is-on') as HTMLElement | null;
+      const mode = document.documentElement.clientWidth <= MOBILE_MAX ? 'MOBILE' : 'DESKTOP';
+      const line =
+        `${mode} · blur ${val('s-blur')}px · falloff ${(Number(val('s-curve')) / 10).toFixed(1)} · ` +
+        `ease ${val('s-rs')}%→${val('s-re')}% · below ${val('s-fade')}px · richness ${val('s-sat')}% · ` +
+        `tints dark ${val('s-dark')}% / light ${val('s-light')}% / film ${val('s-media')}% · ` +
+        `properties ${navfix?.dataset.navfix ?? 'none'}`;
+      navigator.clipboard?.writeText(line);
+      copyBtn.textContent = 'Copied ✓';
+      setTimeout(() => (copyBtn.textContent = 'Copy settings'), 1600);
+    });
+
+    // The header's own script picks the state per scroll frame and branches on
+    // this class — nudge it after every toggle so the states re-resolve
+    // without waiting for the next real scroll.
+    const refresh = () => window.dispatchEvent(new Event('scroll'));
+    header.classList.add('header--glass');
+    refresh();
+    document.querySelectorAll<HTMLElement>('.chip[data-glass]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-glass]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        header.classList.toggle('header--glass', btn.dataset.glass === 'on');
+        refresh();
+      });
+    });
+  }
+  document.addEventListener('astro:page-load', initGlassLab);
+  document.addEventListener('DOMContentLoaded', initGlassLab);
+  initGlassLab();
+</script>

@@ -12,6 +12,9 @@ export const pageOrder = [
   'projects', // M10  — dark  · the carousel (renders nothing if there are no projects)
   'what-we-do', // M05  — DARK navy · Wave 2
   'qualifications', // M07  — ivory · Wave 3
+  'developers', // M16  — ivory · the builders strip (client placement, 4 Aug).
+  //                Renders NOTHING while src/data/developers.ts is empty, so
+  //                listing it here cannot put a blank band on the page.
   'contact', // M09  — dark
   'showcase', // M18 — dark · the scroll-driven film (client green-light, 2 Aug)
   //

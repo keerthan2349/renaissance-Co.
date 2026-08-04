@@ -1,0 +1,196 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// getStaticPaths returns an empty array outside `astro dev`.
+//
+// Edge-to-edge trial for the curated (properties) carousel — client's ask,
+// 4 Aug 2026. This page renders the REAL M10 carousel with the real marquee
+// backdrop and the real cards, so what is judged here is what would ship; the
+// panel only drives the component's own --carousel-bleed / --carousel-pad,
+// which default to 0 (today's contained layout) everywhere else.
+//
+// ⚠️ The cards are still the four EXAMPLE properties that are live by the
+// client's choice — placeholders, not real listings.
+import Base from '@/layouts/Base.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
+import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  // A path per mode, not a query string: Astro serves this route from one
+  // render, so `?mode=` did NOT vary the output — all three modes came back
+  // identical, which quietly invalidated a whole test run.
+  return [
+    { params: { view: undefined } },
+    { params: { view: 'in' } },
+    { params: { view: 'aligned' } },
+    { params: { view: 'flush' } },
+  ];
+}
+
+// The offset is expressed with NO PERCENTAGES, and that is the whole trick.
+// A percentage in `padding-inline` resolves against the containing block, but
+// in `scroll-padding-inline` it resolves against the SCROLLPORT — so the same
+// `calc(50cqw - 50%)` computed to 120.5px for the padding and 0 for the scroll
+// padding, and snapping then dragged the first card flush to the screen edge
+// (measured: track resting at 121px with the card at 0). `cqw` + `rem` only,
+// against the section's own width, resolves identically in both.
+const EDGE = 'max(var(--gutter), calc((100cqw - 72rem) / 2 + var(--gutter)))';
+const MODES: Record<string, { bleed: string; pad: string }> = {
+  in: { bleed: '0px', pad: '0px' },
+  aligned: { bleed: `calc(-1 * ${EDGE})`, pad: EDGE },
+  flush: { bleed: `calc(-1 * ${EDGE})`, pad: '0px' },
+};
+// 'flush' is what shipped (client, 4 Aug), so the bench opens on it.
+const mode = (Astro.params.view as string) in MODES ? (Astro.params.view as string) : 'flush';
+const vars = MODES[mode];
+---
+
+<Base title="LAB · Curated carousel, edge to edge — Renaissance & Co. (dev only)">
+  <div class="note">
+    <p class="note__tag">Lab · not on the site</p>
+    <h1 class="note__h">The curated carousel — end to end</h1>
+    <p class="note__p">
+      The real section, with the real cards and the marquee behind it. Switch between today's
+      contained layout and the edge-to-edge versions, then tell me which — and the card width if
+      you want it changed.
+    </p>
+    <div class="note__ctl">
+      {/* Real links, not JS toggles: each mode is applied server-side so it is
+          judged exactly as it would load, not as a live re-layout. */}
+      <div class="note__chips">
+        <span>Width</span>
+        <a class:list={['chip', { 'is-on': mode === 'in' }]} href="/lab/carousel/in">Today (contained)</a>
+        <a class:list={['chip', { 'is-on': mode === 'aligned' }]} href="/lab/carousel/aligned">Edge to edge, aligned start</a>
+        <a class:list={['chip', { 'is-on': mode === 'flush' }]} href="/lab/carousel/flush">Edge to edge, flush</a>
+      </div>
+    </div>
+    <div class="note__ctl">
+      <label for="cardw">Card width <b id="cardw-v">24rem</b></label>
+      <input type="range" id="cardw" min="14" max="34" step="1" value="24" />
+      <span class="note__read" id="readout">—</span>
+    </div>
+    <p class="note__p note__p--quiet">
+      <b>Aligned start</b> keeps the first card lined up with the heading above it and lets the row
+      run off both edges — the usual editorial treatment. <b>Flush</b> starts the first card hard
+      against the screen edge. Both let cards bleed off-screen, which is what signals there are
+      more.
+    </p>
+    <p class="note__p note__p--warn">
+      ⚠️ Checked automatically on every change: the track must rest at exactly 0 with the back
+      arrow disabled. This exact layout was tried in July and pulled back because padding on a
+      scrolling row left it resting off-position, which made the back arrow look available before
+      you had moved.
+    </p>
+  </div>
+
+  {/* Custom properties inherit, so the wrapper hands the two values down to
+      the carousel's own track — the component reads them with 0 fallbacks, so
+      the live site is untouched. */}
+  <div style={{ '--carousel-bleed': vars.bleed, '--carousel-pad': vars.pad }}>
+    <Carousel />
+  </div>
+  <WhatWeDo />
+</Base>
+
+<style>
+  .note {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: calc(var(--header-h, 110px) + var(--space-6)) var(--gutter) var(--space-8);
+    background: var(--ivory);
+  }
+  .note__tag {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0 0 var(--space-1);
+  }
+  .note__h {
+    font-family: var(--font-display);
+    font-size: var(--type-display-2);
+    font-weight: 400;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    max-width: 46rem;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p--quiet { color: var(--text-muted); font-size: var(--type-caption); }
+  .note__p--warn { color: var(--text-gold-safe); font-size: var(--type-caption); }
+  .note__ctl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 var(--space-2);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+  }
+  .note__ctl input[type='range'] { width: 12rem; accent-color: var(--gold-antique); }
+  .note__ctl b { color: var(--text-gold-safe); }
+  .note__read { font-family: var(--font-util); font-size: var(--type-caption); color: var(--text-muted); }
+  .note__chips { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>
+
+<script>
+  function initCarouselLab() {
+    const section = document.getElementById('projects');
+    const carousel = document.querySelector<HTMLElement>('[data-carousel]');
+    const track = document.querySelector<HTMLElement>('[data-carousel-track]');
+    if (!section || !carousel || !track || (carousel as any).__labWired) return;
+    (carousel as any).__labWired = true;
+
+    // The bleed is expressed against the content column, so it reaches the
+    // screen edges at any width. The section already clips its overflow (it
+    // has a backdrop), so the extra width a scrollbar introduces is hidden
+    // rather than pushing the page sideways.
+    // No layout JS here on purpose: the mode arrives in the HTML (see the
+    // frontmatter), so what is on screen is what a real load produces.
+
+    const readout = document.getElementById('readout');
+    // The historical failure was the track resting at a non-zero position, so
+    // the lab states it out loud after every change rather than trusting it.
+    const check = () => {
+      const prev = document.querySelector<HTMLButtonElement>('[data-prev]');
+      window.setTimeout(() => {
+        const rest = Math.round(track.scrollLeft);
+        const disabled = prev?.disabled ? 'disabled' : 'ENABLED ⚠️';
+        const first = track.querySelector<HTMLElement>('.carousel__item');
+        const left = first ? Math.round(first.getBoundingClientRect().left) : 0;
+        if (readout) readout.textContent = `rest ${rest}px · back arrow ${disabled} · first card ${left}px from screen edge`;
+      }, 120);
+    };
+
+    const cardw = document.getElementById('cardw') as HTMLInputElement | null;
+    const cardwOut = document.getElementById('cardw-v');
+    const applyCard = () => {
+      carousel.style.setProperty('--card-w', `min(78%, ${cardw!.value}rem)`);
+      if (cardwOut) cardwOut.textContent = `${cardw!.value}rem`;
+      check();
+    };
+    cardw?.addEventListener('input', applyCard);
+
+    applyCard();
+    check();
+    track.addEventListener('scroll', check, { passive: true });
+  }
+  document.addEventListener('astro:page-load', initCarouselLab);
+  document.addEventListener('DOMContentLoaded', initCarouselLab);
+  initCarouselLab();
+</script>

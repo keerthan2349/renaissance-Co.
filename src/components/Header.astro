@@ -1,4 +1,4 @@
----
+﻿---
 // Header — brand left, page navigation, contact channels right.
 //
 // REDESIGNED 28 Jul 2026. It previously carried no navigation (§4.3: none until
@@ -33,9 +33,15 @@ import { site } from '@/data/site';
 // — it lives in the footer alone (client, 28 Jul 2026). See nav.ts.
 import { headerLinks } from '@/data/nav';
 
-const { phone, phoneDisplay, instagramUrl } = site.contact;
+const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
 ---
-<header class="header" data-header>
+<header class="header header--glass" data-nav-fix="strong" data-header>
+  {/* The liquid-glass stack (client, 4 Aug): four progressive blur layers +
+      an optional tint, rendered only while .header--glass is on — display:none
+      otherwise, so today's shipped header is untouched by its presence. */}
+  <div class="header__glass" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
   <div class="header__inner">
     <a href="/" class="header__logo" aria-label={`${site.name} — home`}>
       <span class="wordmark">Renaissance &amp; Co</span>
@@ -67,6 +73,26 @@ const { phone, phoneDisplay, instagramUrl } = site.contact;
             data-track="instagram"
           >
             <Icon name="instagram" />
+          </a>
+        )
+      }
+
+      {
+        /* WhatsApp beside Instagram (client, 3 Aug 2026) — the same quiet
+           monochrome icon-button treatment, NEVER WhatsApp green (§7.9). It
+           sits between Instagram and the phone so the two tap-to-message
+           channels read as one group with the phone keeping the last, most
+           prominent spot. Unset `whatsapp` in site.ts and it disappears. */
+        whatsapp && (
+          <a
+            href={`https://wa.me/${whatsapp}`}
+            class="header__icon-btn"
+            aria-label="WhatsApp"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-track="whatsapp"
+          >
+            <Icon name="whatsapp" />
           </a>
         )
       }
@@ -116,12 +142,14 @@ const { phone, phoneDisplay, instagramUrl } = site.contact;
   .header__nav { grid-area: nav; }
   .header__contact { grid-area: contact; }
 
-  /* Very narrow screens (Galaxy Fold cover screen and similar, under 320px):
-     the non-wrapping wordmark plus two 44px buttons cannot share one row, and
-     the buttons were being pushed off the right edge — the phone, which is the
-     conversion, disappearing entirely. Give the brand its own row and put the
-     contact beside the nav instead. Measured, not assumed. */
-  @media (max-width: 319px) {
+  /* Narrow screens: the non-wrapping wordmark and the 44px buttons cannot
+     share one row, and the buttons get pushed off the right edge — the phone,
+     the conversion, disappearing entirely. Give the brand its own row and put
+     the contact beside the nav instead. Measured, not assumed — originally at
+     under 320px with two buttons; the WhatsApp icon (3 Aug) made it three,
+     which moved the tipping point up: 345px of layout failed, 375px fits, so
+     the rearrangement now triggers at ≤374px. */
+  @media (max-width: 23.375rem) {
     .header__inner {
       /* minmax(0, 1fr), not 1fr: a grid track defaults to a min-content floor,
          so the nav refused to shrink and pushed the contact off the edge even
@@ -130,12 +158,18 @@ const { phone, phoneDisplay, instagramUrl } = site.contact;
       grid-template-areas:
         'logo logo'
         'nav  contact';
+    }
+    /* Let the links wrap rather than force the row wide. */
+    .header__nav { flex-wrap: wrap; column-gap: var(--space-2); }
+  }
+  /* The narrowest screens (Galaxy Fold cover screen and similar) still need
+     the extra squeeze on top of the rearrangement. */
+  @media (max-width: 319px) {
+    .header__inner {
       /* Tighter side padding buys the room the 44px tap targets need. The
          gutter token stays untouched — this is a local override. */
       padding-inline: var(--space-1);
     }
-    /* Let the links wrap rather than force the row wide. */
-    .header__nav { flex-wrap: wrap; column-gap: var(--space-2); }
     /* And let the non-wrapping wordmark shrink to fit the narrowest screens. */
     .wordmark { font-size: 0.92rem; letter-spacing: 0.05em; }
   }
@@ -289,6 +323,7 @@ const { phone, phoneDisplay, instagramUrl } = site.contact;
      Text stays ivory (the default). */
   .header.is-dark { background: var(--navy); }
 
+
   /* ---- State: settled (past the hero, or any page without one) ---- */
   .header.is-solid { background: var(--ivory); }
   .header.is-solid .wordmark { color: var(--navy); }
@@ -304,6 +339,322 @@ const { phone, phoneDisplay, instagramUrl } = site.contact;
   }
   .header.is-solid .header__phone:hover { border-color: var(--navy); }
   .header.is-solid .header__rule { transform: scaleX(1); }
+
+  /* ---- LIQUID GLASS variant (lab-tunable, 4 Aug 2026 — client's ask;
+     third pass, rebuilt to their reference: a PROGRESSIVE blur) ----
+     No bar, no fill by default — the page's own colours show straight
+     through, blurred hardest at the very top of the screen and graduating
+     down to perfectly sharp, like the reference site. That gradient cannot
+     come from one backdrop-filter (one filter = one radius), so the glass is
+     a stack of four layers in .header__glass, each with a different radius
+     and a feathered mask band: strongest at the top, weakest at the bottom.
+     Each layer also samples the layers beneath it, so the strengths compound
+     toward the top — that compounding is what makes the gradient read as
+     continuous rather than four visible steps.
+     The container carries the optional tint (default 0% — the reference has
+     none; the sliders can add a whisper if text needs help) and a global
+     dissolve mask, so tint and blur alike reach zero by the zone's bottom
+     edge — no hard line anywhere. Text colours still follow the ground
+     beneath the bar (script): navy text over light sections, ivory over dark.
+     The hairline rule is gone in this design (client: "we don't need it any
+     more") — it survives only behind the solid fallback/comparison.
+     Gated behind .header--glass so the live site is byte-identical until
+     green-light. Outside @supports the class does nothing — older browsers
+     keep today's solid header.
+     ⚠️ Keep this block AFTER the .is-dark/.is-solid state rules: the
+     background overrides tie them at specificity, so source order is what
+     lets glass win (the ivory state silently stayed opaque when this block
+     sat earlier — caught by the sweep). */
+  .header__glass { display: none; }
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    /* ── THE SHIPPED SETTINGS (client's numbers, tuned at /lab/header/ and
+       green-lit 4 Aug 2026 for DESKTOP). Change a value here and the whole
+       effect follows; the lab drives these same properties, so the bench can
+       never show something different from what ships. ── */
+    /* ── THE CLIENT'S FINAL DESKTOP SETTINGS (chosen at /lab/header/,
+       4 Aug 2026): blur 12px · falloff 2.5 · ease 0%→77% · 40px below the
+       bar · richness 100% · every tint off. ── */
+    .header--glass {
+      --hdr-blur: 12px;       /* strength at the very top */
+      /* How far the blurred zone extends past the bar's bottom edge. */
+      --hdr-fade: 40px;
+      /* Where along that zone the easing runs. start 0% = the very top is at
+         full strength; end 77% = the blur has reached zero well before the
+         zone's bottom, so the last stretch is already perfectly sharp. */
+      --hdr-ramp-start: 0%;
+      --hdr-ramp-end: 77%;
+      /* NO TINT ANYWHERE (client, 4 Aug: "remove all tints", reaffirmed for
+         the film). Pure blur — the page's own colour is all that shows
+         through; only the text recolours with the ground beneath it.
+         ⚠️ --hdr-tint-media at 0 measures 1.7:1 for the bar's text against
+         the film's brightest frames (75% measures 5.3:1). The client's call,
+         made knowing that; the lab slider carries the same warning. */
+      --hdr-tint-dark: 0%;
+      --hdr-tint-light: 0%;
+      --hdr-tint-media: 0%;
+      --hdr-sat: 100%;        /* colour richness through the glass */
+
+      /* The ramp is split into EIGHT slices; each layer owns one and feathers
+         a full slice into its neighbours on both sides, so the strengths
+         cross-fade instead of stepping. Four layers read as "blur, then a
+         quick clear" (client saw exactly that) — the gradient needs more
+         steps than the eye can count. */
+      --hdr-slice: calc((var(--hdr-ramp-end) - var(--hdr-ramp-start)) / 8);
+    }
+
+    /* ── MOBILE, the client's own numbers (tuned on a phone at /lab/header/,
+       4 Aug): blur 14px · falloff 1.8 · ease 0%→77% · 56px below the bar ·
+       richness 100% · tints off. Deliberately heavier and longer-reaching
+       than desktop: a phone's header sits on its own two rows with page text
+       running behind both, so the background needs to be washed further out
+       before the bar's own words can read cleanly. ── */
+    @media (max-width: 51.999rem) {
+      .header--glass {
+        --hdr-blur: 14px;
+        --hdr-fade: 56px;
+        --hdr-ramp-start: 0%;
+        --hdr-ramp-end: 77%;
+        --hdr-sat: 100%;
+      }
+      /* The falloff override lives further down, AFTER the layer rules —
+         see "mobile falloff" below. A media query adds no specificity, so
+         placed here it silently lost to the desktop multipliers (measured:
+         layer 2 rendered 10.02px instead of 11px). */
+    }
+
+    .header--glass,
+    .header--glass.is-dark,
+    .header--glass.is-solid {
+      background: none;
+    }
+    /* ⚠️ THE RULE, measured three ways in a rendering engine (not inferred):
+       an ancestor carrying a MASK makes itself a backdrop root, and every
+       backdrop-filter inside it then samples that empty box instead of the
+       page — the blur silently renders nothing while every computed style
+       still reads perfectly. Wrapper positioned + masked: dead. Wrapper
+       positioned, unmasked: fine. Wrapper display:contents: fine.
+       So: the dissolve mask lives on the tint sheet and on each blur layer
+       (self-masking is allowed) — NEVER on a shared ancestor of the layers.
+       display:contents is kept because it makes an accidental mask on this
+       wrapper impossible to add later. */
+    .header--glass .header__glass {
+      display: contents;
+    }
+    /* The tint sheet (::before) and the four blur layers all span the zone:
+       the bar itself plus --hdr-fade of reach below it. All are z:-1 (behind
+       the bar's content) and pointer-events:none — the state script probes
+       the element just beneath the bar with elementFromPoint, and these
+       overlap exactly that strip. */
+    .header--glass .header__glass::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 calc(-1 * var(--hdr-fade, 40px)) 0;
+      z-index: -1;
+      pointer-events: none;
+      background: var(--hdr-tint, transparent);
+      transition: background var(--dur-element) var(--ease);
+      -webkit-mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+    }
+    .header--glass .header__glass > span {
+      position: absolute;
+      inset: 0 0 calc(-1 * var(--hdr-fade, 40px)) 0;
+      z-index: -1;
+      pointer-events: none;
+      -webkit-backdrop-filter: blur(var(--b)) saturate(var(--hdr-sat, 110%));
+      backdrop-filter: blur(var(--b)) saturate(var(--hdr-sat, 110%));
+    }
+    /* THE RAMP — eight layers, each owning one slice of the easing and
+       feathering a whole slice into its neighbours, so the radii cross-fade
+       rather than step. Radii fall geometrically (each ~62% of the one
+       above), which is what makes the change read as even to the eye: equal
+       *ratios* look like equal steps, equal subtractions do not.
+       Every stop is computed from --hdr-ramp-start/-end, so moving those two
+       sliders moves the whole gradient coherently. Verified by measuring the
+       sharpness surviving at each depth against a striped probe. */
+    /* Each layer's radius can be set individually (--hdr-b1…8). The lab's
+       "falloff" slider drives those eight values so the CURVE of the gradient
+       is tunable, not just its endpoints — with a single fixed curve the top
+       half of the bar sat at full blur and the whole change happened in the
+       last third, which is what the client saw and called "not progressive".
+       The fallbacks below are the shipped curve, so the component stands
+       alone with no JavaScript. */
+    .header--glass .header__glass > span:nth-child(1) {
+      --b: var(--hdr-b1, calc(var(--hdr-blur) * 1));
+      --a: var(--hdr-ramp-start);
+    }
+    /* These multipliers ARE the client's chosen falloff 2.5 — ((8-i+1)/8)^2.5
+       — so the component on its own renders exactly what the bench shows
+       before a slider is touched. If a different falloff is ever chosen,
+       these eight numbers are what change. */
+    .header--glass .header__glass > span:nth-child(2) {
+      --b: var(--hdr-b2, calc(var(--hdr-blur) * 0.716));
+      --a: calc(var(--hdr-ramp-start) + 1 * var(--hdr-slice));
+    }
+    .header--glass .header__glass > span:nth-child(3) {
+      --b: var(--hdr-b3, calc(var(--hdr-blur) * 0.487));
+      --a: calc(var(--hdr-ramp-start) + 2 * var(--hdr-slice));
+    }
+    .header--glass .header__glass > span:nth-child(4) {
+      --b: var(--hdr-b4, calc(var(--hdr-blur) * 0.309));
+      --a: calc(var(--hdr-ramp-start) + 3 * var(--hdr-slice));
+    }
+    .header--glass .header__glass > span:nth-child(5) {
+      --b: var(--hdr-b5, calc(var(--hdr-blur) * 0.177));
+      --a: calc(var(--hdr-ramp-start) + 4 * var(--hdr-slice));
+    }
+    .header--glass .header__glass > span:nth-child(6) {
+      --b: var(--hdr-b6, calc(var(--hdr-blur) * 0.086));
+      --a: calc(var(--hdr-ramp-start) + 5 * var(--hdr-slice));
+    }
+    .header--glass .header__glass > span:nth-child(7) {
+      --b: var(--hdr-b7, calc(var(--hdr-blur) * 0.031));
+      --a: calc(var(--hdr-ramp-start) + 6 * var(--hdr-slice));
+    }
+    .header--glass .header__glass > span:nth-child(8) {
+      --b: var(--hdr-b8, calc(var(--hdr-blur) * 0.0055));
+      --a: calc(var(--hdr-ramp-start) + 7 * var(--hdr-slice));
+    }
+    /* ── mobile falloff 1.8 — ((8-i+1)/8)^1.8, gentler than desktop's 2.5 so
+       the blur holds further down the taller two-row phone bar. MUST sit
+       after the layer rules above: equal specificity, so source order is
+       what decides. ── */
+    @media (max-width: 51.999rem) {
+      .header--glass .header__glass > span:nth-child(2) { --b: calc(var(--hdr-blur) * 0.786); }
+      .header--glass .header__glass > span:nth-child(3) { --b: calc(var(--hdr-blur) * 0.596); }
+      .header--glass .header__glass > span:nth-child(4) { --b: calc(var(--hdr-blur) * 0.429); }
+      .header--glass .header__glass > span:nth-child(5) { --b: calc(var(--hdr-blur) * 0.287); }
+      .header--glass .header__glass > span:nth-child(6) { --b: calc(var(--hdr-blur) * 0.171); }
+      .header--glass .header__glass > span:nth-child(7) { --b: calc(var(--hdr-blur) * 0.083); }
+      .header--glass .header__glass > span:nth-child(8) { --b: calc(var(--hdr-blur) * 0.024); }
+    }
+
+    /* One shared mask shape: opaque across this layer's own slice, feathered
+       a slice wide on each side. The first layer starts hard at the very top
+       (nothing above it to blend with). */
+    .header--glass .header__glass > span {
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent calc(var(--a) - var(--hdr-slice)),
+        black var(--a),
+        black calc(var(--a) + var(--hdr-slice)),
+        transparent calc(var(--a) + 2 * var(--hdr-slice))
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        transparent calc(var(--a) - var(--hdr-slice)),
+        black var(--a),
+        black calc(var(--a) + var(--hdr-slice)),
+        transparent calc(var(--a) + 2 * var(--hdr-slice))
+      );
+    }
+    .header--glass .header__glass > span:nth-child(1) {
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        black var(--a),
+        black calc(var(--a) + var(--hdr-slice)),
+        transparent calc(var(--a) + 2 * var(--hdr-slice))
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        black var(--a),
+        black calc(var(--a) + var(--hdr-slice)),
+        transparent calc(var(--a) + 2 * var(--hdr-slice))
+      );
+    }
+    .header--glass.is-dark .header__glass::before {
+      --hdr-tint: color-mix(in srgb, var(--navy) var(--hdr-tint-dark, 31%), transparent);
+    }
+    .header--glass.is-solid .header__glass::before {
+      --hdr-tint: color-mix(in srgb, var(--ivory) var(--hdr-tint-light, 19%), transparent);
+    }
+    /* OVER THE FILM the veil is its own setting, because a flat colour's
+       contrast says nothing about footage that changes shot to shot.
+       Measured against the WORST frame in the clip (text differenced against
+       the same paused frame with the text hidden):
+         0%  → 1.7:1  · the client's choice, 4 Aug ("remove all tints")
+         40% → 2.9:1
+         75% → 5.3:1  · the only value that clears the 4.5:1 floor
+       Default 0 per their instruction; the lab slider carries the numbers so
+       the trade-off stays visible. Must stay AFTER the two rules above
+       (equal specificity — source order decides). */
+    .header--glass.is-over-media .header__glass::before {
+      --hdr-tint: color-mix(in srgb, var(--navy) var(--hdr-tint-media, 0%), transparent);
+    }
+    .header--glass .header__rule { display: none; }
+
+    /* ── NAV LEGIBILITY (client, 4 Aug: "properties in header is not
+       visible") ──────────────────────────────────────────────────────────
+       On phones the nav sits on its own row, and with the bar now clear the
+       page's own text scrolls directly behind it. The link is muted grey by
+       inheritance, so it measured 1.85:1 against that — genuinely invisible,
+       and it is the site's only navigation.
+       Five treatments, switchable with data-nav-fix so the client can pick:
+       none (today) · strong · halo · chip · scrim. Each is scoped to the
+       glass header and lifts the colour to full contrast first — the halo,
+       chip and scrim then add their own separation on top. --hdr-ground
+       tracks the ground so every treatment works on light and dark alike. */
+    .header--glass { --hdr-ground: var(--navy); }
+    .header--glass.is-solid { --hdr-ground: var(--ivory); }
+    .header--glass.is-dark { --hdr-ground: var(--navy); }
+
+    /* Shared by every treatment except 'none': full-contrast ink, switching
+       with the ground exactly as the desktop bar does — ivory on navy
+       grounds, navy on ivory ones (client, 4 Aug: "make them visible and
+       switch contrastingly just as in the desktop site"). The WORDMARK and
+       its subline are included: on a phone they sit over running page text
+       too, and the client asked for both to read clearly. */
+    .header--glass[data-nav-fix='strong'] .header__nav-link,
+    .header--glass[data-nav-fix='halo'] .header__nav-link,
+    .header--glass[data-nav-fix='chip'] .header__nav-link,
+    .header--glass[data-nav-fix='scrim'] .header__nav-link {
+      color: var(--ivory);
+      font-weight: 600;
+    }
+    .header--glass.is-solid[data-nav-fix='strong'] .header__nav-link,
+    .header--glass.is-solid[data-nav-fix='halo'] .header__nav-link,
+    .header--glass.is-solid[data-nav-fix='chip'] .header__nav-link,
+    .header--glass.is-solid[data-nav-fix='scrim'] .header__nav-link {
+      color: var(--navy);
+    }
+    /* The wordmark already switches ivory ⇄ navy; on the treatments it also
+       gains the gold subline's full strength so the lockup reads as one
+       solid unit rather than fading into whatever is passing behind. */
+    .header--glass[data-nav-fix] .wordmark { color: var(--ivory); }
+    .header--glass[data-nav-fix] .wordmark__sub { color: var(--gold-highlight); }
+    .header--glass.is-solid[data-nav-fix] .wordmark { color: var(--navy); }
+    .header--glass.is-solid[data-nav-fix] .wordmark__sub { color: var(--text-gold-safe); }
+
+    /* halo — a soft ring of the ground colour around the letters. */
+    .header--glass[data-nav-fix='halo'] .header__nav-link {
+      text-shadow:
+        0 0 2px var(--hdr-ground),
+        0 0 6px var(--hdr-ground),
+        0 1px 3px var(--hdr-ground);
+    }
+
+    /* chip — a small rounded plate behind each link. */
+    .header--glass[data-nav-fix='chip'] .header__nav-link {
+      padding: 0.35rem 0.6rem;
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--hdr-ground) 82%, transparent);
+    }
+    .header--glass[data-nav-fix='chip'] .header__nav-link::after { bottom: 0.15rem; left: 0.6rem; right: 0.6rem; }
+
+    /* scrim — one feathered band of the ground colour behind the whole nav
+       row, fading out downward so it never reads as a second bar. */
+    .header--glass[data-nav-fix='scrim'] .header__nav { position: relative; }
+    .header--glass[data-nav-fix='scrim'] .header__nav::before {
+      content: '';
+      position: absolute;
+      inset: -0.3rem -0.7rem -0.45rem -0.7rem;
+      z-index: -1;
+      background: color-mix(in srgb, var(--hdr-ground) 80%, transparent);
+      border-radius: 3px;
+      -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+    }
+  }
 </style>
 
 <script>
@@ -322,22 +673,110 @@ const { phone, phoneDisplay, instagramUrl } = site.contact;
     window.addEventListener('resize', setHeight, { passive: true });
     (header as any).__setHeight = setHeight;
 
-    // No hero on this page (projects, judgment, legal): solid ivory from the top.
-    if (!hero) {
-      header.classList.add('is-solid');
-      header.classList.remove('is-dark');
-      return;
-    }
+    // GLASS MODE ONLY (lab-driven until green-lit): the tint follows the
+    // ground actually beneath the bar — navy glass over dark sections, ivory
+    // glass over light ones, on every page. The fixed flip at the hero
+    // boundary was right for an OPAQUE ivory bar; translucent ivory over a
+    // navy section read as a washed-out "white background" (client, 4 Aug).
+    // Walk up from the element just below the bar until something declares a
+    // ground. `.section--dark` answers by name because the projects section's
+    // gradient has no background-color to measure; everything else is judged
+    // by the first opaque background's lightness, so future sections work
+    // without registering themselves anywhere.
+    // What is actually under the bar? Returns { dark, media }.
+    //
+    // The walk starts at the element under the bar and climbs until something
+    // declares an opaque ground. Two things it must handle, both learned by
+    // measuring rather than reasoning:
+    //
+    // · `.section--dark` answers by name — the properties section's gradient
+    //   has no background-COLOR to judge.
+    // · M18's film sits BEHIND the page (negative layer), so hit-testing never
+    //   returns it: over the revealed film the walk fell through to the body's
+    //   ivory and the bar chose NAVY text over dark footage — measured at
+    //   ~2:1, unreadable. So: if nothing opaque is found AND the film is
+    //   spanning the bar, the film IS the ground. It is also `media` — its
+    //   brightness changes shot to shot, so it takes the stronger veil that
+    //   no flat colour needs.
+    const filmCoversBar = (): boolean => {
+      const frame = document.querySelector<HTMLElement>('.showcase__frame');
+      if (!frame) return false;
+      const r = frame.getBoundingClientRect();
+      return r.top <= 0 && r.bottom >= header.offsetHeight;
+    };
 
-    const onScroll = () => {
-      const headerH = header.offsetHeight;
-      const heroH = hero.offsetHeight;
-      const pastHero = window.scrollY > heroH - headerH; // header has cleared the hero
+    const readGround = (): { dark: boolean; media: boolean } => {
+      const vw = document.documentElement.clientWidth;
+      // Take the first element at that point that actually belongs to the
+      // PAGE: skip the header itself and anything pinned on top of the page
+      // (position: fixed). A fixed overlay sitting over the probe point made
+      // the bar read that overlay's colour as the ground — found when the
+      // lab's own control panel did exactly that on a narrow screen, and the
+      // same would happen with any future banner or chat widget.
+      const stack = document.elementsFromPoint(vw / 2, header.offsetHeight + 2) as HTMLElement[];
+      let el: HTMLElement | null =
+        stack.find(
+          (n) => !header.contains(n) && getComputedStyle(n).position !== 'fixed',
+        ) ?? null;
+      // Stop BEFORE <body>: its ivory propagates to the canvas, which paints
+      // behind even negative layers — so body's colour is not what you see
+      // when the film is there. Trusting it put navy text on dark footage.
+      while (el && el !== document.body && el !== document.documentElement) {
+        if (el.classList.contains('section--dark') || el.hasAttribute('data-hero')) {
+          return { dark: true, media: false };
+        }
+        const m = getComputedStyle(el).backgroundColor.match(
+          /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/,
+        );
+        if (m && (m[4] === undefined || Number(m[4]) > 0.5)) {
+          const dark = (0.2126 * +m[1] + 0.7152 * +m[2] + 0.0722 * +m[3]) / 255 < 0.5;
+          return { dark, media: false };
+        }
+        el = el.parentElement;
+      }
+      // No section owns this strip: the film if it is spanning the bar,
+      // otherwise the page's own ivory ground.
+      return filmCoversBar() ? { dark: true, media: true } : { dark: false, media: false };
+    };
+
+    let ticking = false;
+    const applyState = () => {
+      ticking = false;
       const scrolled = window.scrollY > 8;
+
+      if (header.classList.contains('header--glass')) {
+        if (hero && !scrolled) {
+          // Fully transparent over the hero's opening, as today.
+          header.classList.remove('is-dark', 'is-solid', 'is-over-media');
+          return;
+        }
+        const { dark, media } = readGround();
+        header.classList.toggle('is-dark', dark);
+        header.classList.toggle('is-solid', !dark);
+        header.classList.toggle('is-over-media', media);
+        return;
+      }
+      header.classList.remove('is-over-media');
+
+      // Today's shipped behaviour, byte-identical.
+      if (!hero) {
+        header.classList.add('is-solid');
+        header.classList.remove('is-dark');
+        return;
+      }
+      const pastHero = window.scrollY > hero.offsetHeight - header.offsetHeight;
       header.classList.toggle('is-solid', pastHero);
       header.classList.toggle('is-dark', scrolled && !pastHero);
     };
-    onScroll();
+    // rAF-throttled: the glass path hit-tests the DOM, which is too much work
+    // to run on every raw scroll event.
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(applyState);
+      }
+    };
+    applyState();
     window.addEventListener('scroll', onScroll, { passive: true });
     // Store so we can detach before a View Transitions navigation.
     (header as any).__onScroll = onScroll;

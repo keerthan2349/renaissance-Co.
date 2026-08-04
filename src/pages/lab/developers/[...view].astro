@@ -1,0 +1,366 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// getStaticPaths returns an empty array outside `astro dev`, so a production
+// build generates no page. Same guard as every other lab.
+//
+// M16 · DEVELOPER STRIP — four layout options for the client to choose from
+// (their ask, 4 Aug: "a marquee of builders we are in contact with, single
+// row, above Contact and below Qualifications"). Shown IN POSITION with the
+// real Qualifications above and the real Contact below.
+//
+// ⚠️⚠️ EVERY TILE HERE IS A MARKED PLACEHOLDER. No developer is named and no
+// third-party logo is used. This module is gated on client input that has
+// been outstanding since 28 Jul:
+//   1. Bellavierre's WRITTEN approval to name developers publicly (gates M10
+//      and M16 alike — vault/website/m10-projects-module.md).
+//   2. The actual list, from the client — nothing may be inferred.
+//   3. The logo FILES and the right to display them: a developer's logo is
+//      their trademark, and a wall of them reads as an endorsement claim.
+//   4. The WORDING. "Partners" asserts a relationship; "in contact with" does
+//      not, and the two are not interchangeable on a public page (brand §10).
+// Placeholders are typographic on purpose: real logos differ wildly in weight
+// and aspect, so the rhythm WILL change once they land.
+import Base from '@/layouts/Base.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
+import Contact from '@/components/modules/M09-Contact/Contact.astro';
+import Rule from '@/components/primitives/Rule.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+
+// Neutral, obviously-fake stand-ins — never real developer names.
+const SLOTS = ['DEVELOPER ONE', 'DEVELOPER TWO', 'DEVELOPER THREE', 'DEVELOPER FOUR', 'DEVELOPER FIVE', 'DEVELOPER SIX'];
+// Two identical groups: the loop translates by exactly half the track, so it
+// restarts on the pixel that was already there (same maths as the marquee).
+const TRACK = [...SLOTS, ...SLOTS];
+---
+
+<Base title="LAB · Developer strip (M16) — Renaissance & Co. (dev only)">
+  <div class="note">
+    <p class="note__tag">Lab · not on the site</p>
+    <h1 class="note__h">The builders strip — four options</h1>
+    <p class="note__p">
+      A single row between Qualifications and Contact, exactly where you asked for it. Switch
+      between the four treatments and tell me which one — plus the speed if it moves.
+    </p>
+    <div class="note__ctl">
+      <div class="note__chips">
+        <span>Option</span>
+        <button type="button" class="chip is-on" data-opt="a">A · Crawl, boxed</button>
+        <button type="button" class="chip" data-opt="b">B · Crawl, plain</button>
+        <button type="button" class="chip" data-opt="c">C · Static row</button>
+        <button type="button" class="chip" data-opt="d">D · Crawl on navy</button>
+      </div>
+    </div>
+    <div class="note__ctl">
+      <label for="speed">Speed <b id="speed-v">40s</b> per loop</label>
+      <input type="range" id="speed" min="15" max="90" step="1" value="40" />
+      <div class="note__chips">
+        <span>Edge fade</span>
+        <button type="button" class="chip is-on" data-fade="on">On</button>
+        <button type="button" class="chip" data-fade="off">Off</button>
+      </div>
+    </div>
+    <div class="note__ctl">
+      <label for="tilew">Box width <b id="tilew-v">160px</b></label>
+      <input type="range" id="tilew" min="90" max="280" step="5" value="160" />
+      <label for="gap">Gap between boxes <b id="gap-v">10px</b></label>
+      <input type="range" id="gap" min="0" max="48" step="1" value="10" />
+    </div>
+    <div class="note__ctl">
+      <div class="note__chips">
+        <span>Box shape</span>
+        <button type="button" class="chip is-on" data-ratio="1 / 1">Square</button>
+        <button type="button" class="chip" data-ratio="5 / 4">5:4</button>
+        <button type="button" class="chip" data-ratio="4 / 3">4:3</button>
+        <button type="button" class="chip" data-ratio="3 / 2">3:2</button>
+      </div>
+      <div class="note__chips">
+        <span>Corners</span>
+        <button type="button" class="chip is-on" data-corner="3px">Soft</button>
+        <button type="button" class="chip" data-corner="0px">Sharp</button>
+      </div>
+    </div>
+    <p class="note__p note__p--warn">
+      ⚠️ Every tile is a placeholder. Nothing here names a developer and no logo is used — that
+      needs Bellavierre's written approval, your list, the logo files with the right to show them,
+      and a decision on the wording ("partners" claims a relationship; "in contact with" doesn't).
+      Real logos vary hugely in weight and shape, so the rhythm will shift when they arrive.
+    </p>
+    <p class="note__p note__p--quiet">
+      Worth knowing: your rulebook records three motion exceptions (the carousel crawl, the
+      marquee, the film) and says not to add a fourth. Options A, B and D would be that fourth —
+      your call to make knowingly. Option C moves not at all and strains nothing.
+    </p>
+  </div>
+
+  <Qualifications />
+
+  {/* The heading sits in the normal content column; the strip itself is a
+      sibling that spans the full width, so it truly reaches both screen
+      edges. Breaking out of the column with 100vw tricks would overflow by
+      the scrollbar's width — this shape avoids that entirely. */}
+  <div class="devs" data-devs data-opt="a">
+    <div class="devs__inner">
+      <Rule />
+      <Eyebrow>Developers</Eyebrow>
+      <p class="devs__head">TODO — your line here (e.g. who these builders are to you)</p>
+    </div>
+    <div class="devs__viewport" data-viewport>
+      <div class="devs__track" data-devs-track>
+        {TRACK.map((name) => (
+          <div class="devs__tile"><span class="devs__mark">{name}</span></div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <Contact />
+</Base>
+
+<style>
+  /* ---- shared ---- */
+  .devs {
+    /* The band owns its own ground and vertical rhythm, because the strip
+       inside it must reach the screen edges — which nothing inside
+       Section's width-capped column can do. */
+    padding-block: var(--section-y);
+    background: var(--ground);
+    color: var(--text);
+  }
+  .devs__inner {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+  .devs__head {
+    font-family: var(--font-body);
+    font-size: var(--type-lead);
+    line-height: var(--leading-body);
+    max-width: 34rem;
+    margin: 0;
+    color: var(--text-muted);
+  }
+  .devs__viewport {
+    /* clip, NOT hidden: `overflow: hidden` creates a scroll container that
+       silently becomes every descendant's timeline reference — the trap
+       logged on 3 Aug with the curtain. */
+    overflow: clip;
+    width: 100%;
+  }
+  .devs__track {
+    display: flex;
+    align-items: center;
+    gap: var(--devs-gap, 10px);
+    width: max-content;
+    animation: devs-crawl var(--devs-speed, 40s) linear infinite;
+  }
+  @keyframes devs-crawl {
+    from { transform: translateX(0); }
+    /* Half the track = one full copy of the list, so the restart lands on an
+       identical pixel and the seam is invisible. */
+    to   { transform: translateX(-50%); }
+  }
+  /* Squarer tiles (client, 4 Aug): a fixed width with an aspect ratio, so
+     they hold their shape whatever a logo's own proportions are. */
+  .devs__tile {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: var(--devs-w, 160px);
+    aspect-ratio: var(--devs-ratio, 1 / 1);
+    padding: clamp(0.75rem, 1.6vw, 1.25rem);
+  }
+  .devs__mark {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--navy);
+    text-align: center;
+    line-height: 1.35;
+    /* Placeholders read as placeholders. */
+    opacity: 0.55;
+    border-bottom: 1px dashed color-mix(in srgb, var(--navy) 30%, transparent);
+  }
+
+  /* Edge fade — the strip dissolves into the ground rather than being cut. */
+  .devs[data-fade='on'] .devs__viewport {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 8%, black 92%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, black 8%, black 92%, transparent 100%);
+  }
+
+  /* ---- A · boxed tiles (the reference's look) ---- */
+  .devs[data-opt='a'] .devs__tile,
+  .devs[data-opt='d'] .devs__tile {
+    border: 1px solid var(--hairline);
+    border-radius: var(--devs-corner, 3px);
+    background: color-mix(in srgb, var(--navy) 2%, transparent);
+  }
+
+  /* ---- B · plain marks, no boxes (obeys the homepage's no-cards rule) ---- */
+  .devs[data-opt='b'] .devs__tile { border: none; background: none; }
+
+  /* ---- C · static single row, no motion at all ---- */
+  .devs[data-opt='c'] .devs__track {
+    animation: none;
+    width: 100%;
+    justify-content: space-between;
+    padding-inline: var(--gutter);
+  }
+  /* Only the first copy is shown when static, or the row would repeat. */
+  .devs[data-opt='c'] .devs__tile:nth-child(n + 7) { display: none; }
+  .devs[data-opt='c'] .devs__tile { border: none; background: none; }
+
+  /* ---- D · crawl on the navy ground (a dark band between two ivory
+       sections — the same device the carousel uses) ---- */
+  .devs[data-opt='d'] { background: var(--ground-dark); color: var(--text-on-dark); }
+  .devs[data-opt='d'] .devs__mark {
+    color: var(--ivory);
+    border-bottom-color: color-mix(in srgb, var(--ivory) 35%, transparent);
+  }
+  .devs[data-opt='d'] .devs__tile {
+    border-color: color-mix(in srgb, var(--ivory) 22%, transparent);
+    background: color-mix(in srgb, var(--ivory) 4%, transparent);
+  }
+
+  /* Reduced motion: nothing crawls, and the row falls back to the static
+     arrangement so it is never a half-scrolled strip frozen mid-loop. */
+  @media (prefers-reduced-motion: reduce) {
+    .devs__track { animation: none; width: 100%; justify-content: space-between; }
+    .devs__tile:nth-child(n + 7) { display: none; }
+  }
+
+  /* ---- lab chrome ---- */
+  .note {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: calc(var(--header-h, 110px) + var(--space-6)) var(--gutter) var(--space-8);
+    background: var(--ivory);
+  }
+  .note__tag {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0 0 var(--space-1);
+  }
+  .note__h {
+    font-family: var(--font-display);
+    font-size: var(--type-display-2);
+    font-weight: 400;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p {
+    font-family: var(--font-body);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    max-width: 46rem;
+    margin: 0 0 var(--space-2);
+  }
+  .note__p--warn { color: var(--text-gold-safe); }
+  .note__p--quiet { color: var(--text-muted); font-size: var(--type-caption); }
+  .note__ctl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 var(--space-2);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+  }
+  .note__ctl input[type='range'] { width: 12rem; accent-color: var(--gold-antique); }
+  .note__ctl b { color: var(--text-gold-safe); }
+  .note__chips { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>
+
+<script>
+  function initDevsLab() {
+    const devs = document.querySelector<HTMLElement>('[data-devs]');
+    const speed = document.getElementById('speed') as HTMLInputElement | null;
+    if (!devs || !speed || (speed as any).__wired) return;
+    (speed as any).__wired = true;
+
+    // The band owns its ground via the data-opt attribute (D is the dark one),
+    // so switching options is a single attribute change.
+    const applyOpt = (opt: string) => {
+      devs.dataset.opt = opt;
+    };
+
+    document.querySelectorAll<HTMLElement>('.chip[data-opt]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-opt]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        applyOpt(btn.dataset.opt!);
+      });
+    });
+    document.querySelectorAll<HTMLElement>('.chip[data-fade]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.chip[data-fade]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        devs.dataset.fade = btn.dataset.fade!;
+      });
+    });
+
+    const out = document.getElementById('speed-v');
+    const applySpeed = () => {
+      devs.style.setProperty('--devs-speed', `${speed.value}s`);
+      if (out) out.textContent = `${speed.value}s`;
+    };
+    speed.addEventListener('input', applySpeed);
+
+    // Box size + gap
+    const wire = (id: string, outId: string, prop: string, unit: string) => {
+      const input = document.getElementById(id) as HTMLInputElement | null;
+      const label = document.getElementById(outId);
+      if (!input) return;
+      const run = () => {
+        devs.style.setProperty(prop, `${input.value}${unit}`);
+        if (label) label.textContent = `${input.value}${unit}`;
+      };
+      input.addEventListener('input', run);
+      run();
+    };
+    wire('tilew', 'tilew-v', '--devs-w', 'px');
+    wire('gap', 'gap-v', '--devs-gap', 'px');
+
+    // Box shape + corners
+    const chipGroup = (attr: string, prop: string) => {
+      document.querySelectorAll<HTMLElement>(`.chip[data-${attr}]`).forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll(`.chip[data-${attr}]`).forEach((c) => c.classList.remove('is-on'));
+          btn.classList.add('is-on');
+          devs.style.setProperty(prop, btn.dataset[attr]!);
+        });
+      });
+    };
+    chipGroup('ratio', '--devs-ratio');
+    chipGroup('corner', '--devs-corner');
+
+    devs.dataset.fade = 'on';
+    applyOpt('a');
+    applySpeed();
+  }
+  document.addEventListener('astro:page-load', initDevsLab);
+  document.addEventListener('DOMContentLoaded', initDevsLab);
+  initDevsLab();
+</script>

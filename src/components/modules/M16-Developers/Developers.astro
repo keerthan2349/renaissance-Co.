@@ -1,0 +1,187 @@
+---
+// M16 · Developers — the builders strip. A single row of logo boxes that
+// crawls continuously, sitting between Qualifications and Contact (client's
+// placement, 4 Aug 2026). Look chosen by the client at /lab/developers/:
+// boxed · 60s loop · no edge fade · 190px boxes at 4:3 with sharp corners ·
+// 39px apart · edge to edge.
+//
+// ── RENDERS NOTHING WHILE THE LIST IS EMPTY ────────────────────────────────
+// No heading, no empty band, no placeholder marks — the same guarantee the
+// properties shelf gives. Naming builders publicly is gated on Bellavierre's
+// written approval, the client's list, the logo files and their rights, and a
+// decision on the wording. Until those land this section does not exist on the
+// page. See src/data/developers.ts for the full gate.
+//
+// ── WHY THIS ISN'T BUILT ON `Section` ──────────────────────────────────────
+// The row must reach both screen edges, and nothing inside Section's
+// width-capped inner column can. So the band owns its own ground and rhythm,
+// and the heading sits in a normal content column as a sibling of the strip.
+// (The usual `100vw` + negative-margin break-out overflows by exactly the
+// scrollbar's width; this shape has no such failure mode.)
+//
+// ── MOTION ─────────────────────────────────────────────────────────────────
+// ⚠️ This is the FOURTH motion exception (carousel crawl · marquee · M18 film ·
+// this), added on the client's explicit green light after the rulebook's
+// "do not add a fourth" note was put to them. Pure CSS transform, zero JS, and
+// it stops completely under prefers-reduced-motion — where the row also falls
+// back to a static arrangement rather than freezing mid-loop.
+import Rule from '@/components/primitives/Rule.astro';
+import Eyebrow from '@/components/primitives/Eyebrow.astro';
+import { developers } from '@/data/developers';
+import { developersStrip as s } from './content';
+
+// Two identical copies: the loop translates by exactly half the track, so the
+// restart lands on the pixel that was already there and the seam is invisible.
+// (Same maths as the marquee engine.)
+const track = [...developers, ...developers];
+---
+{
+  developers.length > 0 && (
+    <div
+      class:list={['devs', { 'devs--fade': s.edgeFade }]}
+      style={{
+        '--devs-speed': `${s.speedSeconds}s`,
+        '--devs-w': `${s.boxWidth}px`,
+        '--devs-ratio': s.boxRatio,
+        '--devs-gap': `${s.gap}px`,
+        '--devs-corner': s.corner,
+      }}
+    >
+      <div class="devs__inner">
+        <Rule />
+        <Eyebrow>{s.eyebrow}</Eyebrow>
+        {s.line && <p class="devs__line">{s.line}</p>}
+      </div>
+
+      {/* aria-hidden: the row is decorative repetition — a screen reader
+          would otherwise read every name twice, once per copy. */}
+      <div class="devs__viewport" aria-hidden="true">
+        <div class="devs__track">
+          {track.map((d, i) => (
+            <div class:list={['devs__box', { 'devs__box--dup': i >= developers.length }]}>
+              {d.logo ? (
+                <img class="devs__logo" src={d.logo} alt="" loading="lazy" decoding="async" />
+              ) : (
+                <span class="devs__name">{d.name}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* The names in text, once, for assistive tech and search engines —
+          visually hidden, so the row above can stay decorative. */}
+      <ul class="devs__sr">
+        {developers.map((d) => (
+          <li>{d.name}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+<style>
+  .devs {
+    padding-block: var(--section-y);
+    background: var(--ground);
+    color: var(--text);
+  }
+  /* Two sections sharing a ground tighten automatically via Section's own
+     rule; this band isn't a Section, so it matches that behaviour by hand —
+     Qualifications (ivory) sits directly above it. */
+  .devs { padding-top: calc(var(--section-y) * 0.45); }
+
+  .devs__inner {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+  .devs__line {
+    font-family: var(--font-body);
+    font-size: var(--type-lead);
+    line-height: var(--leading-body);
+    max-width: 34rem;
+    margin: 0;
+  }
+
+  .devs__viewport {
+    /* clip, NOT hidden: `overflow: hidden` creates a scroll container that
+       silently becomes every descendant's timeline reference (logged 3 Aug). */
+    overflow: clip;
+    width: 100%;
+  }
+  .devs--fade .devs__viewport {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 8%, black 92%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, black 8%, black 92%, transparent 100%);
+  }
+
+  .devs__track {
+    display: flex;
+    align-items: center;
+    gap: var(--devs-gap);
+    width: max-content;
+    animation: devs-crawl var(--devs-speed) linear infinite;
+  }
+  @keyframes devs-crawl {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  .devs__box {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: var(--devs-w);
+    aspect-ratio: var(--devs-ratio);
+    padding: clamp(0.75rem, 1.6vw, 1.25rem);
+    border: 1px solid var(--hairline);
+    border-radius: var(--devs-corner);
+    background: color-mix(in srgb, var(--navy) 2%, transparent);
+  }
+  .devs__logo {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+  .devs__name {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.35;
+    color: var(--text-muted);
+  }
+
+  /* Visually hidden, still announced. */
+  .devs__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Nothing crawls; the row becomes a static, evenly-spaced line rather than a
+     loop frozen at a random offset. The second copy exists only to make the
+     loop seamless, so it is dropped here — otherwise every logo would appear
+     twice on a still row. */
+  @media (prefers-reduced-motion: reduce) {
+    .devs__track {
+      animation: none;
+      width: 100%;
+      justify-content: space-evenly;
+      flex-wrap: wrap;
+      gap: var(--devs-gap);
+      padding-inline: var(--gutter);
+    }
+    .devs__box--dup { display: none; }
+  }
+</style>

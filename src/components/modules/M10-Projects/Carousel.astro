@@ -135,7 +135,16 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
      that outranks anything reachable from here, so a direct background would
      silently lose. Overriding the token means Section's own declaration
      resolves to this. (Same technique as M04's page-top padding.) */
+  /* Declared a size container so the track can be measured against the
+     SECTION's width in pure CSS (`cqw`), not the viewport's (`vw`). The
+     difference is the scrollbar: `100vw` is ~15px wider than the page, which
+     put the first card 8px left of the heading on every screen. `cqw` is
+     exact, needs no JavaScript, and is therefore right from the very first
+     paint — which matters, because applying the offset later lets the
+     browser's scroll-anchoring nudge the track and re-settle it on card two
+     (measured: it loaded at 360px with the back arrow live at 1920px). */
   :global(.projects--feature) {
+    container-type: inline-size;
     --ground-dark: radial-gradient(
       125% 105% at 8% 0%,
       color-mix(in srgb, var(--gold-deep) 26%, var(--navy)) 0%,
@@ -207,20 +216,45 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     );
   }
 
-  /* The track sits inside the section's normal content box — deliberately NOT
-     full-bleed with negative margins. Padding on a snap container shifts where
-     the first card comes to rest, which left the track at a non-zero scroll
-     position on load and made the "previous" arrow look available at the very
-     start. Inside the content box it rests cleanly at 0. The card is still
-     narrower than the track, so a sliver of the next one shows — which is what
-     tells people it scrolls. */
-  .carousel { --card-w: min(78%, 21rem); }
+  /* ── WIDTH OF THE TRACK — EDGE TO EDGE, FLUSH (client, 4 Aug 2026) ──────
+     The row runs the full width of the screen and the first card starts at
+     the screen's edge. Chosen at /lab/carousel/, where the alternative
+     ("aligned", first card lined up with the heading) is still available for
+     comparison.
+
+     THE OFFSET CARRIES NO PERCENTAGES, deliberately. A percentage resolves
+     against the containing block in `padding-inline` but against the
+     SCROLLPORT in `scroll-padding-inline` — the same expression computed to
+     120px for one and 0 for the other, and snapping then dragged the first
+     card flush while the track rested at 121px. `cqw` (the section is a size
+     container) + `rem` resolve identically in both. It also avoids `vw`,
+     which includes the scrollbar and left the row 8px off the column.
+
+     ⚠️ HISTORY WORTH KEEPING: this track WAS full-bleed once and was pulled
+     back into the content box on 28 Jul, because padding on a scrolling
+     container shifts where the first card comes to rest — it loaded at a
+     non-zero scroll position and the "previous" arrow looked available before
+     the visitor had moved. Any change here must still prove two things at
+     several widths: the track rests at exactly 0, and the back arrow starts
+     disabled. Both are covered by the checks that shipped this. */
+  .carousel {
+    --card-w: min(78%, 24rem);
+    /* Distance from the content column's edge to the screen's edge. */
+    --carousel-edge: max(var(--gutter), calc((100cqw - 72rem) / 2 + var(--gutter)));
+    --carousel-bleed: calc(-1 * var(--carousel-edge));
+    /* 0 = flush (the client's pick). Set to var(--carousel-edge) for the
+       "aligned" variant, where the first card lines up with the heading. */
+    --carousel-pad: 0px;
+  }
 
   .carousel__track {
     display: flex;
     gap: var(--space-3);
     overflow-x: auto;
     padding-bottom: var(--space-2);
+    margin-inline: var(--carousel-bleed, 0px);
+    padding-inline: var(--carousel-pad, 0px);
+    scroll-padding-inline: var(--carousel-pad, 0px);
     /* A quiet scrollbar rather than none — hiding it removes the affordance. */
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--ivory) 28%, transparent) transparent;
@@ -233,7 +267,14 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
      Under reduced motion nothing moves on its own, so snapping becomes useful
      again and is restored — that is the one case it helps. */
   @media (prefers-reduced-motion: reduce) {
-    .carousel__track { scroll-snap-type: x mandatory; }
+    /* `proximity`, not `mandatory`. Mandatory snap FORCES a snap position at
+       rest, and with any scroll-padding on the container it can choose the
+       second card rather than the first — measured at 1920px: the track
+       loaded at 360px with the back arrow live, which is precisely the
+       regression that pulled this layout back into the content column in
+       July. Proximity still snaps when the visitor lets go near a card, and
+       leaves a resting track alone. */
+    .carousel__track { scroll-snap-type: x proximity; }
     .carousel__item { scroll-snap-align: start; }
   }
   .carousel__track:focus-visible { outline: 2px solid var(--gold-highlight); outline-offset: 4px; }

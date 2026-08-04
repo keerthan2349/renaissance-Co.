@@ -713,11 +713,22 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
       // the bar read that overlay's colour as the ground — found when the
       // lab's own control panel did exactly that on a narrow screen, and the
       // same would happen with any future banner or chat widget.
+      // Pinned means pinned ANYWHERE UP THE TREE, not just on the element the
+      // hit-test happened to return. The first version tested only the element
+      // itself, so a pinned panel's own inner button — static, inside a fixed
+      // parent — sailed through the filter and the walk then read that panel's
+      // background as the page's ground. Caught on a phone-width lab bench; a
+      // cookie banner or chat widget with a button in it would do the same on
+      // the live site.
+      const isPinned = (n: HTMLElement | null): boolean => {
+        for (let a: HTMLElement | null = n; a && a !== document.body; a = a.parentElement) {
+          if (getComputedStyle(a).position === 'fixed') return true;
+        }
+        return false;
+      };
       const stack = document.elementsFromPoint(vw / 2, header.offsetHeight + 2) as HTMLElement[];
       let el: HTMLElement | null =
-        stack.find(
-          (n) => !header.contains(n) && getComputedStyle(n).position !== 'fixed',
-        ) ?? null;
+        stack.find((n) => !header.contains(n) && !isPinned(n)) ?? null;
       // Stop BEFORE <body>: its ivory propagates to the canvas, which paints
       // behind even negative layers — so body's colour is not what you see
       // when the film is there. Trusting it put navy text on dark footage.

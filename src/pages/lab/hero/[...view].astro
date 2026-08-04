@@ -1,0 +1,249 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+//
+// THE REWORKED HERO (client's ask, 4 Aug 2026, against newgenre.studio).
+//
+// THE HERO IS THE FIRST THING ON THIS PAGE, and the controls float over it.
+// First version put an explanatory block above it, which meant the first thing
+// you scrolled was that block, not the hero — the client reported it as "not
+// smooth at the beginning, the next page is visible". It was the bench getting
+// in the way of the thing being judged.
+//
+// Each version has its OWN ADDRESS on purpose: Astro serves a route from a
+// single render, so a `?mode=` switch returns the identical page — that mistake
+// silently invalidated a whole test run on the carousel work (3 Aug).
+//
+// The real founder section sits underneath so the hand-off out of the hero is
+// the real thing, not an isolated demo.
+import Base from '@/layouts/Base.astro';
+import HeroScroll from '@/components/lab/HeroScroll.astro';
+import Founder from '@/components/modules/M03-Founder/Founder.astro';
+import Hero from '@/components/modules/M01-Hero/Hero.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [
+    { params: { view: undefined }, props: { view: 'word' } },
+    { params: { view: 'word' }, props: { view: 'word' } },
+    { params: { view: 'clause' }, props: { view: 'clause' } },
+    { params: { view: 'whole' }, props: { view: 'whole' } },
+    { params: { view: 'current' }, props: { view: 'current' } },
+  ];
+}
+
+const { view } = Astro.props;
+
+const VERSIONS = [
+  { id: 'word', label: 'A · Word by word', href: '/lab/hero/word' },
+  { id: 'clause', label: 'B · Clause by clause', href: '/lab/hero/clause' },
+  { id: 'whole', label: 'C · All at once', href: '/lab/hero/whole' },
+  { id: 'current', label: "Today's", href: '/lab/hero/current' },
+];
+---
+
+<Base title="LAB · Hero — Renaissance & Co. (dev only)">
+  {view === 'current' ? <Hero /> : <HeroScroll variant={view as 'word' | 'clause' | 'whole'} class="hs-lab" />}
+
+  <Founder />
+
+  {/* Floating, so the hero starts at the very top of the page and the first
+      thing you scroll is the hero itself. `position: fixed` also means the glass
+      header ignores it when reading the ground — that fix is already in. */}
+  <aside class="panel" data-panel>
+    <button type="button" class="panel__toggle" data-toggle aria-expanded="true">
+      <span data-toggle-label>Hide</span> controls
+    </button>
+    <div class="panel__body" data-body>
+      <p class="panel__tag">Lab · not on the site</p>
+
+      <div class="panel__row">
+        {VERSIONS.map((v) => (
+          <a class:list={['chip', v.id === view && 'is-on']} href={v.href}>{v.label}</a>
+        ))}
+      </div>
+
+      {view !== 'current' && (
+        <>
+          <p class="panel__label">Conviction layout</p>
+          <div class="panel__row">
+            <button type="button" class="chip is-on" data-layout="panel">Your reference</button>
+            <button type="button" class="chip" data-layout="editorial">First version</button>
+          </div>
+
+          <p class="panel__label">The two words, set in</p>
+          <div class="panel__row">
+            <button type="button" class="chip is-on" data-face="sans">Sans</button>
+            <button type="button" class="chip" data-face="display">Cinzel</button>
+            <button type="button" class="chip" data-face="editorial">Garamond</button>
+          </div>
+
+          <p class="panel__label">How the statement changes</p>
+          <div class="panel__row">
+            <button type="button" class="chip" data-transition="sweep">Sweep</button>
+            <button type="button" class="chip is-on" data-transition="curtain">Curtain</button>
+            <button type="button" class="chip" data-transition="dissolve">Dissolve</button>
+            <button type="button" class="chip" data-transition="fade">Fade</button>
+          </div>
+
+          <p class="panel__label">How each word arrives</p>
+          <div class="panel__row">
+            <button type="button" class="chip" data-reveal="wipe">Wipe</button>
+            <button type="button" class="chip is-on" data-reveal="rise">Rise</button>
+            <button type="button" class="chip" data-reveal="blur">Blur</button>
+            <button type="button" class="chip" data-reveal="weight">Weight</button>
+          </div>
+
+          <div class="panel__row">
+            <label for="rail">Scroll length <b id="rail-v">280vh</b></label>
+            <input type="range" id="rail" min="150" max="600" step="10" value="280" />
+          </div>
+          <div class="panel__row">
+            <label for="smooth">Glide <b id="smooth-v">0.35</b></label>
+            <input type="range" id="smooth" min="0" max="1" step="0.05" value="0.35" />
+          </div>
+          <p class="panel__note">
+            <b>Sweep</b> is the ground itself doing the change — navy rises over the ivory, takes
+            the first statement with it and brings the second up in its place. Nothing fades.
+            <b>Curtain</b> does the same to the type alone; <b>dissolve</b> defocuses one into the
+            other; <b>fade</b> is the plain crossfade, there only to judge the others against.
+          </p>
+          <p class="panel__note">
+            <b>Glide</b> eases the reveal toward your scroll position — it is what the reference
+            gets from a scroll-hijacking library we don't allow here. At <b>0</b> the words are
+            locked 1:1 to the scrollbar; higher glides longer after you stop.
+          </p>
+          <button type="button" class="chip chip--wide" data-copy>Copy settings</button>
+        </>
+      )}
+    </div>
+  </aside>
+</Base>
+
+<style>
+  .panel {
+    position: fixed;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    z-index: 60;
+    width: min(21rem, calc(100vw - 2 * var(--space-2)));
+    background: color-mix(in srgb, var(--ivory) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    box-shadow: 0 18px 44px -22px rgba(10, 20, 64, 0.6);
+    font-family: var(--font-util);
+    color: var(--navy);
+  }
+  .panel__toggle {
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--hairline);
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .panel__body { padding: 0.75rem; display: grid; gap: 0.6rem; }
+  .panel[data-closed] .panel__body { display: none; }
+  .panel__tag {
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0;
+  }
+  .panel__row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    font-size: var(--type-caption);
+  }
+  .panel__row input[type='range'] { flex: 1 1 8rem; accent-color: var(--gold-antique); }
+  .panel__row b { color: var(--text-gold-safe); }
+  .panel__label {
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0.15rem 0 -0.2rem;
+  }
+  .panel__note { font-size: 0.6875rem; line-height: 1.45; color: var(--text-muted); margin: 0; }
+  .panel__note b { color: var(--navy); }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.28rem 0.6rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+    text-decoration: none;
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+  .chip--wide { width: 100%; }
+</style>
+
+<script>
+  function initHeroLab() {
+    const panel = document.querySelector<HTMLElement>('[data-panel]');
+    if (!panel || (panel as any).__wired) return;
+    (panel as any).__wired = true;
+
+    const hs = document.querySelector<HTMLElement>('.hs-lab');
+    const rail = document.getElementById('rail') as HTMLInputElement | null;
+    const smooth = document.getElementById('smooth') as HTMLInputElement | null;
+
+    panel.querySelector('[data-toggle]')?.addEventListener('click', () => {
+      const closed = panel.hasAttribute('data-closed');
+      panel.toggleAttribute('data-closed', !closed);
+      const label = panel.querySelector('[data-toggle-label]');
+      if (label) label.textContent = closed ? 'Hide' : 'Show';
+    });
+
+    if (!hs || !rail || !smooth) return;
+
+    const apply = () => {
+      // Drives the component's own variables — the bench can never show a
+      // different truth from what would ship.
+      hs.style.setProperty('--hs-rail', `${rail.value}svh`);
+      hs.style.setProperty('--hs-smooth', smooth.value);
+      const rv = document.getElementById('rail-v');
+      const sv = document.getElementById('smooth-v');
+      if (rv) rv.textContent = `${rail.value}vh`;
+      if (sv) sv.textContent = Number(smooth.value).toFixed(2);
+      dispatchEvent(new Event('resize'));
+    };
+    rail.addEventListener('input', apply);
+    smooth.addEventListener('input', apply);
+    apply();
+
+    // The two style choices flip attributes on the component itself, so the
+    // bench drives exactly the code that would ship — no second copy to drift.
+    for (const key of ['transition', 'reveal', 'layout', 'face'] as const) {
+      panel.querySelectorAll<HTMLElement>(`.chip[data-${key}]`).forEach((btn) => {
+        btn.addEventListener('click', () => {
+          panel.querySelectorAll(`.chip[data-${key}]`).forEach((c) => c.classList.remove('is-on'));
+          btn.classList.add('is-on');
+          hs.dataset[key] = btn.dataset[key]!;
+        });
+      });
+    }
+
+    panel.querySelector('[data-copy]')?.addEventListener('click', (e) => {
+      const line = `hero: ${hs.dataset.layout} layout · ${hs.dataset.face} words · ${hs.dataset.transition} transition · ${hs.dataset.reveal} arrival · scroll ${rail.value}vh · glide ${smooth.value}`;
+      navigator.clipboard?.writeText(line);
+      const b = e.currentTarget as HTMLElement;
+      const was = b.textContent;
+      b.textContent = 'Copied — send me that line';
+      setTimeout(() => { b.textContent = was; }, 1800);
+    });
+  }
+  document.addEventListener('astro:page-load', initHeroLab);
+  document.addEventListener('DOMContentLoaded', initHeroLab);
+  initHeroLab();
+</script>

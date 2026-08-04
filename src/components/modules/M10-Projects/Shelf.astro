@@ -37,7 +37,7 @@ const countLine = `${count} ${count === 1 ? 'property' : 'properties'}`;
       <ul class="grid" role="list" data-curtain>
         {projects.map((p, i) => (
           <li style={`--i:${i % 6}`}>
-            <a class="gcard" href={`/projects/${p.slug}`}>
+            <a class="gcard" href={`/properties/${p.slug}`}>
               <div class="gcard__media">
                 {p.image ? (
                   <img class="gcard__img" src={p.image} alt={p.imageAlt ?? ''} loading="lazy" decoding="async" />

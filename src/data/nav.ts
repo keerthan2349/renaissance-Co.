@@ -3,16 +3,15 @@
 // TWO lists, deliberately, since 28 Jul 2026: the header and the footer no
 // longer carry the same links.
 //
-// /projects appears ONLY when there are projects — while the list is empty that
-// page is not generated at all, and linking to it would be a 404.
+// /properties appears ONLY when there are properties — while the list is empty
+// that page is not generated at all, and linking to it would be a 404.
 import { projects } from '@/data/projects';
 
 type Link = { label: string; href: string };
 
 // "Properties", never "Projects", in anything the client's clients see
-// (client, 3 Aug 2026). The href stays /projects until they decide on the
-// URL rename.
-const projectsLink: Link[] = projects.length > 0 ? [{ label: 'Properties', href: '/projects' }] : [];
+// (client, 3 Aug 2026) — and since 4 Aug the address says it too.
+const projectsLink: Link[] = projects.length > 0 ? [{ label: 'Properties', href: '/properties' }] : [];
 
 /**
  * HEADER — top-level destinations only.

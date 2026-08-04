@@ -1,5 +1,12 @@
 ---
-// /projects and /projects/<slug> — the projects module's own pages (M10).
+// /properties and /properties/<slug> — the projects module's own pages (M10).
+//
+// THE ADDRESS WAS RENAMED 4 Aug 2026 (client decision): /projects → /properties,
+// so the URL finally matches the word every visitor already reads. The old
+// addresses are kept alive by the `redirects` block in astro.config.mjs — do not
+// remove it, or every link shared before the rename dies. Internal names (the
+// M10-Projects folder, projects.ts, the `project` field) are deliberately
+// unchanged: the client-facing word is what mattered.
 //
 // One route file serves both: no slug renders the full shelf, a slug renders
 // that project's detail page.

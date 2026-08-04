@@ -69,7 +69,7 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
         <ul class="carousel__track" role="list" data-carousel-track tabindex="0" aria-label={carouselHeading}>
           {projects.map((p) => (
             <li class="carousel__item">
-              <a class="card" href={`/projects/${p.slug}`}>
+              <a class="card" href={`/properties/${p.slug}`}>
                 <div class="card__media">
                   {p.image ? (
                     <img class="card__img" src={p.image} alt={p.imageAlt ?? ''} loading="lazy" decoding="async" />
@@ -116,7 +116,7 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
               </svg>
             </button>
           </div>
-          <a class="carousel__all" href="/projects">{carouselAll}</a>
+          <a class="carousel__all" href="/properties">{carouselAll}</a>
         </div>
       </div>
     </Reveal>

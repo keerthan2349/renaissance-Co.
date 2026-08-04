@@ -1,7 +1,12 @@
 // projects.ts — THE PROJECTS DATA. One list, three places it appears:
 //   · the homepage carousel      (M10-Projects/Carousel.astro)
-//   · the full list at /projects (M10-Projects/Shelf.astro)
-//   · one detail page per project at /projects/<slug>  (M10-Projects/Detail.astro)
+//   · the full list at /properties (M10-Projects/Shelf.astro)
+//   · one detail page per property at /properties/<slug>  (M10-Projects/Detail.astro)
+//
+// ADDRESS RENAMED 4 Aug 2026 (client): /projects → /properties, so the URL says
+// what every visitor already reads. Old addresses still resolve — see the
+// `redirects` block in astro.config.mjs. The INTERNAL names here (this file, the
+// M10-Projects folder, the `project` field) are deliberately unchanged.
 //
 // It lives in src/data/ rather than inside the module because the footer also
 // needs to know whether there are any projects (to decide whether to show the
@@ -10,7 +15,7 @@
 // ============================================================================
 // NOTHING HERE MAY BE GUESSED. Not a developer, not a project, not an area, not
 // a handover quarter. If a project isn't in this array it does not exist on the
-// site — and while the array is empty, /projects and every detail page are NOT
+// site — and while the array is empty, /properties and every detail page are NOT
 // GENERATED AT ALL, so nothing blank can ship.
 // ============================================================================
 //
@@ -20,15 +25,15 @@
 //      appear on our side — hence the optional `permit` field.
 //   3. The images, and the right to use them.
 //
-// IMAGES: drop files into `public/projects/` and reference them as
-// '/projects/your-file.jpg'. They are served as-is, so COMPRESS THEM FIRST —
+// IMAGES: drop files into `public/properties/` and reference them as
+// '/properties/your-file.jpg'. They are served as-is, so COMPRESS THEM FIRST —
 // a raw developer render is often several MB and this site has a hard
 // performance floor (Lighthouse 95+ mobile, LCP under 2s) against paid traffic
 // on Indian mobile networks. Portrait crops (4:5) suit the cards best.
 // A project with no image renders on a plain navy panel — never a broken frame.
 
 export type Project = {
-  /** URL segment, lowercase and hyphenated. Becomes /projects/<slug>. Must be unique. */
+  /** URL segment, lowercase and hyphenated. Becomes /properties/<slug>. Must be unique. */
   slug: string;
   /** Developer name. Requires Bellavierre's written OK. Never guess. */
   developer: string;
@@ -58,7 +63,7 @@ export type Project = {
    *  so the figure is dated rather than presented as permanent (§10). Optional,
    *  but strongly recommended wherever priceFrom is set. */
   priceAsOf?: string;
-  /** Path under public/, e.g. '/projects/name.jpg'. Optional — navy panel if absent. */
+  /** Path under public/, e.g. '/properties/name.jpg'. Optional — navy panel if absent. */
   image?: string;
   /** Describe the image for screen readers and for when it fails to load. */
   imageAlt?: string;

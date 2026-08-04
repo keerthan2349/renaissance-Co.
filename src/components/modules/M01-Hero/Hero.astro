@@ -1,93 +1,610 @@
 ---
-// M01 · Hero. Type sits on a settled dark band, never on image detail (§8.5).
-// Lines rise + fade in on load via the site's single IntersectionObserver reveal
-// (the same reliable mechanism every section uses) — no dependency on font-load
-// timing, which was leaving the headline stuck on a cold cache.
+// M01 · Hero — the site's opening (client-approved 5 Aug 2026, built against
+// their newgenre.studio reference and their own layout sketch).
 //
-// HERO ASSET: none dropped yet. Until a still/footage lands in assets-incoming/,
-// the background is a settled dark navy field (no detail, exactly where type is
-// allowed to sit). When the asset arrives it goes behind .hero__scrim and the
-// type stays on the dark band.
-import Display from '@/components/primitives/Display.astro';
-import Lead from '@/components/primitives/Lead.astro';
-import { heroContent } from './content';
----
-<section class="hero" data-hero>
-  <div class="hero__media" aria-hidden="true">
-    {/* TODO: hero asset (image or footage). Drop into repo/assets-incoming/. */}
-  </div>
-  <div class="hero__scrim" aria-hidden="true"></div>
+// IT REPLACED blueprint §7.1's "Dubai is correcting" hero. That line was not
+// deleted: it now opens M06 Off-plan at the bottom of /properties and the
+// /judgment page. See this module's content.ts for the full record of that.
+//
+// The bench at /lab/hero imports THIS component — there is one implementation,
+// never a copy, so the lab and the live hero cannot drift apart.
+//
+// THE SHAPE: the opening statement holds on IVORY in navy type → the ground
+// becomes NAVY → the gold line lands → the second statement arrives word by
+// word in ivory. One number, `--p` (0 → 1), runs across the rail and everything
+// derives from it, so nothing can drift out of step.
+//
+// TWO THINGS ARE NOW CHOICES, not fixed (client, 4 Aug — "no half-opacity ghost,
+// and the transition is too plain; give options"):
+//
+//   data-reveal      how each word ARRIVES     wipe · rise · blur · weight
+//   data-transition  how statement 1 BECOMES 2 sweep · curtain · dissolve · fade
+//
+// NO WORD IS EVER A GHOST. Every reveal style starts from nothing — invisible or
+// fully clipped — so the sentence is never previewed at half strength ahead of
+// itself. The words still hold their space, so nothing reflows as they land.
+//
+// WHAT COULD NOT BE COPIED FROM THE REFERENCE: newgenre.studio runs Lenis
+// (`class="lenis lenis-smooth"`), which intercepts and re-animates scrolling.
+// Banned here by name, and a global smooth-scroll already caused a real reported
+// bug (28 Jul). The glide instead eases the ANIMATION toward the scroll
+// position: the page still scrolls natively and instantly.
+import { heroContent, heroParagraph } from './content';
 
-  <div class="hero__content">
-    <Display as="h1" class="hero__headline">
-      {
-        heroContent.headlineLines.map((line, i) => (
-          <span class="hero__line" style={`--line:${i}`}>{line}</span>
-        ))
-      }
-    </Display>
-    <Lead class="hero__sub">{heroContent.sub}</Lead>
+interface Props {
+  variant?: 'word' | 'clause' | 'whole';
+  rail?: number;
+  reveal?: 'wipe' | 'rise' | 'blur' | 'weight';
+  transition?: 'sweep' | 'curtain' | 'dissolve' | 'fade';
+  /** 'panel' = the client's reference layout (4 Aug). 'editorial' = the first one. */
+  layout?: 'panel' | 'editorial';
+  /** Face for the two big words. */
+  face?: 'sans' | 'display' | 'editorial';
+  class?: string;
+}
+// EVERY DEFAULT COMES FROM content.ts, never from a literal here — the client's
+// settings live in one place, and the lab overrides them by passing props. A
+// default written into the component would be a second source of truth and the
+// two would drift the first time one was tuned.
+const s = heroContent.settings;
+const {
+  variant = s.variant,
+  rail = s.rail,
+  reveal = s.reveal,
+  transition = s.transition,
+  layout = s.layout,
+  face = s.face,
+  class: cls = '',
+} = Astro.props;
+
+const words = heroParagraph.split(/\s+/);
+const units = variant === 'clause' ? heroContent.clauses : words;
+const total = variant === 'whole' ? 1 : units.length;
+---
+
+<section
+  class:list={['hs', `hs--${variant}`, cls]}
+  data-hero-scroll
+  data-reveal={reveal}
+  data-transition={transition}
+  data-layout={layout}
+  data-face={face}
+  style={`--hs-rail:${rail}svh; --hs-count:${total}; --hs-smooth:${s.glide};`}
+>
+  <div class="hs__stage">
+    <div class="hs__depth" aria-hidden="true"></div>
+
+    <div class="hs__inner">
+      <h1 class="hs__opening">
+        {heroContent.openingLines.map((line, i) => (
+          <span class="hs__line" style={`--line:${i}`}><span class="hs__line-in">{line}</span></span>
+        ))}
+      </h1>
+    </div>
+
+    {/* The sweep: a navy field that rises over the ivory, taking the first
+        statement with it and bringing the second one up in its place. It sits
+        BETWEEN the two statements in the stack, which is what makes one
+        disappear into it and the other appear out of it. */}
+    <div class="hs__sweep" aria-hidden="true"></div>
+
+    {/* Statement two owns the whole stage, not the text column: the client's
+        reference has the panel running off the left edge, which nothing inside
+        a width-capped, gutter-padded column can do. */}
+    <div class="hs__second">
+      <div class="hs__col">
+        <h2 class="hs__head">
+          {layout === 'panel'
+            ? heroContent.headlineWords.map((w, i) => (
+                <span class="hs__word" style={`--line:${i}`}>{w}</span>
+              ))
+            : heroContent.headline}
+        </h2>
+      </div>
+
+      <div class="hs__panel">
+        {variant === 'whole' ? (
+          <p class="hs__body"><span class="u" style="--i:0">{heroParagraph}</span></p>
+        ) : (
+          <p class="hs__body">
+            {units.map((u, i) => (
+              <Fragment>
+                {/* The space lives OUTSIDE the span: inside an inline-block it
+                    would be collapsed at the box edge and the words would jam
+                    together the moment a transform or mask was applied. */}
+                <span class="u" style={`--i:${i}`}>{u}</span>{' '}
+              </Fragment>
+            ))}
+          </p>
+        )}
+      </div>
+    </div>
   </div>
 </section>
 
 <style>
-  .hero {
+  /* Registered so they compute to real NUMBERS. Unregistered custom properties
+     keep their raw text ("clamp(0, calc(…), 1)"), which is fine for CSS but
+     means nothing can read the value back — the checks measured NaN and the
+     browser re-parses the expression at every point of use. Registering also
+     gives each a safe initial value, so a malformed expression degrades to the
+     start state instead of breaking the rule. */
+  @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --x { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --s { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --y { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --q { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --t { syntax: '<number>'; inherits: true; initial-value: 0; }
+  @property --u { syntax: '<number>'; inherits: false; initial-value: 0; }
+  @property --i { syntax: '<number>'; inherits: false; initial-value: 0; }
+  @property --hs-count { syntax: '<number>'; inherits: true; initial-value: 1; }
+
+  .hs {
+    height: var(--hs-rail, 300svh);
     position: relative;
-    min-height: 100svh;
-    display: flex;
-    align-items: flex-end;
-    color: var(--ivory);
-    overflow: hidden;
+    /* clip, never hidden: `overflow: hidden` silently becomes every
+       descendant's scroll reference — trap already recorded on this project. */
+    overflow: clip;
+
+    --p: 0;                                    /* written by the script, eased */
+
+    /* The windows the whole thing runs on. Ordered so that every readable
+       moment lands on a SETTLED ground: statement one is gone before the ivory
+       starts turning, and statement two does not arrive until it has finished.
+       Halfway through an ivory→navy blend the ground is a mid tone that neither
+       navy nor ivory type survives on — so nothing readable is ever there. */
+    --x: clamp(0, calc((var(--p) - 0.06) / 0.16), 1);   /* statement one leaves */
+    --s: clamp(0, calc((var(--p) - 0.08) / 0.18), 1);   /* the sweep, if chosen */
+    --t: clamp(0, calc((var(--p) - 0.14) / 0.12), 1);   /* ivory → navy         */
+    --y: clamp(0, calc((var(--p) - 0.24) / 0.12), 1);   /* statement two lands  */
+    --q: clamp(0, calc((var(--p) - 0.38) / 0.56), 1);   /* the words resolve    */
+  }
+
+  .hs__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    display: grid;
+    align-items: center;
     isolation: isolate;
+    /* --hs-ground / --hs-ink are written by the script as plain rgb(). Reason,
+       found by measuring: `color-mix()` computes to `color(srgb …)` in Chromium,
+       and the glass header's ground test matches `rgb(…)` — so it could not read
+       this section's colour at all, fell through to the page's ivory, and kept
+       navy letters on the navy end. The fallbacks are what shows if the script
+       never runs: a settled ivory hero with navy type, fully legible. */
+    background-color: var(--hs-ground, var(--ivory));
+    color: var(--hs-ink, var(--navy));
   }
-  /* Placeholder dark field — a settled navy with no detail (§8.5). */
-  .hero__media {
+  .hs__depth {
     position: absolute;
     inset: 0;
-    z-index: -2;
-    background:
-      radial-gradient(120% 90% at 70% 10%, #16224f 0%, #0A1440 55%, #070d2b 100%);
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 85% at 72% 8%, rgba(255, 255, 255, 0.06) 0%, transparent 60%);
+    opacity: var(--t);
   }
-  /* Scrim guarantees the type always sits on a dark band, even once real
-     footage is added behind it. */
-  .hero__scrim {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(to top, rgba(7, 13, 43, 0.92) 0%, rgba(7, 13, 43, 0.5) 45%, rgba(7, 13, 43, 0.15) 100%);
-  }
-  .hero__content {
-    max-width: 72rem;
+
+  /* All three layers fill the stage and overlap; the stacking is what the sweep
+     depends on — statement one UNDER the rising navy, statement two OVER it. */
+  .hs__inner,
+  .hs__second,
+  .hs__sweep { grid-area: 1 / 1; }
+
+  .hs__inner {
+    position: relative;
+    z-index: 0;
     width: 100%;
+    max-width: 72rem;
     margin-inline: auto;
-    padding: 0 var(--gutter) clamp(4rem, 12vh, 8rem);
+    padding-inline: var(--gutter);
+    align-self: center;
+  }
+  .hs__sweep  { z-index: 1; }
+  .hs__second { position: relative; z-index: 2; }
+
+  /* The column that keeps the big words in the page's own measure. */
+  .hs__col {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  /* ---- statement one ----------------------------------------------------- */
+  .hs__opening {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: var(--type-display-1);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    margin: 0;
+    max-width: 22ch;
+    will-change: opacity, filter, clip-path;
+  }
+  .hs__opening .hs__line { display: block; }
+  .hs__opening .hs__line + .hs__line {
+    font-size: 0.62em;
+    line-height: 1.35;
+    margin-top: 0.6em;
+    max-width: 34ch;
+    opacity: 0.82;
+  }
+
+  /* ---- the sweep --------------------------------------------------------- */
+  /* Full-bleed, so it crosses the whole screen and not just the text column. */
+  .hs__sweep {
+    position: absolute;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    height: 200svh;
+    top: 50%;
+    margin-top: -100svh;
+    background: var(--navy);
+    pointer-events: none;
+    display: none;
+  }
+  .hs[data-transition='sweep'] .hs__sweep {
+    display: block;
+    transform: translateX(-50%) translateY(calc((1 - var(--s)) * 100%));
+  }
+
+  /* ---- how statement one leaves, and two arrives -------------------------- */
+  /* SWEEP — the ground itself does it: the navy rises, eats the first statement
+     from below and uncovers the second. Nothing fades at all. It also sidesteps
+     the real problem with an ivory→navy crossing: halfway through, a blended
+     ground is a mid tone that NOTHING readable can sit on. Here there is no
+     blend — a hard edge passes, and each side keeps its own settled ground. */
+  .hs[data-transition='sweep'] .hs__opening { clip-path: inset(0 0 calc(var(--s) * 102%) 0); }
+  .hs[data-transition='sweep'] .hs__second {
+    clip-path: inset(calc((1 - var(--s)) * 102%) 0 0 0);
+    color: var(--ivory);
+  }
+
+  /* CURTAIN — the same idea done to the type alone: line by line, the first
+     statement is drawn away upward and the second is drawn in behind it. */
+  .hs[data-transition='curtain'] .hs__opening { clip-path: inset(0 0 calc(var(--x) * 102%) 0); }
+  .hs[data-transition='curtain'] .hs__second { clip-path: inset(calc((1 - var(--y)) * 102%) 0 0 0); }
+
+  /* DISSOLVE — the first statement goes soft and drifts back; the second
+     sharpens out of the blur. Nothing moves sideways. */
+  .hs[data-transition='dissolve'] .hs__opening {
+    opacity: calc(1 - var(--x));
+    filter: blur(calc(var(--x) * 12px));
+    transform: scale(calc(1 - var(--x) * 0.05));
+  }
+  .hs[data-transition='dissolve'] .hs__second {
+    opacity: var(--y);
+    filter: blur(calc((1 - var(--y)) * 12px));
+  }
+
+  /* FADE — the plain crossfade, kept only so the others can be judged against
+     something. */
+  .hs[data-transition='fade'] .hs__opening { opacity: calc(1 - var(--x)); }
+  .hs[data-transition='fade'] .hs__second { opacity: var(--y); }
+
+  /* ---- statement two ----------------------------------------------------- */
+  .hs__second {
+    display: grid;
+    align-content: center;
+    gap: clamp(1.5rem, 5vh, 3.5rem);
+    will-change: opacity, filter, clip-path;
+  }
+
+  /* ============ THE CLIENT'S REFERENCE LAYOUT (4 Aug) =======================
+     Two big words stacked and right-aligned, and the sentence in a panel that
+     runs off the left edge. Translated into the brand rather than copied:
+       · the reference's black → the firm's navy
+       · its white words       → ivory (16.9:1)
+       · its white panel       → the ivory ground, which is what this site's
+                                 pages are made of
+       · its gold script       → EB Garamond ITALIC in --gold-antique, which is
+                                 the site's own "why it is on the shelf" voice.
+     ⚠️ THE GOLD MATTERS: on ivory, --gold is 3.0:1 and may never carry text;
+     --gold-antique is 4.9:1 and is the only one allowed to (brand §8.2). A
+     script face was not copied — the brand has three faces and a fourth needs
+     the client's say-so.
+     ======================================================================== */
+  .hs__head {
+    margin: 0;
+    color: var(--ivory);
+  }
+  .hs[data-layout='panel'] .hs__head {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    align-items: flex-end;
+    text-align: right;
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    font-size: clamp(2.75rem, 10.5vw, 9rem);
   }
-  /* text-wrap:balance (from Display) re-lays-out the big headline when Cinzel
-     loads, which collides with the entrance animation on wide screens. The
-     headline wrap is already controlled by max-width, so balance isn't needed. */
-  .hero .hero__headline { max-width: 20ch; text-wrap: normal; }
-  .hero__line { display: block; }
-  .hero__sub { color: color-mix(in srgb, var(--ivory) 88%, transparent); max-width: 42rem; }
+  .hs[data-layout='panel'][data-face='sans'] .hs__head { font-family: var(--font-util); font-weight: 600; }
+  .hs[data-layout='panel'][data-face='display'] .hs__head {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    font-size: clamp(2.25rem, 8vw, 7rem);
+  }
+  .hs[data-layout='panel'][data-face='editorial'] .hs__head {
+    font-family: var(--font-body);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  /* The two words land one after the other, not together. */
+  .hs__word {
+    display: block;
+    opacity: clamp(0, calc((var(--y) - var(--line) * 0.22) / 0.5), 1);
+    transform: translateY(calc((1 - clamp(0, calc((var(--y) - var(--line) * 0.22) / 0.5), 1)) * 0.18em));
+  }
 
-  /* Hero entrance — pure CSS, driven by the document timeline, so it is immune to
-     layout/font timing and can never get stuck. Only applies when motion is
-     allowed; under reduced-motion the base state (fully visible) stands. */
+  /* In the reference layout the words sit high and the panel sits at the foot
+     of the screen; the editorial layout stays vertically centred as before. */
+  .hs[data-layout='panel'] .hs__second {
+    grid-template-rows: 1fr auto;
+    align-content: stretch;
+    padding-block: calc(var(--header-h, 110px) + 3vh) clamp(1.25rem, 6vh, 4rem);
+  }
+  .hs[data-layout='panel'] .hs__col { align-self: center; }
+
+  /* The panel bleeds off the left edge, as the reference does. It is a real
+     ivory plate — the same ground the rest of the site is set on. */
+  .hs__panel {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .hs[data-layout='panel'] .hs__panel {
+    justify-self: start;
+    margin-inline: 0;
+    background: var(--ivory);
+    color: var(--gold-antique);
+    padding: clamp(1.25rem, 3.2vw, 2.25rem) clamp(1.5rem, 4vw, 3rem);
+    padding-left: max(var(--gutter), clamp(1.5rem, 4vw, 3rem));
+    width: min(46rem, 68%);
+    max-width: 100%;
+  }
+  .hs[data-layout='panel'] .hs__body {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1.0625rem, 1.9vw, 1.5rem);
+    line-height: 1.5;
+    letter-spacing: 0;
+    text-align: center;
+    margin: 0;
+    max-width: none;
+    text-wrap: pretty;
+  }
+
+  /* ---- the first layout, kept for comparison ----------------------------- */
+  .hs[data-layout='editorial'] .hs__head {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: var(--type-heading);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    /* Gold waits for the navy: gold on ivory is 3.0:1 and may never carry text
+       (brand §8.2); on navy it is 9.0:1. */
+    color: var(--gold-highlight);
+    opacity: clamp(0, calc((var(--p) - 0.26) / 0.1), 1);
+  }
+  .hs[data-layout='editorial'] .hs__body {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: clamp(1.6rem, 3.4vw, 2.9rem);
+    line-height: 1.28;
+    letter-spacing: var(--tracking-display);
+    margin: 0;
+    max-width: 30ch;
+    text-wrap: pretty;
+    color: var(--ivory);
+  }
+
+  /* ---- how each word arrives --------------------------------------------- */
+  /* --u is this word's own 0 → 1. THE MATHS THAT WAS WRONG FIRST TIME: spreading
+     the starts across the whole window left the LAST word no room to finish — it
+     topped out at 45%. The starts must span 0 → (1 − span). */
+  .hs__body .u {
+    display: inline-block;
+    --span: 0.30;
+    --start: calc(var(--i) / max(1, calc(var(--hs-count) - 1)) * (1 - var(--span)));
+    --u: clamp(0, calc((var(--q) - var(--start)) / var(--span)), 1);
+    /* Every style below begins at NOTHING — no half-visible preview of the
+       sentence ahead of itself (client, 4 Aug). */
+  }
+  /* WIPE — the word is drawn on from its left edge, like ink meeting paper.
+     A SOFT edge, not a hard one: a hard clip cuts letters down the middle
+     mid-word ("afte", "advic") and reads as a rendering fault rather than as a
+     reveal. The feather is wider than a letter, so a word materialises instead
+     of being sliced. Masked rather than clipped for the same reason — and a
+     mask also lets descenders through, which a clip box has to be padded for. */
+  .hs[data-reveal='wipe'] .u {
+    --feather: 1.4em;
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      #000 0 calc(var(--u) * (100% + var(--feather)) - var(--feather)),
+      transparent calc(var(--u) * (100% + var(--feather)))
+    );
+    mask-image: linear-gradient(
+      90deg,
+      #000 0 calc(var(--u) * (100% + var(--feather)) - var(--feather)),
+      transparent calc(var(--u) * (100% + var(--feather)))
+    );
+  }
+  /* RISE — it lifts into place from just below the line. */
+  .hs[data-reveal='rise'] .u {
+    opacity: var(--u);
+    transform: translateY(calc((1 - var(--u)) * 0.45em));
+  }
+  /* BLUR — it resolves out of focus, like something being brought into view. */
+  .hs[data-reveal='blur'] .u {
+    opacity: var(--u);
+    filter: blur(calc((1 - var(--u)) * 8px));
+  }
+  /* WEIGHT — it arrives wide and loose and settles to its set width. The only
+     one that touches the letterforms themselves. */
+  .hs[data-reveal='weight'] .u {
+    opacity: var(--u);
+    letter-spacing: calc((1 - var(--u)) * 0.14em);
+    transform: scale(calc(1 - (1 - var(--u)) * 0.04));
+  }
+
+  @media (max-width: 52rem) {
+    .hs__inner { padding-block: calc(var(--header-h, 110px) + var(--space-4)) var(--space-8); }
+    .hs__opening,
+    .hs__body { max-width: none; }
+    /* The panel takes nearly the full width on a phone — at 68% it would be a
+       column of two-word lines. */
+    .hs[data-layout='panel'] .hs__panel { width: min(100%, 34rem); }
+    .hs[data-layout='panel'] .hs__head { font-size: clamp(2.5rem, 15vw, 5rem); }
+  }
+
+  /* ---- entrance ---------------------------------------------------------- */
   @media (prefers-reduced-motion: no-preference) {
-    .hero__line,
-    .hero__sub {
+    .hs__line-in {
+      display: inline-block;
       opacity: 0;
-      animation: heroRise var(--dur-hero) var(--ease) both;
+      animation: hsRise var(--dur-hero) var(--ease) both;
+      animation-delay: calc(var(--line, 0) * 140ms + 200ms);
     }
-    .hero__line { animation-delay: calc(var(--line, 0) * 140ms + 200ms); }
-    .hero__sub { animation-delay: 620ms; }
-
-    @keyframes heroRise {
+    @keyframes hsRise {
       from { opacity: 0; transform: translateY(var(--rise)); }
       to   { opacity: 1; transform: none; }
     }
   }
 
+  /* ---- reduced motion ---------------------------------------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    .hs { height: auto; }
+    .hs__stage { position: static; height: auto; padding-block: var(--section-y); }
+    .hs__inner { grid-template-areas: 'one' 'two'; gap: var(--space-8); }
+    .hs__opening { grid-area: one; }
+    .hs__second { grid-area: two; }
+    .hs__sweep { display: none !important; }
+    /* Everything settled: no clip, no blur, no offset, nothing faint. */
+    .hs__opening,
+    .hs__second,
+    .hs__head,
+    .hs__word,
+    .hs__body .u {
+      opacity: 1 !important;
+      filter: none !important;
+      transform: none !important;
+      clip-path: none !important;
+      letter-spacing: inherit !important;
+    }
+  }
 </style>
+
+<script>
+  function initHeroScroll() {
+    const sections = document.querySelectorAll<HTMLElement>('[data-hero-scroll]');
+    if (!sections.length) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const state = new Map<HTMLElement, { target: number; current: number; raf: number | null }>();
+    for (const el of sections) state.set(el, { target: 0, current: 0, raf: null });
+
+    // Ground ends read from the tokens, so no colour is invented here and a
+    // palette change still flows through.
+    const rgbOf = (name: string, fallback: [number, number, number]) => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      const hex = v.match(/^#([0-9a-f]{6})$/i);
+      if (hex) return [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16)) as [number, number, number];
+      const rgb = v.match(/[\d.]+/g);
+      return rgb && rgb.length >= 3 ? (rgb.slice(0, 3).map(Number) as [number, number, number]) : fallback;
+    };
+    const IVORY = rgbOf('--ivory', [249, 250, 245]);
+    const NAVY = rgbOf('--navy', [10, 20, 64]);
+    const mix = (a: number[], b: number[], t: number) =>
+      `rgb(${a.map((c, i) => Math.round(c + (b[i] - c) * t)).join(', ')})`;
+
+    const painted = new WeakMap<HTMLElement, number>();
+
+    const paint = (el: HTMLElement, p: number) => {
+      const was = painted.get(el);
+      if (was !== undefined && Math.abs(was - p) < 0.0001) return;
+      painted.set(el, p);
+      el.style.setProperty('--p', p.toFixed(4));
+
+      // The ground. Under SWEEP there is no blend at all: the rising navy panel
+      // is the visible change, so the ground beneath it stays ivory until the
+      // panel has covered the screen and then flips under cover. That also
+      // keeps the header honest — it sits at the TOP of the screen, which the
+      // rising panel reaches last.
+      let t: number;
+      if (el.dataset.transition === 'sweep') {
+        const s = Math.min(1, Math.max(0, (p - 0.08) / 0.2));
+        t = s >= 0.999 ? 1 : 0;
+      } else {
+        t = Math.min(1, Math.max(0, (p - 0.16) / 0.16));
+      }
+      el.style.setProperty('--hs-ground', mix(IVORY, NAVY, t));
+      el.style.setProperty('--hs-ink', mix(NAVY, IVORY, t));
+
+      // TELL THE BAR THE GROUND MOVED. The header re-reads what is beneath it on
+      // scroll events only — but the glide keeps changing this ground for a
+      // moment AFTER the last scroll event, so its final reading was taken
+      // mid-change and it settled on navy letters over the navy end. Measured,
+      // not guessed. Its handler is rAF-throttled, so this costs one hit-test
+      // per glide frame and nothing at rest.
+      dispatchEvent(new Event('scroll'));
+    };
+
+    const targetOf = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      const travel = Math.max(1, r.height - innerHeight);
+      return Math.min(1, Math.max(0, -r.top / travel));
+    };
+
+    const tick = (el: HTMLElement) => {
+      const s = state.get(el)!;
+      const smooth = parseFloat(getComputedStyle(el).getPropertyValue('--hs-smooth')) || 0;
+      const k = smooth > 0 ? Math.min(1, 0.22 / Math.max(0.08, smooth)) : 1;
+      s.current += (s.target - s.current) * k;
+      if (Math.abs(s.target - s.current) < 0.0004) {
+        s.current = s.target;
+        s.raf = null;
+      } else {
+        s.raf = requestAnimationFrame(() => tick(el));
+      }
+      paint(el, s.current);
+    };
+
+    let ticking = false;
+    const sample = () => {
+      ticking = false;
+      for (const el of sections) {
+        const s = state.get(el)!;
+        s.target = targetOf(el);
+        if (reduce.matches) {
+          s.current = s.target;
+          paint(el, 1);
+          continue;
+        }
+        if (s.raf === null) s.raf = requestAnimationFrame(() => tick(el));
+      }
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(sample);
+    };
+
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll, { passive: true });
+    reduce.addEventListener?.('change', sample);
+    // The lab flips data-transition live; the ground rule differs per mode, so
+    // repaint when it changes.
+    for (const el of sections) {
+      new MutationObserver(() => { painted.delete(el); paint(el, state.get(el)!.current); })
+        .observe(el, { attributes: true, attributeFilter: ['data-transition'] });
+    }
+    sample();
+  }
+  document.addEventListener('astro:page-load', initHeroScroll);
+  document.addEventListener('DOMContentLoaded', initHeroScroll);
+  initHeroScroll();
+</script>

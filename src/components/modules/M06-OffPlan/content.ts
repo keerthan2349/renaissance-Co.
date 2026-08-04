@@ -14,12 +14,20 @@
 //
 // The closing risk line ("a correction reaches first ... doing so now") is a claim
 // about the current market with no figure behind it. Kept because it is approved
-// §7.6 copy, it is stated AGAINST the firm's own interest, and the live hero
-// already says "Dubai is correcting" — the two lines are one position and would
-// change together. Flagged in vault/website/wave-3-build-plan.md.
+// §7.6 copy and is stated AGAINST the firm's own interest.
+//
+// ⚠️ THIS SECTION NOW CARRIES THE CORRECTION LINE (client, 5 Aug 2026). The lead
+// below is blueprint §7.1 Option A, moved here verbatim from the hero when the
+// hero was replaced. It was the only place the site named the correction in the
+// first screen; the client chose to keep it where the properties actually are
+// rather than lose it. So this section and /judgment are now the two places the
+// site says it, and the closing risk line is no longer standing alone —
+// together they are one position and would change together.
 export const offPlanContent = {
   eyebrow: 'Off-plan',
   heading: 'The protections, and the risks',
+  /** Blueprint §7.1 Option A — the retired hero's opening, moved here 5 Aug 2026. */
+  lead: "Dubai is correcting. Most people selling it to you won't say so.",
   paras: [
     'Your payments sit in independent escrow under Law No. 8 of 2007, and the developer can only draw against them at verified construction milestones. Oqood registration protects your ownership during construction. Entry starts from around 10% down, on interest-free developer payment plans, priced below ready property.',
   ],

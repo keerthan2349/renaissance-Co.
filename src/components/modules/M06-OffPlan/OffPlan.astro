@@ -26,25 +26,31 @@ import Section from '@/components/primitives/Section.astro';
 import Reveal from '@/components/primitives/Reveal.astro';
 import { offPlanContent } from './content';
 
-const { eyebrow, heading, paras, hinge, risks } = offPlanContent;
+const { eyebrow, heading, lead, paras, hinge, risks } = offPlanContent;
 ---
 <Section id="off-plan" dark>
   <Reveal index={0}><p class="op__eyebrow">{eyebrow}</p></Reveal>
   <Reveal index={1}><h2 class="op__title">{heading}</h2></Reveal>
+  {/* The correction line, moved here from the retired hero (client, 5 Aug 2026).
+      It leads the section because it is the thesis the risk list then evidences:
+      the firm names the correction, then explains that off-plan is where it
+      lands first. Set larger than the body, in the gold the dark ground allows
+      (--gold-highlight, 9.0:1) — the one place this area raises its voice. */}
+  {lead && <Reveal index={2}><p class="op__lead">{lead}</p></Reveal>}
   {paras.map((p, i) => (
-    <Reveal index={2 + i}><p class="op__body">{p}</p></Reveal>
+    <Reveal index={3 + i}><p class="op__body">{p}</p></Reveal>
   ))}
 
   {/* The hinge and the list are one unit, so they sit closer than the section's
       2rem rhythm. The wrapper is an element this module renders itself — a class
       handed to <Reveal class="…"> would land in Reveal's scope, not ours. */}
   <div class="op__risk-block">
-    <Reveal index={2 + paras.length}><p class="op__body">{hinge}</p></Reveal>
+    <Reveal index={3 + paras.length}><p class="op__body">{hinge}</p></Reveal>
     {/* role="list" is deliberate: base.css sets `list-style: none` globally, which
         makes Safari/VoiceOver stop announcing this as a list. This restores it. */}
     <ul class="op__risks" role="list">
       {risks.map((r, i) => (
-        <Reveal as="li" index={3 + paras.length + i}>{r}</Reveal>
+        <Reveal as="li" index={4 + paras.length + i}>{r}</Reveal>
       ))}
     </ul>
   </div>
@@ -68,6 +74,20 @@ const { eyebrow, heading, paras, hinge, risks } = offPlanContent;
     letter-spacing: -0.01em;
     line-height: 1.15;
     margin: 0;
+  }
+  /* The correction line. Larger than the body and in the on-dark gold
+     (--gold-highlight, 9.0:1 on navy) — plain --gold would be wrong on ivory and
+     this section can be placed either way, so the token that is safe on this
+     ground is used explicitly. It is the only raised voice in this area. */
+  .op__lead {
+    font-family: var(--font-util);
+    font-weight: 500;
+    font-size: clamp(1.125rem, 2.1vw, 1.5rem);
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    max-width: 34rem;
+    margin: 0;
+    color: var(--gold-highlight);
   }
   .op__body {
     font-family: var(--font-util);

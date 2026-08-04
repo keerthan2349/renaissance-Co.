@@ -16,9 +16,10 @@
 // The real founder section sits underneath so the hand-off out of the hero is
 // the real thing, not an isolated demo.
 import Base from '@/layouts/Base.astro';
-import HeroScroll from '@/components/lab/HeroScroll.astro';
-import Founder from '@/components/modules/M03-Founder/Founder.astro';
+// The REAL module — promoted 5 Aug. This page is now a tuning bench over it, so
+// there is one implementation and the bench can never show a different truth.
 import Hero from '@/components/modules/M01-Hero/Hero.astro';
+import Founder from '@/components/modules/M03-Founder/Founder.astro';
 
 export function getStaticPaths() {
   if (!import.meta.env.DEV) return [];
@@ -42,7 +43,11 @@ const VERSIONS = [
 ---
 
 <Base title="LAB · Hero — Renaissance & Co. (dev only)">
-  {view === 'current' ? <Hero /> : <HeroScroll variant={view as 'word' | 'clause' | 'whole'} class="hs-lab" />}
+  {/* "Today's" now means the shipped settings from content.ts, since this IS
+      what ships; the other three override only the variant. */}
+  {view === 'current'
+    ? <Hero class="hs-lab" />
+    : <Hero variant={view as 'word' | 'clause' | 'whole'} class="hs-lab" />}
 
   <Founder />
 

@@ -62,6 +62,22 @@ interface Props {
   decorative?: boolean;
   /** Absolute-fill mode, for sitting behind another section's content. */
   background?: boolean;
+  /**
+   * A BLUR RAMP across the rows — softest in the middle of the stack, firmest
+   * at its top and bottom edges. Client-chosen shape, 6 Aug 2026.
+   *
+   * It lives here rather than in a caller because two sections now want it (the
+   * homepage shelf and the properties band) and a second copy of the maths
+   * would drift the first time one was tuned — the same reasoning that made
+   * this engine a primitive and moved the words into one file.
+   *
+   * ⚠️ GIVE EACH CALLER VALUES PROPORTIONAL TO ITS OWN TYPE. The same pixel
+   * blur reads more than twice as heavy on the band's 1.2rem as on the shelf's
+   * 2.65rem. This is the trap that already bit the marquee once: absolute
+   * values judged at one size do not carry to another (which is why the gap and
+   * the stroke are both `em` here).
+   */
+  blur?: { from: string; to: string };
   class?: string;
 }
 
@@ -74,6 +90,7 @@ const {
   fade,
   decorative = true,
   background = false,
+  blur,
   class: className,
 } = Astro.props;
 
@@ -116,6 +133,14 @@ const rootStyle: Record<string, string> = {};
 if (gap) rootStyle['--mq-gap'] = gap;
 if (fade) rootStyle['--mq-fade'] = fade;
 if (separator) rootStyle['--mq-sep'] = SEPARATORS[separator];
+// The row COUNT, published so a caller can derive a per-row ramp (M10's blur
+// gradient). Always emitted — it describes the rows that exist, it is not a
+// tunable, so there is no caller default for it to outrank.
+rootStyle['--mq-n'] = String(rows.length);
+if (blur) {
+  rootStyle['--mq-blur-from'] = blur.from;
+  rootStyle['--mq-blur-to'] = blur.to;
+}
 
 const resolved = rows.map((row, i) => {
   const duration = row.duration ?? DEFAULT_DURATIONS[i % DEFAULT_DURATIONS.length];
@@ -127,6 +152,9 @@ const resolved = rows.map((row, i) => {
     direction,
     variant: row.variant ?? 'fill',
     style: {
+      // This row's index, so a caller can derive a per-row ramp down the stack
+      // (M10 uses it for a blur gradient) without duplicating any DOM.
+      '--mq-i': String(i),
       // The lab's speed slider scales every row at once through --mq-dur-scale,
       // which keeps the relative parallax intact while the overall pace changes.
       '--mq-dur': `calc(var(--mq-dur-scale, 1) * ${duration}s)`,
@@ -149,6 +177,7 @@ const resolved = rows.map((row, i) => {
     className,
   ]}
   style={rootStyle}
+  data-blur-ramp={blur ? '' : undefined}
   aria-hidden={decorative ? 'true' : undefined}
 >
   {
@@ -200,6 +229,79 @@ const resolved = rows.map((row, i) => {
     justify-content: space-around;
     pointer-events: none;
     user-select: none;
+  }
+
+  /* ⚠️ THE SLICED-ROW LINE (client-reported on mobile, 6 Aug — "there is a
+     line"). A background marquee fills a box that is almost never an exact
+     multiple of the row pitch, so the first and last rows are cut mid-letter at
+     the box edges. SHARP type survives that — a cut letter at a section's edge
+     reads as the band ending. BLURRED type does not: a soft form with a dead
+     straight edge across it reads as a rendering fault, and at 390px the band's
+     8 rows land exactly flush, so the bottom row was sliced clean through.
+     The ink therefore ENDS over a short distance instead of being cut. This is
+     the vertical twin of the horizontal --mq-fade the rows already carry, and
+     it is deliberately tiny — under a line of text — because it is the ink
+     terminating, NOT a transition between sections (the seam treatments the
+     client removed were 4–10rem; this is 0.75rem).
+     Only blurred marquees get it: sharp ones never had the problem.
+     Trap re-checked: a mask makes this element a backdrop root, but the
+     heading's backdrop-blur panel is a SIBLING in the section's own column,
+     never a descendant of the marquee — so it still samples the page. */
+  .marquee--background[data-blur-ramp] {
+    --mq-end-fade: 0.75rem;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--mq-end-fade),
+      #000 calc(100% - var(--mq-end-fade)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--mq-end-fade),
+      #000 calc(100% - var(--mq-end-fade)),
+      transparent 100%
+    );
+  }
+
+  /* THE BLUR RAMP's position maths — this row's place down the stack (--u,
+     0 → 1) and its signed distance from the centre (--c, −1 → 1), then --t, the
+     0 → 1 amount of blur it takes. The default curve is SOFTEST IN THE MIDDLE
+     (the client's pick, 6 Aug). `abs()` is too new to rely on, so it folds with
+     max(x, −x) — same result, supported everywhere this site runs.
+     Deliberately NOT gated behind the ramp attribute: these are three numbers
+     that render nothing on their own, and keeping the selector at this
+     specificity lets a caller override --t for an alternative shape without a
+     specificity fight (the trap that made a media query lose once). */
+  .marquee__row {
+    --u: calc(var(--mq-i, 0) / max(1, calc(var(--mq-n, 1) - 1)));
+    --c: calc(2 * var(--u) - 1);
+    --t: calc(1 - max(var(--c), calc(-1 * var(--c))));
+  }
+  /* Only a marquee that asked for the ramp pays for it. The filter sits on the
+     TRACK: its content never changes, it only translates, so the compositor
+     rasterises each blurred row once and slides it — on the row or the root it
+     would re-rasterise every frame of the crawl. */
+  .marquee[data-blur-ramp] .marquee__track {
+    filter: blur(
+      calc(var(--mq-blur-from, 0px) + (var(--mq-blur-to, 0px) - var(--mq-blur-from, 0px)) * var(--t, 1))
+    );
+  }
+  /* ⚠️ EVERY ROW WAS CUTTING ITS OWN BLUR — the line the client kept seeing.
+     A row clips to its box (its `overflow`, and more decisively its edge mask,
+     which clips to the border box whatever `overflow` says). Sharp glyphs sit
+     inside that box, so nothing showed before; a BLURRED glyph spreads several
+     px past its own outline, and that spread was being sliced flat at every
+     row boundary — a faint straight edge above and below each line of text,
+     repeating down the whole marquee.
+     The row now carries vertical padding to hold the bleed, with an equal
+     negative margin so the rhythm and the row pitch are completely unchanged —
+     the box grows, the layout does not. Scoped to blurred marquees: sharp ones
+     never had the problem and are left exactly as they were. */
+  .marquee[data-blur-ramp] .marquee__row {
+    padding-block: 0.45em;
+    margin-block: -0.45em;
   }
 
   .marquee__row {

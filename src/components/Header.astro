@@ -705,7 +705,9 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
       return r.top <= 0 && r.bottom >= header.offsetHeight;
     };
 
-    const readGround = (): { dark: boolean; media: boolean } => {
+    // Returns null when the page is not yet hit-testable (mid-navigation) —
+    // the caller must retry, never guess.
+    const readGround = (): { dark: boolean; media: boolean } | null => {
       const vw = document.documentElement.clientWidth;
       // Take the first element at that point that actually belongs to the
       // PAGE: skip the header itself and anything pinned on top of the page
@@ -727,6 +729,16 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
         return false;
       };
       const stack = document.elementsFromPoint(vw / 2, header.offsetHeight + 2) as HTMLElement[];
+      // ⚠️ DURING A CLIENT-SIDE NAVIGATION the fresh page is not hit-testable
+      // for a few frames — the view-transition overlay leaves the probe seeing
+      // only <html>. The first version guessed "light" from that nothing and
+      // put navy letters on the properties band's navy until the first scroll
+      // re-asked (client-reported, 6 Aug; reproduced and traced). A reading
+      // taken from a frame that does not exist yet is not a reading — say so,
+      // and the caller retries next frame instead of deciding.
+      if (!stack.some((n) => n !== document.documentElement && n !== document.body)) {
+        return null;
+      }
       let el: HTMLElement | null =
         stack.find((n) => !header.contains(n) && !isPinned(n)) ?? null;
       // Stop BEFORE <body>: its ivory propagates to the canvas, which paints
@@ -761,10 +773,20 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
           header.classList.remove('is-dark', 'is-solid', 'is-over-media');
           return;
         }
-        const { dark, media } = readGround();
-        header.classList.toggle('is-dark', dark);
-        header.classList.toggle('is-solid', !dark);
-        header.classList.toggle('is-over-media', media);
+        const g = readGround();
+        if (!g) {
+          // The page isn't hit-testable yet (mid-navigation). Keep whatever
+          // state is showing — it is under the transition overlay anyway — and
+          // ask again next frame until the DOM is real. This is what fixes the
+          // wrong-coloured bar at the top of /properties after a nav click:
+          // the old behaviour guessed once, and nothing re-asked until the
+          // first scroll.
+          requestAnimationFrame(applyState);
+          return;
+        }
+        header.classList.toggle('is-dark', g.dark);
+        header.classList.toggle('is-solid', !g.dark);
+        header.classList.toggle('is-over-media', g.media);
         return;
       }
       header.classList.remove('is-over-media');

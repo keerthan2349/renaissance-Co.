@@ -13,13 +13,16 @@
 // single render, so a `?mode=` switch returns the identical page — that mistake
 // silently invalidated a whole test run on the carousel work (3 Aug).
 //
-// The real founder section sits underneath so the hand-off out of the hero is
-// the real thing, not an isolated demo.
+// The REAL next section sits underneath so the hand-off out of the hero is the
+// real thing, not an isolated demo. Since 6 Aug (client's swap) that section is
+// the PROJECTS CAROUSEL, not the founder — the bench must mirror it, because
+// the hand-off ground changed from ivory to the gradient and the header reads
+// that boundary differently.
 import Base from '@/layouts/Base.astro';
 // The REAL module — promoted 5 Aug. This page is now a tuning bench over it, so
 // there is one implementation and the bench can never show a different truth.
 import Hero from '@/components/modules/M01-Hero/Hero.astro';
-import Founder from '@/components/modules/M03-Founder/Founder.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
 
 export function getStaticPaths() {
   if (!import.meta.env.DEV) return [];
@@ -45,11 +48,17 @@ const VERSIONS = [
 <Base title="LAB · Hero — Renaissance & Co. (dev only)">
   {/* "Today's" now means the shipped settings from content.ts, since this IS
       what ships; the other three override only the variant. */}
+  {/* THE ANIMATION IS LOCKED (client, 6 Aug): every setting they finalised comes
+      from content.ts untouched, and only the BUTTONS are being judged here.
+      `buttons` and `preview` are passed by the bench alone — the homepage
+      renders this same component with buttons off, so it is byte-identical to
+      what they signed off. `preview` is what lets the destination-less "Our
+      work" button appear here and nowhere else. */}
   {view === 'current'
-    ? <Hero class="hs-lab" />
-    : <Hero variant={view as 'word' | 'clause' | 'whole'} class="hs-lab" />}
+    ? <Hero class="hs-lab" buttons preview />
+    : <Hero variant={view as 'word' | 'clause' | 'whole'} class="hs-lab" buttons preview />}
 
-  <Founder />
+  <Carousel />
 
   {/* Floating, so the hero starts at the very top of the page and the first
       thing you scroll is the hero itself. `position: fixed` also means the glass
@@ -66,6 +75,109 @@ const VERSIONS = [
           <a class:list={['chip', v.id === view && 'is-on']} href={v.href}>{v.label}</a>
         ))}
       </div>
+
+      <p class="panel__label">Shelf ground</p>
+      <div class="panel__row">
+        <button type="button" class="chip is-on" data-ground="match">Matches the hero</button>
+        <button type="button" class="chip" data-ground="glow">Gold glow (retired)</button>
+      </div>
+      <p class="panel__note">
+        <b>Matches</b> is live now — the exact same navy the hero ends on, so there is no colour
+        step at all. <b>Gold glow</b> is the feature ground you chose on 28 Jul, kept here for
+        comparison: it marked this as the section to land on, but it painted a warmer, less blue
+        field than the hero, which is what made the join read as a break.
+      </p>
+
+      <p class="panel__label">“conviction. continuity.” · size &amp; position</p>
+      <div class="panel__row">
+        <label for="head-scale">Size <b id="head-scale-v">1.00×</b></label>
+        <input type="range" id="head-scale" min="0.5" max="1.6" step="0.02" value="1" />
+      </div>
+      <div class="panel__row">
+        <label for="head-shift">Nudge up / down <b id="head-shift-v">0.00em</b></label>
+        <input type="range" id="head-shift" min="-1.2" max="1.2" step="0.02" value="0" />
+      </div>
+      <div class="panel__row">
+        <button type="button" class="chip is-on" data-head-align="right">Right</button>
+        <button type="button" class="chip" data-head-align="center">Centred</button>
+        <button type="button" class="chip" data-head-align="left">Left</button>
+      </div>
+      <p class="panel__note">
+        Size <b>multiplies</b> the words rather than fixing them, so they keep scaling with the
+        screen — a phone stays in proportion instead of inheriting a desktop number. The nudge is
+        in <b>ems of the words' own size</b>, so it holds its proportion at every width too.
+      </p>
+      <button type="button" class="chip chip--wide" data-copy-head>Copy heading settings</button>
+
+      <p class="panel__label">Marquee blur · which way the ramp runs</p>
+      <div class="panel__row">
+        <button type="button" class="chip is-on" data-blur="center">Soft in the middle ✓</button>
+        <button type="button" class="chip" data-blur="down">Sharp → soft</button>
+        <button type="button" class="chip" data-blur="up">Soft → sharp</button>
+        <button type="button" class="chip" data-blur="edges">Sharp in the middle</button>
+        <button type="button" class="chip" data-blur="flat">Flat</button>
+      </div>
+      <div class="panel__row">
+        <label for="blur-from">From <b id="blur-from-v">1.4px</b></label>
+        <input type="range" id="blur-from" min="0" max="6" step="0.1" value="1.4" />
+      </div>
+      <div class="panel__row">
+        <label for="blur-to">To <b id="blur-to-v">4.3px</b></label>
+        <input type="range" id="blur-to" min="0" max="6" step="0.1" value="4.3" />
+      </div>
+      <p class="panel__note">
+        ✓ <b>Live now: soft in the middle, 1.4px → 4.3px</b> — your settings, baked in. The ramp
+        runs across the marquee's <b>20 rows</b>, each taking its own blur from its position, so
+        it costs nothing extra. <b>From</b> is both ends of the stack, <b>To</b> its centre.
+      </p>
+      <button type="button" class="chip chip--wide" data-copy-marquee>Copy marquee blur settings</button>
+
+      <p class="panel__label">Buttons · where the pair sits</p>
+      <div class="panel__row">
+        <button type="button" class="chip is-on" data-placement="corners">Corners</button>
+        <button type="button" class="chip" data-placement="column">In the column</button>
+        <button type="button" class="chip" data-placement="edge">Edge tabs</button>
+        <button type="button" class="chip" data-placement="top">Both at the top</button>
+      </div>
+
+      <p class="panel__label">Buttons · what one looks like</p>
+      <div class="panel__row">
+        <button type="button" class="chip is-on" data-btn="arrow">Arrow</button>
+        <button type="button" class="chip" data-btn="plate">Plate</button>
+        <button type="button" class="chip" data-btn="veil">Veil</button>
+        <button type="button" class="chip" data-btn="outline">Outline</button>
+        <button type="button" class="chip" data-btn="text">Underlined</button>
+      </div>
+
+      <p class="panel__label">Buttons · how the colour changes</p>
+      <div class="panel__row">
+        <button type="button" class="chip is-on" data-swap="snap">Switch</button>
+        <button type="button" class="chip" data-swap="follow">Follow the ground</button>
+      </div>
+
+      <p class="panel__label">Buttons · corners</p>
+      <div class="panel__row">
+        <button type="button" class="chip is-on" data-corners="soft">Soft</button>
+        <button type="button" class="chip" data-corners="sharp">Sharp</button>
+      </div>
+
+      {/* The live readout. This is the whole argument in two numbers, updating
+          as you scroll: how readable the LABEL is, and how visible the button's
+          own shape is against whatever is behind it. */}
+      <p class="panel__label">Measured right now, as you scroll</p>
+      <p class="panel__read">
+        Label on its own backing <b data-read-label>—</b><br />
+        Button against the ground <b data-read-edge>—</b>
+      </p>
+      <p class="panel__note">
+        Readable floor is <b>4.5:1</b> for words, <b>3:1</b> for a shape. Scroll slowly through
+        the middle of the change — that is where a treatment either holds or gives up.
+      </p>
+      <p class="panel__note">
+        <b>“Our work” has no page yet</b>, so it shows here as a marked chip and cannot appear on
+        the real site until that page exists.
+      </p>
+      <button type="button" class="chip chip--wide" data-copy-buttons>Copy button settings</button>
 
       {view !== 'current' && (
         <>
@@ -128,7 +240,12 @@ const VERSIONS = [
   .panel {
     position: fixed;
     right: var(--space-2);
-    bottom: var(--space-2);
+    /* Under the header, NOT in the bottom-right corner: bottom-right is where
+       the "Browse properties" button now sits, and the bench must not squat on
+       the exhibit. (The header ignores fixed elements when reading its ground,
+       so the panel cannot mislead the bar from up here.) */
+    top: calc(var(--header-h, 110px) + var(--space-2));
+    bottom: auto;
     z-index: 60;
     width: min(21rem, calc(100vw - 2 * var(--space-2)));
     background: color-mix(in srgb, var(--ivory) 94%, transparent);
@@ -151,7 +268,18 @@ const VERSIONS = [
     cursor: pointer;
     color: var(--navy);
   }
-  .panel__body { padding: 0.75rem; display: grid; gap: 0.6rem; }
+  .panel__body {
+    padding: 0.75rem;
+    display: grid;
+    gap: 0.6rem;
+    /* The bench grew past the screen once the button controls landed, and the
+       chips below the fold could not be reached at all — caught by the checks
+       ("element is outside of the viewport"). The body scrolls; the toggle
+       stays put. */
+    max-height: min(72svh, 40rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   .panel[data-closed] .panel__body { display: none; }
   .panel__tag {
     font-size: var(--type-eyebrow);
@@ -178,6 +306,17 @@ const VERSIONS = [
   }
   .panel__note { font-size: 0.6875rem; line-height: 1.45; color: var(--text-muted); margin: 0; }
   .panel__note b { color: var(--navy); }
+  .panel__read {
+    font-size: var(--type-caption);
+    line-height: 1.6;
+    margin: 0;
+    color: var(--text-muted);
+  }
+  .panel__read b {
+    font-variant-numeric: tabular-nums;
+    color: var(--navy);
+  }
+  .panel__read b[data-fail] { color: #8E2A1F; }
   .chip {
     font-family: var(--font-util);
     font-size: var(--type-caption);
@@ -210,7 +349,220 @@ const VERSIONS = [
       if (label) label.textContent = closed ? 'Hide' : 'Show';
     });
 
-    if (!hs || !rail || !smooth) return;
+    if (!hs) return;
+
+    // Flips an attribute on the component itself, so the bench drives exactly
+    // the code that would ship — never a copy that can drift.
+    const wire = (keys: string[]) => {
+      for (const key of keys) {
+        panel.querySelectorAll<HTMLElement>(`.chip[data-${key}]`).forEach((btn) => {
+          btn.addEventListener('click', () => {
+            panel.querySelectorAll(`.chip[data-${key}]`).forEach((c) => c.classList.remove('is-on'));
+            btn.classList.add('is-on');
+            hs.dataset[key] = btn.dataset[key]!;
+          });
+        });
+      }
+    };
+    // Wired before the sliders are looked for, so the button controls work on
+    // EVERY view — including "Today's", which has no sliders at all.
+    wire(['placement', 'btn', 'swap', 'corners']);
+
+    // ---- the two big words: size, nudge, alignment (6 Aug) ----------------
+    // These drive the hero's own variables, so the bench and the site are one
+    // implementation. 'right' is the shipped alignment and sets no attribute.
+    const headScale = document.getElementById('head-scale') as HTMLInputElement | null;
+    const headShift = document.getElementById('head-shift') as HTMLInputElement | null;
+    const applyHead = () => {
+      if (headScale) {
+        hs.style.setProperty('--head-scale', headScale.value);
+        const v = document.getElementById('head-scale-v');
+        if (v) v.textContent = `${Number(headScale.value).toFixed(2)}×`;
+      }
+      if (headShift) {
+        hs.style.setProperty('--head-shift', `${headShift.value}em`);
+        const v = document.getElementById('head-shift-v');
+        if (v) v.textContent = `${Number(headShift.value).toFixed(2)}em`;
+      }
+    };
+    headScale?.addEventListener('input', applyHead);
+    headShift?.addEventListener('input', applyHead);
+    panel.querySelectorAll<HTMLElement>('.chip[data-head-align]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        panel.querySelectorAll('.chip[data-head-align]').forEach((c) => c.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        if (btn.dataset.headAlign === 'right') delete hs.dataset.headAlign;
+        else hs.dataset.headAlign = btn.dataset.headAlign!;
+      });
+    });
+    panel.querySelector('[data-copy-head]')?.addEventListener('click', (e) => {
+      const line = `hero heading: size ${headScale?.value ?? 1}× · nudge ${headShift?.value ?? 0}em · ${hs.dataset.headAlign ?? 'right'}`;
+      navigator.clipboard?.writeText(line);
+      const b = e.currentTarget as HTMLElement;
+      const was = b.textContent;
+      b.textContent = 'Copied — send me that line';
+      setTimeout(() => { b.textContent = was; }, 1800);
+    });
+
+    // ---- the seam options (6 Aug) --------------------------------------
+    // These flip `data-seam` on the PROJECTS SECTION below the hero — the same
+    // element the site renders — so the bench drives exactly the code that
+    // would ship. No attribute = the live melt.
+    const shelf = document.querySelector<HTMLElement>('.projects--feature');
+    if (shelf) {
+      // The ground toggle. 'match' = no attribute = exactly what ships.
+      panel.querySelectorAll<HTMLElement>('.chip[data-ground]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          panel.querySelectorAll('.chip[data-ground]').forEach((c) => c.classList.remove('is-on'));
+          btn.classList.add('is-on');
+          if (btn.dataset.ground === 'match') delete shelf.dataset.ground;
+          else shelf.dataset.ground = btn.dataset.ground!;
+          // The bar samples what paints beneath it and only re-reads on scroll;
+          // swapping a ground with no scroll would leave its reading stale.
+          dispatchEvent(new Event('scroll'));
+        });
+      });
+      // The blur ramp's SHAPE. 'center' = no attribute = exactly what ships
+      // (the client's locked pick, 6 Aug).
+      panel.querySelectorAll<HTMLElement>('.chip[data-blur]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          panel.querySelectorAll('.chip[data-blur]').forEach((c) => c.classList.remove('is-on'));
+          btn.classList.add('is-on');
+          if (btn.dataset.blur === 'center') delete shelf.dataset.blur;
+          else shelf.dataset.blur = btn.dataset.blur!;
+        });
+      });
+      // The ends of the ramp. Set on the MARQUEE, which is where the component
+      // declares them, so the bench drives the shipped variables themselves.
+      const mq = shelf.querySelector<HTMLElement>('.projects__marquee');
+      const from = document.getElementById('blur-from') as HTMLInputElement | null;
+      const to = document.getElementById('blur-to') as HTMLInputElement | null;
+      const applyBlur = () => {
+        if (!mq || !from || !to) return;
+        mq.style.setProperty('--mq-blur-from', `${from.value}px`);
+        mq.style.setProperty('--mq-blur-to', `${to.value}px`);
+        const fv = document.getElementById('blur-from-v');
+        const tv = document.getElementById('blur-to-v');
+        if (fv) fv.textContent = `${Number(from.value).toFixed(1)}px`;
+        if (tv) tv.textContent = `${Number(to.value).toFixed(1)}px`;
+      };
+      from?.addEventListener('input', applyBlur);
+      to?.addEventListener('input', applyBlur);
+
+      panel.querySelector('[data-copy-marquee]')?.addEventListener('click', (e) => {
+        const line = `marquee blur: ${shelf.dataset.blur ?? 'center'} · from ${from?.value ?? 1.4}px · to ${to?.value ?? 4.3}px`;
+        navigator.clipboard?.writeText(line);
+        const b = e.currentTarget as HTMLElement;
+        const was = b.textContent;
+        b.textContent = 'Copied — send me that line';
+        setTimeout(() => { b.textContent = was; }, 1800);
+      });
+    }
+
+    // ---- the live contrast readout -------------------------------------
+    // Two numbers, updating as you scroll. This is the argument made visible
+    // rather than asserted, and it is the thing that decides between the
+    // styles.
+    //
+    // ⚠️ THE PARSER MUST HANDLE BOTH SYNTAXES. Chromium computes `color-mix()`
+    // to `color(srgb 0.04 0.08 0.25)` — 0→1, not 0→255 — while plain colours
+    // compute to `rgb(…)`. Reading srgb values as 8-bit made every pair measure
+    // as black and reported 1.0:1 for everything (5 Aug). Costs two lines here
+    // and cost hours once.
+    type RGBA = [number, number, number, number];
+    const parse = (v: string): RGBA | null => {
+      let m = v.match(/^rgba?\(([^)]+)\)/);
+      if (m) {
+        const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
+      }
+      m = v.match(/^color\(srgb\s+([^)]+)\)/);
+      if (m) {
+        const p = m[1].split(/[\s/]+/).filter(Boolean).map(Number);
+        return [p[0] * 255, p[1] * 255, p[2] * 255, p.length > 3 ? p[3] : 1];
+      }
+      return null;
+    };
+    const over = (fg: RGBA, bg: RGBA): RGBA => [
+      fg[0] * fg[3] + bg[0] * (1 - fg[3]),
+      fg[1] * fg[3] + bg[1] * (1 - fg[3]),
+      fg[2] * fg[3] + bg[2] * (1 - fg[3]),
+      1,
+    ];
+    const lum = (c: RGBA) => {
+      const f = (n: number) => {
+        const s = n / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+    };
+    const ratio = (a: RGBA, b: RGBA) => {
+      const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+
+    const outLabel = panel.querySelector<HTMLElement>('[data-read-label]');
+    const outEdge = panel.querySelector<HTMLElement>('[data-read-edge]');
+    const stage = hs.querySelector<HTMLElement>('.hs__stage');
+
+    const readContrast = () => {
+      if (!outLabel || !outEdge || !stage) return;
+      const acts = hs.querySelectorAll<HTMLElement>('.hs__act');
+      const ground = parse(getComputedStyle(stage).backgroundColor);
+      if (!acts.length || !ground) return;
+
+      let worstLabel = Infinity;
+      let worstEdge = Infinity;
+      for (const act of acts) {
+        const cs = getComputedStyle(act);
+        const bg = parse(cs.backgroundColor);
+        const ink = parse(cs.color);
+        const bd = parse(cs.borderTopColor);
+        if (!ink) continue;
+        // What the label actually sits on: its own plate composited over the
+        // ground, or — if there is no plate — the moving ground itself. That
+        // distinction IS the finding.
+        const plate = bg && bg[3] > 0.02 ? over(bg, ground) : ground;
+        worstLabel = Math.min(worstLabel, ratio(over(ink, plate), plate));
+        // How visible the button's shape is. A border defines the shape when
+        // the fill does not, so whichever reads stronger is the honest number.
+        let edge = ratio(plate, ground);
+        if (bd && bd[3] > 0.02) edge = Math.max(edge, ratio(over(bd, ground), ground));
+        worstEdge = Math.min(worstEdge, edge);
+      }
+      if (!isFinite(worstLabel)) return;
+      const put = (el: HTMLElement, v: number, floor: number) => {
+        el.textContent = `${v.toFixed(1)}:1`;
+        el.toggleAttribute('data-fail', v < floor);
+      };
+      put(outLabel, worstLabel, 4.5);
+      put(outEdge, worstEdge, 3);
+    };
+
+    let reading = false;
+    const onRead = () => {
+      if (reading) return;
+      reading = true;
+      requestAnimationFrame(() => {
+        reading = false;
+        readContrast();
+      });
+    };
+    addEventListener('scroll', onRead, { passive: true });
+    addEventListener('resize', onRead, { passive: true });
+    panel.addEventListener('click', () => setTimeout(readContrast, 420));
+    readContrast();
+
+    panel.querySelector('[data-copy-buttons]')?.addEventListener('click', (e) => {
+      const line = `hero buttons: ${hs.dataset.placement} placement · ${hs.dataset.btn} style · ${hs.dataset.swap} colour · ${hs.dataset.corners} corners`;
+      navigator.clipboard?.writeText(line);
+      const b = e.currentTarget as HTMLElement;
+      const was = b.textContent;
+      b.textContent = 'Copied — send me that line';
+      setTimeout(() => { b.textContent = was; }, 1800);
+    });
+
+    if (!rail || !smooth) return;
 
     const apply = () => {
       // Drives the component's own variables — the bench can never show a
@@ -227,17 +579,9 @@ const VERSIONS = [
     smooth.addEventListener('input', apply);
     apply();
 
-    // The two style choices flip attributes on the component itself, so the
-    // bench drives exactly the code that would ship — no second copy to drift.
-    for (const key of ['transition', 'reveal', 'layout', 'face'] as const) {
-      panel.querySelectorAll<HTMLElement>(`.chip[data-${key}]`).forEach((btn) => {
-        btn.addEventListener('click', () => {
-          panel.querySelectorAll(`.chip[data-${key}]`).forEach((c) => c.classList.remove('is-on'));
-          btn.classList.add('is-on');
-          hs.dataset[key] = btn.dataset[key]!;
-        });
-      });
-    }
+    // The animation choices flip attributes on the component the same way the
+    // button choices already do — one wiring, no second copy to drift.
+    wire(['transition', 'reveal', 'layout', 'face']);
 
     panel.querySelector('[data-copy]')?.addEventListener('click', (e) => {
       const line = `hero: ${hs.dataset.layout} layout · ${hs.dataset.face} words · ${hs.dataset.transition} transition · ${hs.dataset.reveal} arrival · scroll ${rail.value}vh · glide ${smooth.value}`;

@@ -29,7 +29,7 @@
 // Banned here by name, and a global smooth-scroll already caused a real reported
 // bug (28 Jul). The glide instead eases the ANIMATION toward the scroll
 // position: the page still scrolls natively and instantly.
-import { heroContent, heroParagraph } from './content';
+import { heroContent, heroParagraph, heroActions } from './content';
 
 interface Props {
   variant?: 'word' | 'clause' | 'whole';
@@ -40,6 +40,19 @@ interface Props {
   layout?: 'panel' | 'editorial';
   /** Face for the two big words. */
   face?: 'sans' | 'display' | 'editorial';
+  /** The two persistent buttons. OFF by default — see content.ts. */
+  buttons?: boolean;
+  placement?: 'corners' | 'column' | 'edge' | 'top';
+  btnStyle?: 'plate' | 'veil' | 'outline' | 'text' | 'arrow';
+  swap?: 'snap' | 'follow';
+  btnCorners?: 'soft' | 'sharp';
+  /**
+   * LAB ONLY. Renders a destination-less button as a marked pending chip so the
+   * layout can be judged before its page exists. Never passed on the live path —
+   * which is what makes a dead link structurally impossible rather than a thing
+   * somebody has to remember not to ship.
+   */
+  preview?: boolean;
   class?: string;
 }
 // EVERY DEFAULT COMES FROM content.ts, never from a literal here — the client's
@@ -54,12 +67,32 @@ const {
   transition = s.transition,
   layout = s.layout,
   face = s.face,
+  buttons = s.buttons,
+  placement = s.placement,
+  btnStyle = s.btnStyle,
+  swap = s.swap,
+  btnCorners = s.btnCorners,
+  preview = false,
   class: cls = '',
 } = Astro.props;
 
 const words = heroParagraph.split(/\s+/);
 const units = variant === 'clause' ? heroContent.clauses : words;
 const total = variant === 'whole' ? 1 : units.length;
+
+// `data-ground="light"` is written in the markup below, not only by the script:
+// the correct state before JS runs is the light ground, and a button flashing
+// the wrong colours on first paint would be the same class of bug as the
+// hero-fonts one (24 Jul).
+
+// A button shows only if it has somewhere real to go — or if the bench asked to
+// preview it. On the shipping path an action with `href: null` renders NOTHING,
+// so the live site cannot carry a dead link even if the buttons are switched on
+// before `/our-work` exists.
+const acts = ([
+  ['lead', heroActions.lead],
+  ['trail', heroActions.trail],
+] as const).filter(([, a]) => a.href !== null || preview);
 ---
 
 <section
@@ -69,6 +102,12 @@ const total = variant === 'whole' ? 1 : units.length;
   data-transition={transition}
   data-layout={layout}
   data-face={face}
+  data-buttons={buttons ? 'on' : 'off'}
+  data-placement={placement}
+  data-btn={btnStyle}
+  data-swap={swap}
+  data-corners={btnCorners}
+  data-ground="light"
   style={`--hs-rail:${rail}svh; --hs-count:${total}; --hs-smooth:${s.glide};`}
 >
   <div class="hs__stage">
@@ -102,7 +141,7 @@ const total = variant === 'whole' ? 1 : units.length;
         </h2>
       </div>
 
-      <div class="hs__panel">
+      <div class="hs__panel" data-hs-panel>
         {variant === 'whole' ? (
           <p class="hs__body"><span class="u" style="--i:0">{heroParagraph}</span></p>
         ) : (
@@ -119,6 +158,41 @@ const total = variant === 'whole' ? 1 : units.length;
         )}
       </div>
     </div>
+
+    {/* THE TWO PERSISTENT BUTTONS (client, 6 Aug 2026). Last in the DOM on
+        purpose: the hero says what the firm is, and then offers the two ways
+        onward — that is the order it should be read and tabbed in. Where they
+        SIT is decided entirely in CSS, so reading order and visual position are
+        free of each other. */}
+    {buttons && acts.length > 0 && (
+      <div class="hs__acts">
+        {acts.map(([slot, a]) =>
+          a.href ? (
+            <a
+              class:list={['hs__act', `hs__act--${slot}`]}
+              href={a.href}
+              data-track={a.track}
+            >
+              <span class="hs__act-in">{a.label}</span>
+              <span class="hs__act-arrow" aria-hidden="true"></span>
+            </a>
+          ) : (
+            /* Lab only. Not a link, not focusable as one, and visibly marked —
+               it can never be mistaken for a working button, and it never
+               reaches the live site (see `acts` above). */
+            <span
+              class:list={['hs__act', `hs__act--${slot}`, 'is-pending']}
+              role="note"
+              aria-label={`${a.label} — page not built yet`}
+            >
+              <span class="hs__act-in">{a.label}</span>
+              <span class="hs__act-flag">page not built yet</span>
+              <span class="hs__act-arrow" aria-hidden="true"></span>
+            </span>
+          ),
+        )}
+      </div>
+    )}
   </div>
 </section>
 
@@ -142,6 +216,35 @@ const total = variant === 'whole' ? 1 : units.length;
   .hs {
     height: var(--hs-rail, 300svh);
     position: relative;
+    /* ⚠️ THE HAIRLINE AT THE HERO'S BOTTOM EDGE (client-reported at 430×932,
+       "below the hero and above the curated").
+       The stage is STICKY and the rail is 280svh — a fractional height. Where
+       the stage releases, its box and the next section's top can land either
+       side of a device pixel, and the gap between them shows the PAGE's ivory,
+       because the ivory ground lives on <body> and propagates to the canvas
+       that paints behind everything (a rule already on record here — it is
+       what makes M18's film work). A fraction of an ivory pixel against navy
+       is a bright line, and downscaling a phone preview makes it a full one.
+       The section now paints the SAME ground as its own stage, so there is
+       nothing behind the stage to show through. The stage still paints over
+       it, so nothing else changes — the two are always the same colour, both
+       written by the script from one value. */
+    background-color: var(--hs-ground, var(--ivory));
+    /* …and that alone was NOT enough, which is the part worth remembering.
+       MEASURED: the offending pixel row was a 25% blend of ivory into navy —
+       exactly the same fraction on all three channels, which is the signature
+       of the CANVAS bleeding through, not of any element being the wrong
+       colour. A sticky stage is composited on its own layer, so its bottom
+       edge antialiases against what the compositor has behind it — the page
+       canvas — rather than against this section's background.
+       So the next section is pulled up by one pixel to sit ON the seam. Both
+       grounds are navy there, so nothing is covered that anyone can see, and
+       the page simply has no sub-pixel gap left to leak through.
+       ⚠️ It only showed at SOME viewport heights — 430×932 and 375×812 leaked,
+       390×844 and 414×915 did not — because it depends on where a fractional
+       svh rail lands against the device pixel grid. That is why it survived
+       three rounds of checking at 390: the bug was never there. */
+    margin-bottom: -1px;
     /* clip, never hidden: `overflow: hidden` silently becomes every
        descendant's scroll reference — trap already recorded on this project. */
     overflow: clip;
@@ -310,15 +413,26 @@ const total = variant === 'whole' ? 1 : units.length;
     margin: 0;
     color: var(--ivory);
   }
+  /* THE TWO BIG WORDS. Size and placement are variables (6 Aug) so the client
+     can tune them at /lab/hero without the copy or the choreography moving —
+     the bench drives these same three, so it cannot show a different truth.
+       --head-scale  multiplies the whole clamp, so it keeps scaling with the
+                     screen instead of becoming one fixed size
+       --head-align  which edge the stack sits against
+       --head-shift  a nudge up (negative) or down, in ems of the words'
+                     own size, so it holds its proportion at every width */
   .hs[data-layout='panel'] .hs__head {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    text-align: right;
+    align-items: var(--head-align, flex-end);
+    text-align: var(--head-text-align, right);
     line-height: 0.92;
     letter-spacing: -0.02em;
-    font-size: clamp(2.75rem, 10.5vw, 9rem);
+    font-size: calc(clamp(2.75rem, 10.5vw, 9rem) * var(--head-scale, 1));
+    transform: translateY(var(--head-shift, 0em));
   }
+  .hs[data-head-align='center'] .hs__head { --head-align: center; --head-text-align: center; }
+  .hs[data-head-align='left'] .hs__head { --head-align: flex-start; --head-text-align: left; }
   .hs[data-layout='panel'][data-face='sans'] .hs__head { font-family: var(--font-util); font-weight: 600; }
   .hs[data-layout='panel'][data-face='display'] .hs__head {
     font-family: var(--font-display);
@@ -355,7 +469,22 @@ const total = variant === 'whole' ? 1 : units.length;
     margin-inline: auto;
     padding-inline: var(--gutter);
   }
+  /* ⚠️ THE PANEL ARRIVES WITH ITS SENTENCE, NEVER AHEAD OF IT (client-reported
+     6 Aug: "the white is still appearing").
+     It used to ride `.hs__second`'s curtain, which completes at --y (p 0.36) —
+     but the words only BEGIN resolving at --q (p 0.38) and take until 0.94. So
+     there was a window where a large ivory rectangle sat fully formed and
+     completely empty. On a phone the panel is full-width, so that read as a
+     blank white block dropped into the middle of the hero. Exactly the fault
+     the client caught in the film on 2 Aug — a container arriving before its
+     content.
+     It now wipes in from the left — the edge it bleeds off, so the gesture is
+     the panel's own — across the first slice of the word window, so the ivory
+     and the first words appear together. Never a fade: the client rejected
+     plain crossfades here on 4 Aug. */
   .hs[data-layout='panel'] .hs__panel {
+    --panel-in: clamp(0, calc(var(--q) / 0.06), 1);
+    clip-path: inset(0 calc((1 - var(--panel-in)) * 100%) 0 0);
     justify-self: start;
     margin-inline: 0;
     background: var(--ivory);
@@ -451,14 +580,338 @@ const total = variant === 'whole' ? 1 : units.length;
     transform: scale(calc(1 - (1 - var(--u)) * 0.04));
   }
 
+  /* ======================================================================
+     THE TWO PERSISTENT BUTTONS — client's ask, 6 Aug 2026.
+     Top-left "Our work", bottom-right "Browse properties", both holding their
+     place for the whole hero while their colour follows the ground beneath.
+
+     ⚠️ THE MEASURED FINDING THAT SHAPES ALL OF THIS. Plain type cannot stay
+     readable across an ivory→navy crossing. At the midpoint the ground is a mid
+     tone, and the BEST any single ink can do at the worst moment is ~4.1:1 —
+     under the 4.5:1 floor, whichever colour you pick, because navy and ivory
+     lose to the mid ground in turn. (Same wall the header hit on 4 Aug: "strong"
+     3.0:1 and "halo" 2.1:1 both failed over the film; only the treatments that
+     put something SOLID behind the letters — chip 13.0:1, scrim 12.3:1 — held.)
+     So: a style that gives the label its own settled backing is legible at every
+     moment of the crossing, and one that does not, is not. Both are built, and
+     both are measured, so the choice is made with the numbers in view.
+     ====================================================================== */
+  .hs__acts {
+    /* ⚠️ THE GRID TRAP, already paid for once on this project (3 Aug, M18): a
+       grid's alignment AND placement still reach absolutely-positioned children
+       — an inherited `align-self: center` makes `inset: 0` shrink-wrap instead
+       of stretch, and an inherited row start line becomes the containing block's
+       top edge. Both are cleared here explicitly, which is why the buttons
+       actually sit against the screen's edges rather than against a centred,
+       shrink-wrapped box. */
+    grid-area: 1 / 1;
+    align-self: stretch;
+    justify-self: stretch;
+    position: relative;
+    z-index: 3;
+    /* The layer must never swallow a click meant for the page beneath it — the
+       same rule the marquee backdrop depends on. Only the buttons take input. */
+    pointer-events: none;
+  }
+  .hs__act {
+    position: absolute;
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+    text-decoration: none;
+    /* 44px tap target at every size, whatever the padding works out to. */
+    min-height: 44px;
+    padding: 0.75em 1.4em;
+    /* Colour is the only thing that moves. Motion tokens only — never a raw
+       duration (rulebook). */
+    transition:
+      background-color var(--dur-element) var(--ease),
+      color var(--dur-element) var(--ease),
+      border-color var(--dur-element) var(--ease);
+  }
+  .hs[data-corners='soft'] .hs__act { border-radius: 3px; }
+  .hs[data-corners='sharp'] .hs__act { border-radius: 0; }
+
+  /* ---- the two settled colour pairs -------------------------------------
+     `--act-ink` and `--act-plate` are ALWAYS one of the two settled pairs, never
+     a blend of them — which is what keeps the label at 16.9:1 against its own
+     plate at every moment, including mid-crossing. Only WHICH pair is showing
+     changes, and it crossfades over one element duration. This is exactly how
+     the header decides its own colour, rather than a second mechanism. */
+  .hs__acts { --act-ink: var(--navy); --act-plate: var(--ivory); }
+  .hs[data-ground='dark'] .hs__acts { --act-ink: var(--ivory); --act-plate: var(--navy); }
+
+  /* FOLLOW — the naive version, kept so the client can see WHY the other one
+     exists: the colours track the blending ground continuously, which looks
+     smooth and measures badly at the midpoint. Numbers in the lab panel. */
+  .hs[data-swap='follow'] .hs__acts {
+    --act-ink: var(--hs-ink, var(--navy));
+    --act-plate: var(--hs-ground, var(--ivory));
+  }
+
+  /* ---- what a button looks like ------------------------------------------ */
+  /* PLATE — a solid pill that inverts with the ground. The label sits on its own
+     settled plate, so it is 16.9:1 the whole way through. */
+  .hs[data-btn='plate'] .hs__act {
+    background-color: var(--act-ink);
+    color: var(--act-plate);
+  }
+  /* VEIL — the same protection, worn lightly: a translucent plate plus a
+     hairline, so it reads quieter than a solid pill while still backing the
+     letters. */
+  .hs[data-btn='veil'] .hs__act {
+    background-color: color-mix(in srgb, var(--act-ink) 88%, transparent);
+    color: var(--act-plate);
+    border: 1px solid color-mix(in srgb, var(--act-plate) 38%, transparent);
+  }
+  /* OUTLINE — hairline and label, nothing behind the letters. */
+  .hs[data-btn='outline'] .hs__act {
+    background-color: transparent;
+    color: var(--act-ink);
+    border: 1px solid color-mix(in srgb, var(--act-ink) 62%, transparent);
+  }
+  /* TEXT — the site's own text-button language: label plus a rule that draws
+     from the left on hover (§4.2). Nothing behind the letters. */
+  .hs[data-btn='text'] .hs__act {
+    background-color: transparent;
+    color: var(--act-ink);
+    padding-inline: 0;
+  }
+  .hs[data-btn='text'] .hs__act-in { position: relative; }
+  .hs[data-btn='text'] .hs__act-in::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform var(--dur-micro) var(--ease);
+  }
+  .hs[data-btn='text'] .hs__act:hover .hs__act-in::after { transform: scaleX(0); }
+
+  .hs[data-btn='plate'] .hs__act:hover,
+  .hs[data-btn='veil'] .hs__act:hover {
+    background-color: color-mix(in srgb, var(--act-ink) 82%, var(--act-plate));
+  }
+  .hs[data-btn='outline'] .hs__act:hover {
+    background-color: var(--act-ink);
+    color: var(--act-plate);
+  }
+
+  /* ARROW — the client's own reference (6 Aug), translated into the brand
+     rather than copied: a bare label with a drawn arrow to its right; on hover
+     the arrow's line grows into the button's full plate and the label inverts.
+     What changed in translation: #222/#fff → the settled ink/plate pair (so it
+     keeps switching with the ground like every other style), sans-serif → the
+     site's Inter, the raw 0.3s → the motion tokens, the reference's scale(3)
+     dropped (demo sizing, not design). The reference used z-index: -1 to seat
+     the plate behind the label — inside the hero's layered stack that would
+     drop it behind the wrong things, so the button isolates and stacks the
+     label above the plate explicitly instead.
+     ⚠️ At REST this style is unbacked — same legibility class as outline/text,
+     and the lab's readout reports it honestly. The plate exists only on hover. */
+  .hs__act-arrow { display: none; }
+  .hs[data-btn='arrow'] .hs__act {
+    background-color: transparent;
+    color: var(--act-ink);
+    padding-right: 3.4em;
+    isolation: isolate;
+    /* ⚠️ A `transition` shorthand REPLACES the whole set (the curtain bug) —
+       so the base list is restated here alongside the padding this style
+       animates. */
+    transition:
+      background-color var(--dur-element) var(--ease),
+      color var(--dur-element) var(--ease),
+      border-color var(--dur-element) var(--ease),
+      padding var(--dur-element) var(--ease);
+  }
+  .hs[data-btn='arrow'] .hs__act-in { position: relative; z-index: 1; }
+  .hs[data-btn='arrow'] .hs__act-flag { position: relative; z-index: 1; }
+  .hs[data-btn='arrow'] .hs__act-arrow {
+    display: block;
+    position: absolute;
+    z-index: 0;
+    right: 1em;
+    top: 50%;
+    width: 1.5em;
+    height: 2px;
+    margin-top: -1px;
+    background: var(--act-ink);
+    border-radius: inherit;
+    transition:
+      background-color var(--dur-element) var(--ease),
+      right var(--dur-element) var(--ease),
+      top var(--dur-element) var(--ease),
+      width var(--dur-element) var(--ease),
+      height var(--dur-element) var(--ease),
+      margin-top var(--dur-element) var(--ease);
+  }
+  /* The chevron head, drawn from the line's tip. `background: inherit` keeps it
+     the line's own colour — including once the line has become the plate, when
+     the head simply disappears into it, exactly as the reference does. */
+  .hs[data-btn='arrow'] .hs__act-arrow::before,
+  .hs[data-btn='arrow'] .hs__act-arrow::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    width: 0.55em;
+    height: 2px;
+    background: inherit;
+    transform-origin: right center;
+    transition:
+      right var(--dur-element) var(--ease),
+      opacity var(--dur-element) var(--ease);
+  }
+  .hs[data-btn='arrow'] .hs__act-arrow::before { transform: translateY(-50%) rotate(45deg); }
+  .hs[data-btn='arrow'] .hs__act-arrow::after { transform: translateY(-50%) rotate(-45deg); }
+  .hs[data-btn='arrow'] .hs__act:hover {
+    padding-right: 1.4em;
+    color: var(--act-plate);
+  }
+  .hs[data-btn='arrow'] .hs__act:hover .hs__act-arrow {
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin-top: 0;
+  }
+  /* THE CHEVRON MUST GO WITH THE LINE, measured on the pending chip (client
+     report, 6 Aug): the head's two dashes sit at right: -1px — 1px OUTSIDE the
+     span — and their ±45° rotation pushes corners further, so once the span
+     has become the plate they poked past its right edge as ink-coloured marks
+     on the page ground. The reference's own hover tucks them to right: 0; the
+     fade on top of that kills the sub-pixel rotation overhang too (they are
+     the plate's own colour, so fading them changes nothing else visually). */
+  .hs[data-btn='arrow'] .hs__act:hover .hs__act-arrow::before,
+  .hs[data-btn='arrow'] .hs__act:hover .hs__act-arrow::after {
+    right: 0;
+    opacity: 0;
+  }
+
+  /* ---- where the pair sits ------------------------------------------------
+     Every placement clears the fixed header from its LIVE published height
+     (`--header-h`) — never a hardcoded number, which has broken twice on this
+     project. The bottom edge clears the ivory panel the same way, from the
+     panel's own MEASURED height (`--hs-panel-h`, published by the script): the
+     panel is nearly full width on a phone, so a guessed offset would put the
+     button on top of the client's own sentence. Same rule the footer taught us
+     — a fixed overlap guess is a bug; measure it. */
+  .hs__acts {
+    /* The gap under the bar is never below 0.75rem, and that is load-bearing,
+       not taste: the header decides its colour by hit-testing the page 2px
+       below its own bottom edge. Keeping the button's top edge a clear 12px
+       under that line means the bar can never sample a BUTTON and mistake it
+       for the page's ground — the exact failure that put navy letters on a navy
+       hero when a pinned panel's child slipped through (5 Aug). */
+    --act-top: calc(var(--header-h, 110px) + clamp(0.75rem, 2vh, 1.5rem));
+    --act-bottom: clamp(1.25rem, 6vh, 4rem);
+    --act-side: var(--gutter);
+  }
+  .hs__act--lead { top: var(--act-top); left: var(--act-side); }
+  .hs__act--trail { bottom: var(--act-bottom); right: var(--act-side); }
+
+  /* COLUMN — lined up with the page's own measure instead of the screen edge,
+     so on a wide screen the buttons sit in the same column as the hero's type.
+     Done by capping the LAYER to the measure and centring it — the identical
+     pattern `.hs__inner` and `.hs__col` already use — rather than by computing
+     an offset from the viewport width. That deliberately avoids two traps this
+     project has already paid for: `100vw` includes the scrollbar (the carousel
+     sat 8px off on every screen), and the same percentage resolves differently
+     against different boxes (it rested 121px off). Nothing to get wrong here. */
+  .hs[data-placement='column'] .hs__acts {
+    max-width: 72rem;
+    margin-inline: auto;
+  }
+  /* EDGE — flush to the screen, reading as tabs off the side rather than as
+     free-floating pills. The inner corners stay square whatever the corner
+     setting, because a radius against the screen edge reads as a mistake. */
+  .hs[data-placement='edge'] .hs__acts { --act-side: 0px; }
+  .hs[data-placement='edge'] .hs__act--lead { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .hs[data-placement='edge'] .hs__act--trail { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  /* TOP — both at the top, left and right. The one arrangement that never has
+     to negotiate with the ivory panel at any width, on any phone. */
+  .hs[data-placement='top'] .hs__act--trail {
+    bottom: auto;
+    top: var(--act-top);
+  }
+
+  /* PENDING — the lab-only chip for a button whose page does not exist yet. */
+  .hs__act.is-pending { cursor: not-allowed; opacity: 0.9; flex-wrap: wrap; }
+  .hs__act-flag {
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.72;
+    font-weight: 400;
+  }
+
   @media (max-width: 52rem) {
     .hs__inner { padding-block: calc(var(--header-h, 110px) + var(--space-4)) var(--space-8); }
     .hs__opening,
     .hs__body { max-width: none; }
     /* The panel takes nearly the full width on a phone — at 68% it would be a
        column of two-word lines. */
-    .hs[data-layout='panel'] .hs__panel { width: min(100%, 34rem); }
-    .hs[data-layout='panel'] .hs__head { font-size: clamp(2.5rem, 15vw, 5rem); }
+    .hs[data-layout='panel'] .hs__panel {
+      width: min(100%, 34rem);
+      /* ⚠️ ON A PHONE THE PANEL MUST DRAW DOWNWARD WITH ITS SENTENCE, not open
+         all at once. Full-width and six lines tall, it stays mostly empty for
+         most of the word window — so the desktop fix (a quick wipe in from the
+         left) still left a tall blank ivory block, measured 166px with no ink
+         in it. Here the ivory grows top-down as the words resolve, so there is
+         never ivory without words on it.
+         The 0.65 divisor is derived, not picked: a word at vertical position v
+         starts at --q ≈ 0.7v, so the panel must reach v sooner than that or a
+         word would land outside the ivory. 0.65 keeps it just ahead the whole
+         way down. */
+      clip-path: inset(0 0 calc((1 - clamp(0, calc(var(--q) / 0.65), 1)) * 100%) 0);
+    }
+    /* ✅ THE CLIENT'S MOBILE SETTINGS (6 Aug 2026), chosen in the lab:
+       size 0.78× · nudge 0.34em. PHONE ONLY — desktop keeps 1× and no nudge,
+       which is what they signed off separately. The scale multiplies the
+       clamp rather than replacing it, so the words still grow with the screen
+       inside this breakpoint instead of freezing at one size. */
+    .hs[data-layout='panel'] .hs__head {
+      --head-scale: 0.78;
+      --head-shift: 0.34em;
+      font-size: calc(clamp(2.5rem, 15vw, 5rem) * var(--head-scale, 1));
+    }
+
+    /* ⚠️ THE PHONE COLLISION, and what measuring it actually showed. The ivory
+       panel is nearly full width on a phone — but it is NOT at the foot of the
+       screen: the stage centres the statement block (the same shrink-wrap the
+       grid trap describes), which leaves a free strip ~200px tall BELOW the
+       panel, and the button's default position already sits inside it. The
+       first version of this rule assumed the panel sat at the bottom and
+       "lifted" the button panel-height upward — straight into the panel it was
+       meant to avoid. The bug was the guess; the strip was always free.
+
+       What ships instead: the script publishes the MEASURED height of that
+       free strip (`--hs-clear-below`, the `--footer-h` pattern), and the
+       button's offset is CAPPED so its top edge can never rise past the
+       panel's bottom edge minus 8px. On every current phone the cap is slack
+       and the default wins; if a future re-wrap ever eats the strip, the
+       button gives ground toward the screen edge rather than covering the
+       client's own sentence. `top` placement never needs any of this. */
+    .hs[data-layout='panel']:not([data-placement='top']) .hs__acts {
+      --act-bottom: clamp(
+        0.5rem,
+        clamp(1.25rem, 6vh, 4rem),
+        calc(var(--hs-clear-below, 999px) - 52px)
+      );
+    }
+    /* Long labels must not force a phone into sideways scrolling, which is a
+       hard rule down to 240px. */
+    .hs__act { max-width: calc(100% - 2 * var(--gutter)); }
   }
 
   /* ---- entrance ---------------------------------------------------------- */
@@ -488,12 +941,36 @@ const total = variant === 'whole' ? 1 : units.length;
     .hs__second,
     .hs__head,
     .hs__word,
+    .hs__panel,
     .hs__body .u {
       opacity: 1 !important;
       filter: none !important;
       transform: none !important;
       clip-path: none !important;
       letter-spacing: inherit !important;
+    }
+
+    /* The buttons come out of their pinned corners and simply follow the hero
+       as two ordinary links. Nothing is pinned, so there is nothing for them to
+       be pinned against — and a corner-parked button on a page that no longer
+       holds still would drift over the type. The ground is settled navy here,
+       so they take the dark treatment and stay at 16.9:1. */
+    .hs__acts {
+      grid-area: auto;
+      position: static;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      width: 100%;
+      max-width: 72rem;
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+      margin-top: var(--space-6);
+    }
+    .hs__act {
+      position: static;
+      inset: auto;
+      transition: none;
     }
   }
 </style>
@@ -544,6 +1021,20 @@ const total = variant === 'whole' ? 1 : units.length;
       el.style.setProperty('--hs-ground', mix(IVORY, NAVY, t));
       el.style.setProperty('--hs-ink', mix(NAVY, IVORY, t));
 
+      // WHICH SETTLED PAIR THE BUTTONS WEAR. Deliberately a threshold, not a
+      // blend — the same decision the header makes about its own letters.
+      //
+      // 0.56, not 0.5, and the number was derived rather than picked: it is the
+      // point where navy-on-ground and ivory-on-ground measure the SAME
+      // contrast (~4.1:1). Flipping there is what maximises the worst moment of
+      // the crossing. Below it navy wins, above it ivory does.
+      //
+      // It also decides how visible the button's own plate is against the
+      // ground; the label's legibility does not depend on it at all, because
+      // the label sits on that plate at 16.9:1 either way. That separation is
+      // the whole point of the plate.
+      el.dataset.ground = t >= 0.56 ? 'dark' : 'light';
+
       // TELL THE BAR THE GROUND MOVED. The header re-reads what is beneath it on
       // scroll events only — but the glide keeps changing this ground for a
       // moment AFTER the last scroll event, so its final reading was taken
@@ -592,6 +1083,28 @@ const total = variant === 'whole' ? 1 : units.length;
       ticking = true;
       requestAnimationFrame(sample);
     };
+
+    // PUBLISH THE FREE STRIP BELOW THE IVORY PANEL, so the bottom-right button
+    // clears the panel by measurement instead of by guess. Same pattern as
+    // `--header-h` and `--footer-h`: the thing that knows the geometry says so,
+    // and whatever has to avoid it reads the live value. The two rects are read
+    // in the same frame, so the difference is scroll-invariant — the panel does
+    // not move relative to the stage.
+    if (typeof ResizeObserver !== 'undefined') {
+      for (const el of sections) {
+        const panel = el.querySelector<HTMLElement>('[data-hs-panel]');
+        const stage = el.querySelector<HTMLElement>('.hs__stage');
+        if (!panel || !stage) continue;
+        const publish = () => {
+          const strip = stage.getBoundingClientRect().bottom - panel.getBoundingClientRect().bottom;
+          el.style.setProperty('--hs-clear-below', `${Math.max(0, Math.round(strip))}px`);
+        };
+        const ro = new ResizeObserver(publish);
+        ro.observe(panel);
+        ro.observe(stage);
+        publish();
+      }
+    }
 
     addEventListener('scroll', onScroll, { passive: true });
     addEventListener('resize', onScroll, { passive: true });

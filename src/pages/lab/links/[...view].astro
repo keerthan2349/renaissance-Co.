@@ -1,0 +1,255 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// getStaticPaths returns an empty array outside `astro dev`, so a production
+// build generates no page and the URL does not exist.
+//
+// THE LINK-IN-BIO PAGE ("LinkStack"), client's ask 5 Aug 2026 — built here so
+// they can judge the functionality before deciding whether it joins the site.
+//
+// WHY IT IS NOT ACTUAL LINKSTACK: the folder they added is LinkStack 4.8.6 — a
+// PHP 8 / Laravel 9 app with its own SQLite database and an admin login. This
+// site is a static Astro build on Vercel, which runs no PHP. LinkStack therefore
+// cannot live inside the website at all; it could only be a separate install on
+// its own host that we link out to. Full reasoning and the options in the vault:
+// website/linkstack-decision.md.
+//
+// Each layout has its OWN ADDRESS on purpose: Astro serves a route from a single
+// render, so a `?mode=` switch returns the identical page (that mistake silently
+// invalidated a whole test run on 3 Aug).
+import Base from '@/layouts/Base.astro';
+import Icon from '@/components/primitives/Icon.astro';
+import { linksContent } from '@/components/lab/links-content';
+import { site } from '@/data/site';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [
+    { params: { view: undefined }, props: { view: 'stack' } },
+    { params: { view: 'stack' }, props: { view: 'stack' } },
+    { params: { view: 'ledger' }, props: { view: 'ledger' } },
+  ];
+}
+const { view } = Astro.props;
+
+const LAYOUTS = [
+  { id: 'stack', label: 'A · Stacked cards', href: '/lab/links/stack' },
+  { id: 'ledger', label: 'B · Ruled ledger', href: '/lab/links/ledger' },
+];
+const { intro, hours, rows } = linksContent;
+---
+
+<Base
+  title="LAB · Links — Renaissance & Co. (dev only)"
+  description="A link-in-bio page for the Instagram profile."
+  bare
+>
+  <div class:list={['lk', `lk--${view}`]}>
+    <div class="lk__inner">
+      <header class="lk__head">
+        <p class="lk__wordmark">Renaissance &amp; Co</p>
+        <p class="lk__sub">Investments</p>
+        <p class="lk__intro">{intro}</p>
+      </header>
+
+      <nav class="lk__rows" aria-label="Where to find us">
+        {rows.map((r) => (
+          <a
+            class:list={['lk__row', r.primary && 'lk__row--primary']}
+            href={r.href}
+            data-track={r.track}
+            {...(r.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
+            {r.icon && <Icon name={r.icon} class="lk__icon" />}
+            <span class="lk__text">
+              <span class="lk__label">{r.label}</span>
+              {r.note && <span class="lk__note">{r.note}</span>}
+            </span>
+            <span class="lk__chev" aria-hidden="true">→</span>
+          </a>
+        ))}
+      </nav>
+
+      <p class="lk__hours">{hours}</p>
+      <p class="lk__partner">{site.partner.line}</p>
+    </div>
+
+    <aside class="panel">
+      <p class="panel__tag">Lab · not on the site</p>
+      <div class="panel__row">
+        {LAYOUTS.map((l) => (
+          <a class:list={['chip', l.id === view && 'is-on']} href={l.href}>{l.label}</a>
+        ))}
+      </div>
+      <p class="panel__note">
+        Built as a page of this site rather than as the LinkStack app: LinkStack needs PHP and a
+        database, which this site's host does not run. Every row here comes from your existing
+        settings — clear a channel and its row disappears.
+      </p>
+    </aside>
+  </div>
+</Base>
+
+<style>
+  /* A phone-first page: this is opened from an Instagram bio, one-handed. */
+  .lk {
+    min-height: 100svh;
+    background: var(--navy);
+    color: var(--ivory);
+    padding: clamp(2.5rem, 9vh, 5rem) var(--gutter) var(--space-8);
+  }
+  .lk__inner {
+    width: 100%;
+    max-width: 30rem;      /* deliberately narrow — a phone column, even on desktop */
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .lk__head { text-align: center; display: grid; gap: 0.25rem; }
+  .lk__wordmark {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 5vw, 1.6rem);
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+  .lk__sub {
+    font-family: var(--font-util);
+    font-size: 0.6rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    /* Gold on navy is 9.0:1 with the highlight — the pairing the brand allows. */
+    color: var(--gold-highlight);
+    margin: 0;
+  }
+  .lk__intro {
+    font-family: var(--font-body);
+    font-size: var(--type-lead);
+    line-height: 1.4;
+    margin: var(--space-2) 0 0;
+    color: color-mix(in srgb, var(--ivory) 88%, transparent);
+  }
+
+  .lk__rows { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .lk__row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    /* 44px is the floor for a tap target; these are far above it. */
+    min-height: 3.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--ivory) 28%, transparent);
+    border-radius: 2px;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--dur-micro) var(--ease),
+                background-color var(--dur-micro) var(--ease);
+  }
+  .lk__row:hover,
+  .lk__row:focus-visible {
+    border-color: var(--gold-highlight);
+    background: color-mix(in srgb, var(--ivory) 6%, transparent);
+  }
+  /* The phone is the conversion, so it is the one filled row. Ivory on navy
+     inverts to navy on ivory — 16.9:1 either way. */
+  .lk__row--primary {
+    background: var(--ivory);
+    color: var(--navy);
+    border-color: var(--ivory);
+  }
+  .lk__row--primary:hover,
+  .lk__row--primary:focus-visible {
+    background: var(--ivory);
+    border-color: var(--gold-antique);
+  }
+
+  .lk__icon { font-size: 1.15rem; flex: none; }
+  .lk__text { display: grid; gap: 0.1rem; flex: 1 1 auto; min-width: 0; }
+  .lk__label {
+    font-family: var(--font-util);
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+  }
+  .lk__note {
+    font-family: var(--font-util);
+    font-size: 0.75rem;
+    opacity: 0.7;
+    overflow-wrap: anywhere;   /* the email must never push the row off-screen */
+  }
+  .lk__chev { opacity: 0.45; font-size: 0.9rem; flex: none; }
+
+  .lk__hours,
+  .lk__partner {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    text-align: center;
+    margin: 0;
+    color: color-mix(in srgb, var(--ivory) 62%, transparent);
+  }
+  .lk__hours { margin-top: var(--space-2); }
+  .lk__partner { line-height: 1.5; }
+
+  /* ---- B · the ruled ledger ---------------------------------------------- */
+  /* No boxes at all: hairline rules between rows, the way the site's own pages
+     are set. Quieter, and closer to the homepage's document feel. */
+  .lk--ledger .lk__rows { gap: 0; }
+  .lk--ledger .lk__row {
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ivory) 18%, transparent);
+    border-radius: 0;
+    padding-inline: 0;
+    background: none;
+    color: inherit;
+  }
+  .lk--ledger .lk__row:first-child { border-top: 1px solid color-mix(in srgb, var(--ivory) 18%, transparent); }
+  .lk--ledger .lk__row:hover,
+  .lk--ledger .lk__row:focus-visible {
+    background: none;
+    border-bottom-color: var(--gold-highlight);
+  }
+  .lk--ledger .lk__row--primary .lk__label { color: var(--gold-highlight); }
+
+  /* ---- the bench's own panel --------------------------------------------- */
+  .panel {
+    position: fixed;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    z-index: 60;
+    width: min(19rem, calc(100vw - 2 * var(--space-2)));
+    background: var(--ivory);
+    color: var(--navy);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    padding: 0.75rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .panel__tag {
+    font-family: var(--font-util);
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0;
+  }
+  .panel__row { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .panel__note {
+    font-family: var(--font-util);
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.28rem 0.6rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    color: var(--navy);
+    text-decoration: none;
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>

@@ -23,10 +23,21 @@ import Footer from '@/components/modules/M15-Footer/Footer.astro';
 interface Props {
   title?: string;
   description?: string;
+  /**
+   * Renders the page WITHOUT the site header and footer — for a page that is a
+   * destination in its own right rather than part of the site's navigation (the
+   * link-in-bio page opened from an Instagram profile is the first of these).
+   *
+   * Purely additive: every existing page passes nothing and is byte-for-byte
+   * unchanged. A bare page must carry whatever it needs itself — the partner
+   * line and the legal links are otherwise only in the footer.
+   */
+  bare?: boolean;
 }
 const {
   title = 'Renaissance & Co. — Dubai property, advised not sold',
   description = 'A Hyderabad advisory for Indian buyers and NRIs entering the UAE property market.',
+  bare = false,
 } = Astro.props;
 
 // Absolute URL for the share card. Resolves correctly once a domain is set in
@@ -62,11 +73,11 @@ const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url);
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to content</a>
-    <Header />
+    {!bare && <Header />}
     <main id="main">
       <slot />
     </main>
-    <Footer />
+    {!bare && <Footer />}
     <script>
       import '@/scripts/reveal.ts';
       import '@/scripts/curtain.ts';

@@ -1,7 +1,15 @@
 ---
 // M03 · Founder. Assembled only from primitives + its own content (architecture
-// rule 2). Ivory ground — the reading band between the dark hero and the
-// sections below. Portrait slot is deferred (§13); the section stands as text.
+// rule 2). Portrait slot is deferred (§13); the section stands as text.
+//
+// ⚠️ NAVY GROUND SINCE 6 AUG 2026 (client, chosen at /lab/sections/). It was
+// ivory from Wave 2 until then. The swap with M05 kept both BANDS where they
+// were and traded only the copy, so this module's default ground had to flip
+// with the page-order change — the two go together, and changing one alone
+// inverts the page. A dark band is emphasis on this site, and it now carries
+// the founder's record, which is the firm's actual proof.
+// When the portrait finally lands it will sit on navy — allowed: photography
+// here must sit over a settled dark field with no detail in it (brand §8.5).
 import Section from '@/components/primitives/Section.astro';
 import Rule from '@/components/primitives/Rule.astro';
 import Eyebrow from '@/components/primitives/Eyebrow.astro';
@@ -10,9 +18,18 @@ import Body from '@/components/primitives/Body.astro';
 import Reveal from '@/components/primitives/Reveal.astro';
 import { founderContent } from './content';
 
+// The ground is a PROP (6 Aug 2026) so the pairing with M05 can be re-judged in
+// the lab without moving any copy between files. `/judgment` composes M04 the
+// same way. ⚠️ The default IS the live page — flip it only alongside
+// page-order.ts (see the note above).
+interface Props {
+  dark?: boolean;
+}
+const { dark = true } = Astro.props;
+
 const { eyebrow, heading, paras } = founderContent;
 ---
-<Section id="founder">
+<Section id="founder" dark={dark}>
   <Rule />
   <Reveal index={0}><Eyebrow>{eyebrow}</Eyebrow></Reveal>
   <Reveal index={1}><Heading>{heading}</Heading></Reveal>

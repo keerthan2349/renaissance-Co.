@@ -8,9 +8,20 @@
 
 export const pageOrder = [
   'hero', // M01  — dark
-  'founder', // M03  — ivory · Wave 2
   'projects', // M10  — dark  · the carousel (renders nothing if there are no projects)
-  'what-we-do', // M05  — DARK navy · Wave 2
+  //             SWAPPED with 'founder' 6 Aug 2026 (client's call): the shelf now
+  //             follows the hero directly. The hero ends navy and the gradient's
+  //             gold glow is what marks the new boundary; the gradient still
+  //             resolves to exactly --navy at its bottom, which now hands off to
+  //             the founder's IVORY — a clean colour change.
+  // ⚠️ SWAPPED 6 Aug 2026 (client, chosen at /lab/sections/): the two BANDS did
+  // not move — the ivory band is still first and the navy band second — only
+  // the copy inside them traded places. That is why this reorder is paired with
+  // each module's default ground being flipped: reordering alone would have
+  // carried the grounds along and produced navy-then-ivory, the opposite of
+  // what was asked. Change one without the other and the page inverts.
+  'what-we-do', // M05  — ivory · the reading band after the shelf
+  'founder', // M03  — DARK navy · the record now takes the emphasis band
   'qualifications', // M07  — ivory · Wave 3
   'developers', // M16  — ivory · the builders strip (client placement, 4 Aug).
   //                Renders NOTHING while src/data/developers.ts is empty, so
@@ -24,11 +35,14 @@ export const pageOrder = [
   // tightening rule doesn't apply — contact's navy runs straight into it,
   // which is the seamless hand-off the client approved in the lab.
   //
-  // Grounds (28 Jul, client): hero(dark) founder(ivory) projects(GRADIENT)
-  // what-we-do(navy) qualifications(ivory) contact(navy). The projects section
-  // carries a gold-tinted gradient because it is the feature; what-we-do is flat
-  // navy beneath it. Those two are the only same-ground neighbours, and the
-  // gradient-to-flat change is what marks the boundary between them.
+  // Grounds (reordered 6 Aug, client): hero(dark, ends navy) projects(NAVY)
+  // founder(ivory) what-we-do(navy) qualifications(ivory) contact(navy).
+  // The projects section's gold-tinted feature gradient was RETIRED the same
+  // day (client): it painted a warmer, less blue field than the hero it now
+  // sits under, and they asked for the match. So hero|projects are now the
+  // exact same navy and that boundary is deliberately invisible — the hero is
+  // not a Section, so the same-ground tightening rule doesn't reach across it
+  // either. Every later boundary is still a colour change.
   //
   // ---------------------------------------------------------------------------
   // 'off-plan' (M06) was REMOVED from the homepage on 28 Jul 2026 and now sits at

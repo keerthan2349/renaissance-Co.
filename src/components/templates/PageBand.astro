@@ -42,7 +42,28 @@ const rows = marquee ? darkGroundRows(8) : [];
 <header class:list={['band', className]}>
   {marquee && (
     <div class="band__backdrop" aria-hidden="true">
-      <Marquee rows={rows} repeat={2} background class="band__mq" />
+      {/* The same blur treatment as the homepage shelf (client, 6 Aug), SCALED
+          to this band's own type. The shelf's letters are 2.65rem and take
+          1.4→4.3px; these are 1.2rem, so the same pixel values would read more
+          than twice as heavy. These are that ramp at this size — the same look,
+          not the same number. (The marquee's gap and stroke are already
+          relative for exactly this reason.)
+
+          ⚠️ `to` is 2.1px, not the 1.9px the arithmetic first suggested, and
+          the difference is the ROW COUNT. The curve peaks at the centre of the
+          stack, but no row sits exactly there — so a ramp is always sampled
+          just short of its peak, and 8 rows fall shorter than 20. Measured:
+          the shelf renders 96% of its range, this band only 86%. Matching the
+          nominal numbers would have left the band visibly softer than the
+          shelf. What is matched here is the RENDERED blur relative to the type
+          — 9.8% of the letter height in both. */}
+      <Marquee
+        rows={rows}
+        repeat={2}
+        background
+        blur={{ from: '0.6px', to: '2.1px' }}
+        class="band__mq"
+      />
     </div>
   )}
   <div class="band__inner">
@@ -72,6 +93,16 @@ const rows = marquee ? darkGroundRows(8) : [];
     position: absolute;
     inset: 0;
     pointer-events: none;
+    /* THE HEADER'S OWN STRIP STAYS PLAIN NAVY (client, 6 Aug: "extend the
+       shelf marquee part … just enough to fit the header — it looks ugly to
+       blur right away"). Every page that opens with this template has the
+       fixed header sitting over the band's top, and blurred letters directly
+       under the glass read as a smear. The marquee now begins below the bar's
+       own height — measured live (--header-h, the published value; never a
+       hardcoded number, which has broken twice) — so the glass sits on clean
+       navy and the letters start beneath it. The rows spread over the reduced
+       box; the surplus clips, exactly as the band was designed to. */
+    top: calc(var(--header-h, 110px) + 0.75rem);
   }
   /* The client-approved band recipe (3 Aug): 28% strength, 1.2rem text, the
      homepage marquee's spacing/fade/stroke numbers. */

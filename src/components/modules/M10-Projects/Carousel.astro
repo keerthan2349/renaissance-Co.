@@ -41,6 +41,9 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
       rows={backdropRows}
       repeat={BACKDROP_REPEAT}
       background
+      {/* ✅ The client's locked blur, 6 Aug: soft in the middle. These are the
+          numbers they set in the lab against THIS section's 2.65rem type. */}
+      blur={{ from: '1.4px', to: '4.3px' }}
       class="projects__marquee"
     />
 
@@ -145,13 +148,50 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
      (measured: it loaded at 360px with the back arrow live at 1920px). */
   :global(.projects--feature) {
     container-type: inline-size;
-    --ground-dark: radial-gradient(
-      125% 105% at 8% 0%,
-      color-mix(in srgb, var(--gold-deep) 26%, var(--navy)) 0%,
-      color-mix(in srgb, var(--gold-deep) 11%, var(--navy)) 38%,
-      var(--navy) 78%
-    );
+    /* ⚠️ THE GROUND NOW MATCHES THE HERO EXACTLY (client, 6 Aug: "the
+       background of the marquee is not matching the hero section blue — match
+       that"). It is plain `--navy`, the identical colour the hero ends on.
+       MEASURED, which is how the fault was confirmed rather than guessed: the
+       old gold-tinted gradient painted #0a1440 at the join but #181c38 by the
+       marquee zone — red climbing 10→24 and blue falling 64→56, i.e. a warmer,
+       muddier blue than the hero's. No seam treatment can reconcile two fields
+       that are simply different colours; this is the actual fix for the
+       boundary reading as a break.
+       ⚠️ THIS RETIRES THE SITE'S ONE GRADIENT — the gold-deep "feature ground"
+       the client chose on 28 Jul to mark this as the section they most want
+       people to land on. Superseded by their own instruction above. It is kept
+       one chip away in the lab (`data-ground='glow'`) and is one line to
+       restore. Written as a plain colour, never `color-mix()`: the glass
+       header's ground test matches `rgb(…)` only (recorded trap). */
+    --ground-dark: var(--navy);
   }
+
+  /* 🔬 LAB ONLY — the retired feature gradient, kept switchable for comparison
+     so the client can see what the match cost them. Not reachable on the live
+     page (no `data-ground` attribute is ever set there). */
+  :global(.projects--feature[data-ground='glow']) {
+    --ground-dark:
+      /* Literal, not `var(--seam-melt)`: that variable is gone with the seam
+         work, and this comparison must stay self-contained. */
+      linear-gradient(to bottom, var(--navy) 0, transparent clamp(4rem, 14svh, 10rem)),
+      radial-gradient(
+        125% 105% at 8% 0%,
+        color-mix(in srgb, var(--gold-deep) 26%, var(--navy)) 0%,
+        color-mix(in srgb, var(--gold-deep) 11%, var(--navy)) 38%,
+        var(--navy) 78%
+      );
+  }
+
+  /* ⚠️ THE FOUR SEAM TREATMENTS (melt variants · cut · gold thread · bloom)
+     WERE REMOVED ON 6 AUG at the client's word: "as the background is the same
+     there is no need to add another seamless transition." Once the shelf's
+     ground became the hero's exact navy the boundary disappeared on its own,
+     and every treatment was solving a problem that no longer existed. The last
+     remnant — the marquee's letters fading in below the join — went the same
+     day on the same reasoning ("I don't want any transition … the background
+     already blends"). `--seam-melt` is gone entirely. Do not rebuild any of it
+     speculatively: the boundary is invisible because the two grounds are the
+     same colour, which is the only mechanism needed. */
 
   /* THE MARQUEE BACKDROP — the client's approved settings, 2 Aug 2026.
      Reasoning for each number, and why three of them are not the literal value
@@ -166,9 +206,12 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     --mq-gap: 1.23em;
     --mq-tracking: 0.02em;
     --mq-row-gap: 0.6em;
-    /* 13%, up from 3% (client's final numbers, 3 Aug) — a wider soft fade at
-       the screen edges. */
-    --mq-fade: 13%;
+    /* 0 — REMOVED at the client's ask, 6 Aug ("remove the blue edge fade … it
+       doesn't suit anymore"): once the whole field was blurred, the side fades
+       read as a blue vignette instead of a soft exit. The rows now run to the
+       screen edges and cut there, which is the honest edge for an edge-to-edge
+       section. (History: 3% → 13% on 3 Aug, their number then too.) */
+    --mq-fade: 0%;
     /* 0.23 (client's final numbers, 3 Aug; was 0.38 → 0.24 → this). At 20 rows
        there is roughly three times the ink of the sparse field 0.38 was first
        judged against, so small steps read larger than they sound. */
@@ -178,7 +221,50 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
        rather than turning the outline solid on a phone — floored at 0.7px,
        below which a hairline stroke starts dropping out on 1x screens. */
     --mq-stroke: max(0.7px, 0.024em);
+    /* ⚠️ NO VERTICAL FADE AT THE TOP — removed 6 Aug at the client's word: "I
+       don't want any transition between hero and this marquee section because
+       the background already blends and it's fine." It had been the last
+       remnant of the seam work, fading the letters in below the join. With the
+       shelf's ground now the hero's exact navy there is nothing to bridge, and
+       a fade over an already-invisible boundary only softened the marquee's
+       own top edge for no reason. The rows keep their own horizontal edge
+       behaviour; nothing masks the marquee as a whole any more. */
   }
+
+  /* THE MARQUEE'S BLUR GRADIENT (client, 6 Aug: "a blur gradient from 0px to
+     2px for the marquee"). It ramps DOWN THE STACK rather than sitting flat.
+     ⚠️ 🔬 THE SHAPE IS STILL IN THE LAB — `data-blur` on the section switches
+     it at /lab/hero. Without the attribute this is the shipped default (top
+     sharp → bottom soft), so the live page is one settled thing while they
+     judge; nothing is half-applied.
+
+     HOW, and why it costs nothing: `filter: blur()` cannot itself take a
+     gradient, and the usual workaround is stacking N masked copies — which is
+     what the glass header does with backdrop layers. Here it is free: the
+     marquee is already 20 stacked rows, so each row simply takes its own blur
+     from its index (`--mq-i` / `--mq-n`, published by the primitive). 20 steps
+     across 0→2px is a 0.1px increment — smooth, with ZERO extra DOM and no
+     second copy of anything.
+
+     The blur stays on the TRACK: its content never changes, it only
+     translates, so the compositor rasterises each blurred row once and slides
+     it. On the row or the root it would re-rasterise every frame of the crawl.
+     Scoped to THIS marquee — the PageBand's and the labs' stay sharp. */
+  /* ✅ THE CLIENT'S LOCKED BLUR (6 Aug 2026): soft in the middle, 1.4px → 4.3px.
+     THE RAMP ITSELF NOW LIVES IN THE MARQUEE PRIMITIVE — the properties band
+     wanted the same treatment, and a second copy of the maths would drift the
+     first time one was tuned. The numbers are passed as a prop above, because
+     they are specific to THIS section's 2.65rem type; the band passes smaller
+     ones for its 1.2rem.
+     🔬 Only the alternative SHAPES stay here, for retuning at /lab/hero — none
+     is ever set on the live page. They override --t, which the primitive
+     declares at a lower specificity precisely so this works. */
+  :global(.projects--feature[data-blur='down'] .marquee__row) { --t: var(--u); }
+  :global(.projects--feature[data-blur='up'] .marquee__row) { --t: calc(1 - var(--u)); }
+  :global(.projects--feature[data-blur='edges'] .marquee__row) {
+    --t: max(var(--c), calc(-1 * var(--c)));
+  }
+  :global(.projects--feature[data-blur='flat'] .marquee__row) { --t: 1; }
 
   /* THE HEADING PANEL (client-approved 3 Aug, tuned in the lab): a gentle
      backdrop blur behind CURATED → "On the shelf", because the marquee text
@@ -195,8 +281,14 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
-    backdrop-filter: blur(var(--head-blur, 2px));
-    -webkit-backdrop-filter: blur(var(--head-blur, 2px));
+    /* Default DOWN from 2px to 0 (client, 6 Aug): the whole marquee now carries
+       the 2px blur itself, and keeping the panel's backdrop blur on top made
+       the heading zone a visibly softer rectangle against the uniform field —
+       the exact non-uniformity the client asked to remove. The panel structure
+       stays (the lab's slider still drives --head-blur live); one word turns
+       it back up if the heading ever needs extra help. */
+    backdrop-filter: blur(var(--head-blur, 0px));
+    -webkit-backdrop-filter: blur(var(--head-blur, 0px));
     padding: 1.5rem 1.25rem 2rem;
     margin: -1.5rem -1.25rem -2rem;
     border-radius: 1rem;
@@ -454,40 +546,106 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
       let lastTs = 0;
       let pos = 0; // float position: at 26px/s a frame moves <0.5px, which would
       //              round away to nothing if we incremented scrollLeft directly
-      let dir: 1 | -1 = 1;
-      let maxScroll = 0;
+      let period = 0; // the width of ONE full set of cards, gap included
       let resumeTimer: number | null = null;
       let busy = false; // focused, or recently interacted with
+      let focused = false; // keyboard focus inside — wrapping pauses too, see below
       let onScreen = false;
 
-      // Cached so the per-frame loop never reads layout (that would thrash).
-      const measure = () => { maxScroll = Math.max(0, track.scrollWidth - track.clientWidth); };
-      measure();
+      // ---- THE ENDLESS CIRCLE (client, 6 Aug 2026) --------------------------
+      // "If it reaches the end the first property should be seen again." Same
+      // mechanism as the marquee: the card set is DUPLICATED, and scrolling is
+      // kept inside the band [period, 2·period) by teleporting exactly one
+      // period — which is invisible by construction, because the content is
+      // periodic. This replaces the old reverse-at-each-end behaviour: a circle
+      // has no ends. (A wrap that jumped to a DIFFERENT picture was rejected on
+      // 28 Jul as reading like a glitch; a wrap that lands on identical pixels
+      // is not a jump at all.)
+      //
+      // Clones are presentation only: aria-hidden, links untabbable — a screen
+      // reader and the Tab key still see each property exactly once. They still
+      // CLICK fine (tabindex -1 removes tab order, not the link).
+      const originals = [...track.children] as HTMLElement[];
+      const setCount = originals.length;
+      const addSet = () => {
+        for (const li of originals) {
+          const c = li.cloneNode(true) as HTMLElement;
+          c.setAttribute('aria-hidden', 'true');
+          c.querySelectorAll('a').forEach((a) => a.setAttribute('tabindex', '-1'));
+          track.appendChild(c);
+        }
+      };
+      const ensureLoop = () => {
+        if (setCount === 0) return;
+        if (track.children.length === setCount) addSet();
+        // The period is MEASURED (first card of set 2 minus first card of set
+        // 1), never summed from widths — offsetLeft carries the gaps exactly.
+        period =
+          (track.children[setCount] as HTMLElement).offsetLeft -
+          (track.children[0] as HTMLElement).offsetLeft;
+        if (period <= 0) return;
+        // Enough copies that the whole wrap band plus a full viewport always
+        // exists inside the real scroll range — the marquee's top-up lesson
+        // (2 Aug): a copy count that is ample at one size is a bare gap at
+        // another, so it is measured, not assumed.
+        while (track.scrollWidth < 2.5 * period + 2 * track.clientWidth) addSet();
+      };
+      // Keep scrolling inside the band. Skipped while keyboard focus is inside:
+      // a teleport moves the focused element physically, and the browser's own
+      // scroll-to-focused would fight it — focusout normalizes instead.
+      const normalize = () => {
+        if (period <= 0 || focused) return;
+        let x = track.scrollLeft;
+        if (x >= period && x < 2 * period) return;
+        while (x < period) x += period;
+        while (x >= 2 * period) x -= period;
+        track.scrollLeft = x;
+        pos = x;
+      };
+      ensureLoop();
+      // Scroll anchoring once re-settled this track on card two after a late
+      // layout change (the /lab/carousel find) — appending clones is exactly
+      // that kind of change, so anchoring is off before the start position is
+      // set.
+      track.style.overflowAnchor = 'none';
+      // Start one period in: pixel-identical to the old start, and the circle
+      // can immediately be walked backwards too.
+      track.scrollLeft = period;
+      pos = period;
 
       const step = () => {
         const card = track.querySelector<HTMLElement>('.carousel__item');
         const gap = parseFloat(getComputedStyle(track).columnGap || '0') || 0;
         return card ? card.offsetWidth + gap : track.clientWidth * 0.8;
       };
-      const go = (d: number) =>
+      const go = (d: number) => {
+        // Pre-wrap so a smooth arrow step can never cross the band edge in
+        // flight: setting scrollLeft mid-animation cancels the glide and it
+        // would land abruptly. One card step is at most a quarter period, so
+        // after these teleports the target is always comfortably inside.
+        if (period > 0) {
+          if (d > 0 && track.scrollLeft > 1.7 * period) { track.scrollLeft -= period; pos = track.scrollLeft; }
+          if (d < 0 && track.scrollLeft < 1.3 * period) { track.scrollLeft += period; pos = track.scrollLeft; }
+        }
         track.scrollBy({ left: d * step(), behavior: reduce.matches ? 'auto' : 'smooth' });
+      };
 
       const mayRun = () =>
-        !busy && onScreen && !reduce.matches && !document.hidden && maxScroll > 4;
+        !busy && onScreen && !reduce.matches && !document.hidden && period > 4;
 
       // One continuous crawl at a constant rate — distance is derived from real
       // elapsed time, so the speed is identical on a 60Hz and a 120Hz screen and
-      // doesn't lurch after a stall. It reverses at each end rather than jumping
-      // back to the start, which would read as a glitch.
+      // doesn't lurch after a stall. FORWARD ONLY since 6 Aug (client): the
+      // circle has no ends, so there is nothing to reverse at — crossing the
+      // band edge teleports back one period onto identical pixels.
       const frame = (ts: number) => {
         if (!mayRun()) { raf = null; return; }
         if (!lastTs) lastTs = ts;
         const dt = Math.min((ts - lastTs) / 1000, 0.05); // clamp after a tab stall
         lastTs = ts;
 
-        pos += SPEED * dt * dir;
-        if (pos >= maxScroll) { pos = maxScroll; dir = -1; }
-        else if (pos <= 0) { pos = 0; dir = 1; }
+        pos += SPEED * dt;
+        if (pos >= 2 * period) pos -= period;
         track.scrollLeft = pos;
 
         raf = requestAnimationFrame(frame);
@@ -531,8 +689,8 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
         if (resumeTimer !== null) clearTimeout(resumeTimer);
         resumeTimer = window.setTimeout(() => { busy = false; startAuto(); }, 400);
       };
-      root.addEventListener('focusin', () => { busy = true; stopAuto(); });
-      root.addEventListener('focusout', release);
+      root.addEventListener('focusin', () => { busy = true; focused = true; stopAuto(); });
+      root.addEventListener('focusout', () => { focused = false; normalize(); release(); });
 
       // Only while it is actually on screen. A forgiving threshold: it should
       // start as soon as a reasonable part of it is showing, not only when it is
@@ -553,15 +711,26 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
         else startAuto();
       });
 
-      // Keep the arrows' enabled state honest. Reads no layout — maxScroll is
-      // cached — because this fires on every frame while the crawl runs.
-      const sync = () => {
-        prev.disabled = track.scrollLeft <= 1;
-        next.disabled = track.scrollLeft >= maxScroll - 1;
-      };
-      sync();
-      track.addEventListener('scroll', sync, { passive: true });
-      window.addEventListener('resize', () => { measure(); sync(); startAuto(); }, { passive: true });
+      // The arrows never disable any more: a circle always has a next and a
+      // previous. (The old rest-at-0-with-back-arrow-greyed contract is
+      // superseded by the client's endless-loop instruction, 6 Aug.)
+      prev.disabled = false;
+      next.disabled = false;
+      // The wrap itself: any scroll that leaves the band — a fling, a wheel, a
+      // scrollbar drag — is teleported back onto identical pixels. The one
+      // honest cost: a touch fling that crosses the boundary loses its
+      // remaining momentum (browsers kill momentum when scrollLeft is set).
+      // With a period this wide that crossing is rare, and the alternative was
+      // a visible hard stop at a real end.
+      track.addEventListener('scroll', normalize, { passive: true });
+      window.addEventListener('resize', () => {
+        // Card widths are viewport-relative on phones, so the PERIOD moves
+        // with a resize — re-measure, top the copies up if the viewport grew,
+        // and re-seat the position inside the new band.
+        ensureLoop();
+        normalize();
+        startAuto();
+      }, { passive: true });
 
       // If the visitor turns reduced motion on mid-visit, stop immediately.
       reduce.addEventListener?.('change', () => { if (reduce.matches) stopAuto(); else startAuto(); });

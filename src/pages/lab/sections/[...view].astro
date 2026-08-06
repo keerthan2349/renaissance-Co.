@@ -1,0 +1,191 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+//
+// THE FOUNDER ↔ WHAT-WE-DO SWAP (client's ask, 6 Aug 2026): "swap the text part
+// but with same backgrounds of what we do and founder parts — show that in labs
+// before doing."
+//
+// The KEY of it: the GROUNDS stay exactly where they are (ivory band, then navy
+// band) and only the copy trades places. That is not a reorder — reordering
+// page-order.ts would carry each module's ground along with it and produce
+// navy-then-ivory, which is the opposite of what was asked. So each module
+// takes its ground as a prop and the pair is composed both ways here.
+//
+// EACH ARRANGEMENT HAS ITS OWN ADDRESS on purpose: Astro serves a route from a
+// single render, so a `?mode=` switch returns the identical page — the mistake
+// that silently invalidated a whole test run on the carousel (3 Aug).
+//
+// The REAL neighbours sit above and below (the shelf, then qualifications), so
+// the hand-offs either side are the real thing and not an isolated demo.
+import Base from '@/layouts/Base.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
+import Founder from '@/components/modules/M03-Founder/Founder.astro';
+import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
+
+// ✅ LOCKED 6 Aug 2026: the client chose SWAPPED and it is now the live site.
+// The views are relabelled accordingly — a bench that still called the old
+// arrangement "today" would be lying, and a stale bench has cost this project
+// before.
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [
+    { params: { view: undefined }, props: { view: 'current' } },
+    { params: { view: 'current' }, props: { view: 'current' } },
+    { params: { view: 'previous' }, props: { view: 'previous' } },
+    // The old address still resolves, so any link already shared lands on the
+    // arrangement it named — which is now simply what ships.
+    { params: { view: 'swapped' }, props: { view: 'current' } },
+  ];
+}
+
+const { view } = Astro.props;
+// 'current' = what the site renders today: what-we-do on ivory, founder on navy.
+const previous = view === 'previous';
+
+const VIEWS = [
+  { id: 'current', label: 'Live now ✓', href: '/lab/sections/current' },
+  { id: 'previous', label: 'Before the swap', href: '/lab/sections/previous' },
+];
+---
+
+<Base title="LAB · Founder ↔ What we do — Renaissance & Co. (dev only)">
+  {/* The shelf above, so the hand-off into the ivory band is the real one. */}
+  <Carousel />
+
+  {previous ? (
+    <>
+      {/* The arrangement before 6 Aug: the founder's record read on the ivory
+          band and "what we do" took the navy one. Kept for comparison only. */}
+      <Founder dark={false} />
+      <WhatWeDo dark />
+    </>
+  ) : (
+    <>
+      {/* LIVE: both modules render on their own defaults, so this view cannot
+          drift from the homepage — it IS the homepage's pairing. */}
+      <WhatWeDo />
+      <Founder />
+    </>
+  )}
+
+  {/* Qualifications below, so the hand-off out of the navy band is real too. */}
+  <Qualifications />
+
+  <aside class="panel" data-panel>
+    <button type="button" class="panel__toggle" data-toggle aria-expanded="true">
+      <span data-toggle-label>Hide</span> controls
+    </button>
+    <div class="panel__body" data-body>
+      <p class="panel__tag">Lab · not on the site</p>
+
+      <p class="panel__label">Which arrangement</p>
+      <div class="panel__row">
+        {VIEWS.map((v) => (
+          <a class:list={['chip', v.id === view && 'is-on']} href={v.href}>{v.label}</a>
+        ))}
+      </div>
+
+      <p class="panel__note">
+        The <b>backgrounds do not move</b> — the ivory band stays first and the navy band second.
+        Only the words trade places.
+      </p>
+      <p class="panel__note">
+        ✓ <b>Live now:</b> “what we do” reads on ivory, and the founder's record takes the navy
+        band.<br />
+        <b>Before the swap:</b> the founder's record read on ivory, then “what we do” on navy.
+      </p>
+      <p class="panel__note">
+        Worth judging with your eyes: on this site a <b>dark band is emphasis</b> — the brand's
+        premise is an ivory page with navy used to mark what matters. Swapped, that emphasis lands
+        on the founder's record, which is the firm's actual proof. It also means the
+        <b> portrait</b>, whenever it arrives, would sit on navy — allowed, since photography here
+        must sit over a settled dark field.
+      </p>
+    </div>
+  </aside>
+</Base>
+
+<style>
+  .panel {
+    position: fixed;
+    right: var(--space-2);
+    top: calc(var(--header-h, 110px) + var(--space-2));
+    z-index: 60;
+    width: min(21rem, calc(100vw - 2 * var(--space-2)));
+    background: color-mix(in srgb, var(--ivory) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    box-shadow: 0 18px 44px -22px rgba(10, 20, 64, 0.6);
+    font-family: var(--font-util);
+    color: var(--navy);
+  }
+  .panel__toggle {
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--hairline);
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .panel__body {
+    padding: 0.75rem;
+    display: grid;
+    gap: 0.6rem;
+    max-height: min(72svh, 40rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .panel[data-closed] .panel__body { display: none; }
+  .panel__tag {
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0;
+  }
+  .panel__label {
+    font-size: var(--type-eyebrow);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0.15rem 0 -0.2rem;
+  }
+  .panel__row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .panel__note { font-size: 0.6875rem; line-height: 1.45; color: var(--text-muted); margin: 0; }
+  .panel__note b { color: var(--navy); }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.28rem 0.6rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+    text-decoration: none;
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>
+
+<script>
+  function initSectionsLab() {
+    const panel = document.querySelector<HTMLElement>('[data-panel]');
+    if (!panel || (panel as any).__wired) return;
+    (panel as any).__wired = true;
+    panel.querySelector('[data-toggle]')?.addEventListener('click', () => {
+      const closed = panel.hasAttribute('data-closed');
+      panel.toggleAttribute('data-closed', !closed);
+      const label = panel.querySelector('[data-toggle-label]');
+      if (label) label.textContent = closed ? 'Hide' : 'Show';
+    });
+  }
+  document.addEventListener('astro:page-load', initSectionsLab);
+  document.addEventListener('DOMContentLoaded', initSectionsLab);
+  initSectionsLab();
+</script>

@@ -8,6 +8,9 @@ import { site } from '@/data/site';
 import { legalPages } from '@/data/legal';
 import { footerLinks } from '@/data/nav';
 import logoColor from '@/assets/logo-color.png';
+// Its words live in this module's own content file (architecture rule 1); the
+// firm's name, partner line, legal pages and link list stay site-wide.
+import { footerContent } from './content';
 
 const year = new Date().getFullYear();
 ---
@@ -40,7 +43,7 @@ const year = new Date().getFullYear();
     </nav>
 
     <p class="footer__meta">
-      © {year} {site.name}. Figures are indicative and dated; nothing here is a return promise. See the <a href="/disclaimer">disclaimer</a>.
+      © {year} {site.name}. {footerContent.meta} <a href={footerContent.metaLinkHref}>{footerContent.metaLinkLabel}</a>.
     </p>
   </div>
 </footer>

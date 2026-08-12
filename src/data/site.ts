@@ -52,4 +52,37 @@ export const site = {
   partner: {
     line: 'Renaissance & Co. Investments is the exclusive India partner of Bellavierre, Dubai. UAE transactions are completed through Bellavierre.',
   },
+
+  // ── THE HEADER'S SINGLE CONTACT BUTTON (client's settings, 11 Aug 2026,
+  // chosen at /lab/contact-button/) ──────────────────────────────────────
+  // It REPLACES the header's Instagram, WhatsApp and phone buttons on every
+  // page. `enabled: false` brings all three straight back and removes this
+  // button — the whole change is one word, which is the revert path.
+  //
+  // ⚠️ The phone was the header's conversion from Wave 1 until now. All four
+  // channels still live in the contact section, and this button's job is to
+  // take people there. Their explicit call.
+  headerCta: {
+    enabled: true,
+
+    // Set in normal case; the button uppercases it in CSS, as the rest of the
+    // site's small labels do. Their words, 11 Aug: "BEGIN A CONVERSATION".
+    label: 'Begin a conversation',
+
+    // How the page travels to the contact section when the section is ON THIS
+    // page (the homepage and /judgment). Their numbers: settle · 2400ms.
+    //   settle  — the site's own curve family: fast away, settling into the end
+    //   glide   — eases in and out
+    //   browser — the browser's native smooth scroll (sets its own speed)
+    scrollMs: 2400,
+    scrollEase: 'settle' as 'settle' | 'glide' | 'browser',
+
+    // ⚠️ ON A PAGE WITH NO CONTACT SECTION (every property page, the shelf,
+    // the legal pages) THERE IS NO SCROLL AT ALL — the button is a real link
+    // to `/#contact`, so the site's own page transition cross-fades and the
+    // browser lands directly on the section. Their instruction, 11 Aug:
+    // "no scroll animation, simply redirect with seamless fade to contact us
+    // section of main page." Nothing needs configuring for it; it is what an
+    // honest <a href> does, which is why the button was built as one.
+  },
 } as const;

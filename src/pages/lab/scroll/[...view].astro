@@ -1,0 +1,302 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// Same guard as every other lab: getStaticPaths returns an empty array outside
+// `astro dev`, so a production build generates no page.
+//
+// SMOOTH SCROLLING bench (client's ask, 12 Aug 2026): "smooth scrolling that
+// co relates to the scroll length motion from the user but scrolling should be
+// easing out smoothly not a straight line … give me multiple options inside
+// the labs first."
+//
+// It drives the REAL engine (`M19-Scroll/scroll.ts`) through the same
+// `<html data-smooth-*>` attributes the shipping path uses, and writes them
+// with the module's own `scrollAttrs()` helper — so the bench and the site can
+// never be two different implementations. The live site is untouched:
+// `M19-Scroll/content.ts → enabled` is false, so no page outside this lab
+// carries any of these attributes and the engine is never fetched.
+//
+// The page composes the REAL homepage sections, hero and film included,
+// because those are what this feature can break: the hero's 280svh pinned
+// rail, M18's scroll-driven film and the header's ground probe all read the
+// real scroll position. Judge the feel here AND watch those three.
+import Base from '@/layouts/Base.astro';
+import Hero from '@/components/modules/M01-Hero/Hero.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
+import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+import Founder from '@/components/modules/M03-Founder/Founder.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
+import Contact from '@/components/modules/M09-Contact/Contact.astro';
+import Showcase from '@/components/modules/M18-Showcase/Showcase.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+---
+
+<Base title="LAB · Smooth scrolling — Renaissance & Co. (dev only)">
+  <Hero />
+  <Carousel />
+  <WhatWeDo />
+  <Founder />
+  <Qualifications />
+  <Contact />
+  <Showcase />
+
+  <aside class="sc-panel" aria-label="Lab controls">
+    <p class="sc-panel__tag">
+      Lab · smooth scrolling
+      <button type="button" id="sc-toggle" aria-label="Collapse panel">–</button>
+    </p>
+
+    <p class="sc-panel__hint">
+      <b>Scroll the page with your wheel or trackpad and switch between the four.</b>
+      Each one still travels exactly as far as you push — what changes is how it comes to rest.
+      The live site is untouched while you judge.
+    </p>
+
+    <p class="sc-panel__group">The option</p>
+    <div class="sc-panel__row sc-panel__chips">
+      <button type="button" class="chip" data-mode="off">Native</button>
+      <button type="button" class="chip is-on" data-mode="lerp">Glide</button>
+      <button type="button" class="chip" data-mode="settle">Settle</button>
+      <button type="button" class="chip" data-mode="momentum">Momentum</button>
+    </div>
+    <p class="sc-panel__hint" id="sc-desc"></p>
+
+    <p class="sc-panel__group">How much</p>
+    <label class="sc-panel__row">
+      <span>Glide · ease <output id="sc-lerp-o">0.12</output></span>
+      <input type="range" id="sc-lerp" min="0.04" max="0.35" step="0.01" value="0.12" />
+    </label>
+    <label class="sc-panel__row">
+      <span>Settle · time <output id="sc-dur-o">900</output>ms</span>
+      <input type="range" id="sc-dur" min="300" max="1600" step="50" value="900" />
+    </label>
+    <label class="sc-panel__row">
+      <span>Momentum · tail <output id="sc-friction-o">0.92</output></span>
+      <input type="range" id="sc-friction" min="0.80" max="0.97" step="0.01" value="0.92" />
+    </label>
+    <label class="sc-panel__row">
+      <span>Distance per push <output id="sc-mult-o">1.00</output>×</span>
+      <input type="range" id="sc-mult" min="0.5" max="2" step="0.05" value="1" />
+    </label>
+
+    <p class="sc-panel__group">Also</p>
+    <div class="sc-panel__row sc-panel__chips">
+      <button type="button" class="chip is-on" id="sc-keys">Arrow / page keys</button>
+      <button type="button" class="chip" id="sc-touch">Touch too</button>
+    </div>
+    <p class="sc-panel__hint">
+      ⚠️ <b>Leave “Touch too” off unless you want to feel why.</b> A phone's own scrolling is
+      already smooth, and taking it over fights your finger and breaks pull-to-refresh. It is the
+      version of this that genuinely deserves the name scroll-jacking.
+    </p>
+
+    <div class="sc-panel__row sc-panel__chips">
+      <button type="button" class="chip" id="sc-copy">Copy settings</button>
+    </div>
+
+    <p class="sc-panel__hint sc-panel__warn">
+      ⚠️ <b>This is the one thing your rulebook bans by name.</b> Green-lighting it makes a sixth
+      motion exception, and unlike the other five it touches every page and every visitor. Anyone
+      with “reduce motion” on gets plain native scrolling in every option. No library was added.
+    </p>
+  </aside>
+</Base>
+
+<style is:global>
+  .sc-panel {
+    position: fixed;
+    /* BOTTOM-LEFT and height-capped: the hero's own "Browse properties" button
+       rides the bottom-right, and the header's contact button the top-right.
+       A tall panel in either corner sat over the element being judged and
+       swallowed its clicks — twice now (hero bench 6 Aug, contact bench
+       11 Aug). */
+    left: 1rem;
+    bottom: 1rem;
+    z-index: 60; /* above the header (50) so it never sits under the glass */
+    width: min(21rem, calc(100vw - 2rem));
+    max-height: min(74vh, calc(100vh - 7rem));
+    overflow-y: auto;
+    background: var(--ivory);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: var(--space-2);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--navy) 18%, transparent);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--navy);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .sc-panel.is-collapsed > *:not(.sc-panel__tag) { display: none; }
+  .sc-panel__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0;
+  }
+  #sc-toggle {
+    margin-left: auto;
+    width: 1.6rem;
+    height: 1.6rem;
+    line-height: 1;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    font-size: 1rem;
+    color: var(--navy);
+    background: none;
+    cursor: pointer;
+  }
+  .sc-panel__group {
+    margin: 0.2rem 0 0;
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .sc-panel__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+  }
+  .sc-panel__row input[type='range'] { width: 100%; }
+  .sc-panel__chips { flex-direction: row; flex-wrap: wrap; gap: 0.35rem; }
+  .sc-panel .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    background: none;
+    color: var(--navy);
+    cursor: pointer;
+  }
+  .sc-panel .chip.is-on {
+    background: var(--navy);
+    color: var(--ivory);
+    border-color: var(--navy);
+  }
+  .sc-panel__hint {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+  .sc-panel__warn {
+    border-top: 1px solid var(--hairline);
+    padding-top: 0.5rem;
+    color: var(--gold-antique);
+  }
+</style>
+
+<script>
+  // The bench writes the SAME attributes the shipping path writes, then asks
+  // the engine to re-read them. There is no second implementation here.
+  // It imports the engine itself because Base only fetches it when the site
+  // has it switched on — which, until the client green-lights it, is never.
+  const root = document.documentElement;
+  root.setAttribute('data-smooth', 'lerp');
+  await import('@/components/modules/M19-Scroll/scroll');
+
+  const panel = document.querySelector('.sc-panel') as HTMLElement;
+
+  const DESC: Record<string, string> = {
+    off: 'Native — the browser\'s own scrolling, exactly as the live site is today. Here to judge the other three against.',
+    lerp: 'Glide — the page is always easing toward where you have pushed it, and slows as it arrives. Never a hard stop; the most continuous of the three.',
+    settle: 'Settle — each push runs the site\'s OWN easing curve, the same one every other transition here uses. Leaves quickly, settles into the end.',
+    momentum: 'Momentum — your push adds speed and friction takes it away, like a fling. The longest tail, and the one that carries on the most after you stop.',
+  };
+
+  const refresh = () => (window as any).__smoothScrollRefresh?.();
+
+  const set = (key: string, value: string) => {
+    root.setAttribute(key, value);
+    refresh();
+  };
+
+  // ⚠️ OPEN ON THE MODULE'S OWN SETTINGS, never on a copy of them. The bench
+  // writes the identical attribute set the shipping path writes, from the same
+  // helper, so the two can never disagree — and the controls below are seeded
+  // FROM those values rather than from the numbers typed into the markup.
+  const { scroll: cfg, scrollAttrs } = await import('@/components/modules/M19-Scroll/content');
+  const opening = scrollAttrs({ ...cfg, mode: cfg.mode === 'off' ? 'lerp' : cfg.mode });
+  for (const [k, v] of Object.entries(opening)) set(k, v);
+
+  const desc = document.getElementById('sc-desc')!;
+  const showDesc = (m: string) => { desc.textContent = DESC[m] ?? ''; };
+
+  const markMode = (m: string) => {
+    panel.querySelectorAll('[data-mode]').forEach((b) =>
+      b.classList.toggle('is-on', (b as HTMLElement).dataset.mode === m));
+    showDesc(m);
+  };
+  markMode(opening['data-smooth']);
+
+  panel.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const m = btn.dataset.mode!;
+      set('data-smooth', m);
+      markMode(m);
+    });
+  });
+
+  const slider = (id: string, attr: string, fmt: (v: string) => string) => {
+    const input = document.getElementById(id) as HTMLInputElement;
+    const out = document.getElementById(`${id}-o`) as HTMLOutputElement;
+    if (opening[attr] !== undefined) input.value = opening[attr]; // seed from the module
+    const apply = () => {
+      out.textContent = fmt(input.value);
+      set(attr, input.value);
+    };
+    input.addEventListener('input', apply);
+    apply();
+  };
+  slider('sc-lerp', 'data-smooth-lerp', (v) => (+v).toFixed(2));
+  slider('sc-dur', 'data-smooth-dur', (v) => String(Math.round(+v)));
+  slider('sc-friction', 'data-smooth-friction', (v) => (+v).toFixed(2));
+  slider('sc-mult', 'data-smooth-mult', (v) => (+v).toFixed(2));
+
+  const toggle = (id: string, attr: string) => {
+    const btn = document.getElementById(id)!;
+    btn.classList.toggle('is-on', opening[attr] === 'on'); // seed from the module
+    btn.addEventListener('click', () => {
+      const on = btn.classList.toggle('is-on');
+      set(attr, on ? 'on' : 'off');
+    });
+  };
+  toggle('sc-keys', 'data-smooth-keys');
+  toggle('sc-touch', 'data-smooth-touch');
+
+  document.getElementById('sc-copy')!.addEventListener('click', async () => {
+    const line = [
+      `mode ${root.dataset.smooth}`,
+      `ease ${root.dataset.smoothLerp}`,
+      `time ${root.dataset.smoothDur}ms`,
+      `tail ${root.dataset.smoothFriction}`,
+      `distance ${root.dataset.smoothMult}×`,
+      `keys ${root.dataset.smoothKeys}`,
+      `touch ${root.dataset.smoothTouch}`,
+    ].join(' · ');
+    try {
+      await navigator.clipboard.writeText(line);
+      const b = document.getElementById('sc-copy')!;
+      const t = b.textContent;
+      b.textContent = 'Copied ✓';
+      setTimeout(() => { b.textContent = t; }, 1400);
+    } catch {
+      prompt('Copy this line and send it back:', line);
+    }
+  });
+
+  document.getElementById('sc-toggle')!.addEventListener('click', () => {
+    panel.classList.toggle('is-collapsed');
+  });
+</script>

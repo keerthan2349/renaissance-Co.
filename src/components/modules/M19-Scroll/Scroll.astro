@@ -1,0 +1,39 @@
+---
+/**
+ * M19 · Scroll — how the page comes to rest when the visitor scrolls.
+ *
+ * ── WHAT KIND OF MODULE THIS IS ─────────────────────────────────────────────
+ * Site-wide plumbing, not a visual section — the same shape as M17 Meta:
+ *   · it renders NOTHING;
+ *   · it never appears in `page-order.ts`;
+ *   · it is included ONCE, by `Base.astro`;
+ *   · it never imports from another module, and no module imports it.
+ * Delete this folder and the one line in Base, and the site is unchanged.
+ *
+ * ── REUSING IT ──────────────────────────────────────────────────────────────
+ * Drop the folder into any Astro project, render <Scroll /> once in the
+ * layout, and set `content.ts`. It has no dependency on this site: no token,
+ * no primitive, no other module — it reads `--ease` from wherever it lands and
+ * falls back to its own curve if that token does not exist.
+ *
+ * ⚠️ OFF UNTIL THE CLIENT SAYS OTHERWISE (`content.ts → enabled`), and gated
+ * TWICE on purpose:
+ *   1. `Base.astro` does not RENDER this component while it is disabled, which
+ *      is what keeps its script out of the built page entirely. A conditional
+ *      around a <script> *tag* does not do that — Astro hoists and bundles
+ *      every script in a component that renders, so wrapping the tag still
+ *      shipped 259 bytes and two extra requests to every page (measured).
+ *   2. The dynamic import below, so even where the component does render the
+ *      engine is only fetched when it is actually switched on.
+ */
+---
+
+<script>
+  import { scroll, scrollAttrs } from './content';
+
+  if (scroll.enabled) {
+    const root = document.documentElement;
+    for (const [name, value] of Object.entries(scrollAttrs())) root.setAttribute(name, value);
+    void import('./scroll');
+  }
+</script>

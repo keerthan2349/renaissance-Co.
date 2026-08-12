@@ -35,14 +35,17 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     {/* The marquee backdrop (client-approved 2 Aug 2026). It rides in
         Section's `backdrop` slot, which renders full-bleed behind the content
         column and takes no pointer events, so the carousel above it keeps
-        every tap, swipe and arrow click. Settings live in ./backdrop.ts. */}
+        every tap, swipe and arrow click. Settings live in ./backdrop.ts.
+        The blur pair below is the client's locked ramp (6 Aug): soft in the
+        middle — the numbers they set in the lab against THIS section's
+        2.65rem type. (Comment moved OUT of the attribute list, 11 Aug: a
+        comment between attributes parses in the compiler but breaks
+        `astro check` — the recorded 29 Jul trap.) */}
     <Marquee
       slot="backdrop"
       rows={backdropRows}
       repeat={BACKDROP_REPEAT}
       background
-      {/* ✅ The client's locked blur, 6 Aug: soft in the middle. These are the
-          numbers they set in the lab against THIS section's 2.65rem type. */}
       blur={{ from: '1.4px', to: '4.3px' }}
       class="projects__marquee"
     />

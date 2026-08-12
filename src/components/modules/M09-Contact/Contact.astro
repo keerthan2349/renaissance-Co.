@@ -17,14 +17,26 @@ import Button from '@/components/primitives/Button.astro';
 import Reveal from '@/components/primitives/Reveal.astro';
 import Icon from '@/components/primitives/Icon.astro';
 import { site } from '@/data/site';
+// Its words live in this module's own content file (architecture rule 1), the
+// channels in the site-wide control room. Copy belongs to the module; facts
+// belong to the site.
+import { contactContent } from './content';
 
 const { phone, phoneDisplay, whatsapp, hours, email, instagramUrl, instagramLabel } = site.contact;
+const { eyebrow, line } = contactContent;
 ---
 <Section id="contact" dark>
   <Rule />
-  <Reveal index={0}><Eyebrow>Contact</Eyebrow></Reveal>
+  <Reveal index={0}><Eyebrow>{eyebrow}</Eyebrow></Reveal>
   <Reveal index={1}>
-    <h2 class="contact__line">We would rather talk<br />than exchange forms.</h2>
+    <h2 class="contact__line">
+      {line.map((part, i) => (
+        <>
+          {i > 0 && <br />}
+          {part}
+        </>
+      ))}
+    </h2>
   </Reveal>
 
   {/* The `data-track` attributes below are the stable hooks M17 (Meta plumbing)

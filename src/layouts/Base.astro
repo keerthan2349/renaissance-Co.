@@ -19,6 +19,20 @@ import '@fontsource/inter/600.css';
 import { ClientRouter } from 'astro:transitions';
 import Header from '@/components/Header.astro';
 import Footer from '@/components/modules/M15-Footer/Footer.astro';
+// M19 · Scroll — site-wide plumbing, included once, renders nothing visible.
+// Its own folder owns every setting it has; this layout knows only that it
+// exists. Same shape M17 Meta will take. Delete these two lines and the one
+// below and the module is gone with no other trace.
+//
+// ⚠️ THE `enabled` GUARD BELONGS HERE, NOT INSIDE THE COMPONENT, AND THE
+// DIFFERENCE IS MEASURABLE. Astro hoists and bundles every <script> declared
+// in a component that RENDERS, so a conditional around the script *tag* still
+// shipped it (measured: the page loaded a 259-byte module and two extra
+// requests while the feature was switched off). A conditional around the
+// *component* is what actually removes it — with this false the built page
+// loads no script of its own at all.
+import { scroll as scrollCfg } from '@/components/modules/M19-Scroll/content';
+import Scroll from '@/components/modules/M19-Scroll/Scroll.astro';
 
 interface Props {
   title?: string;
@@ -82,6 +96,7 @@ const ogImage = new URL('/og-image.png', Astro.site ?? Astro.url);
       import '@/scripts/reveal.ts';
       import '@/scripts/curtain.ts';
     </script>
+    {scrollCfg.enabled && <Scroll />}
   </body>
 </html>
 

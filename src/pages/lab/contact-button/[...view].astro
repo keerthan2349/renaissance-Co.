@@ -1,0 +1,455 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// Same guard as every other lab: getStaticPaths returns an empty array outside
+// `astro dev`, so a production build generates no page.
+//
+// THE SINGLE CONTACT BUTTON bench (client's ask, 11 Aug 2026): the header's
+// three channel buttons (Instagram · WhatsApp · phone) replaced by ONE button
+// that glides the page down to the contact section.
+//
+// ✅ STATUS: the client's settings are LIVE on the site (site.ts → headerCta).
+// This bench is now a RETUNING bench, not a preview of something pending — it
+// drives the real header's own attributes and variables, and every control
+// initialises FROM what the server shipped, so it can never show different
+// values from the live bar. Do not hardcode opening values here.
+//
+// The page composes the REAL homepage sections, Showcase included, so the
+// grounds the button crosses are genuine. ⚠️ Its section ORDER is its own, so
+// its contact section sits nearer the end than the homepage's — judge the
+// glide's landing on the real homepage (verify-contact-button block 1c), not
+// here. Judging it on this page's geometry reported three failures the live
+// site does not have.
+import Base from '@/layouts/Base.astro';
+import Hero from '@/components/modules/M01-Hero/Hero.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
+import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+import Founder from '@/components/modules/M03-Founder/Founder.astro';
+import Qualifications from '@/components/modules/M07-Qualifications/Qualifications.astro';
+import Contact from '@/components/modules/M09-Contact/Contact.astro';
+import Showcase from '@/components/modules/M18-Showcase/Showcase.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+---
+
+<Base title="LAB · One contact button — Renaissance & Co. (dev only)">
+  <Hero />
+  <Carousel />
+  <WhatWeDo />
+  <Founder />
+  <Qualifications />
+  <Contact />
+  <Showcase />
+
+  <aside class="cb-panel" aria-label="Lab controls">
+    <p class="cb-panel__tag">
+      Lab · one contact button <span id="cb-w"></span>
+      <button type="button" id="cb-toggle" aria-label="Collapse panel">–</button>
+    </p>
+    <div class="cb-panel__row cb-panel__chips">
+      <button type="button" class="chip" id="cb-copy">Copy settings</button>
+    </div>
+    <p class="cb-panel__hint">
+      ✅ <b>Your settings are LIVE on the local site</b> — this bench now opens on exactly what the
+      real header carries, so the two can't disagree. Keep retuning here any time.
+      <b>Click the button in the bar to feel the scroll.</b> Scrolling, touching or any key
+      cancels it mid-flight; anyone with reduced motion on jumps instantly — both by design.
+    </p>
+
+    <p class="cb-panel__group">The label</p>
+    <label class="cb-panel__row">
+      <span>Button text</span>
+      <input type="text" id="cb-label" value="Begin a conversation" maxlength="30" />
+    </label>
+
+    <p class="cb-panel__group">Style</p>
+    <div class="cb-panel__row cb-panel__chips">
+      <button type="button" class="chip is-on" data-style="mix">Mix ✦ yours</button>
+      <button type="button" class="chip" data-style="outline">Outline</button>
+      <button type="button" class="chip" data-style="plate">Plate</button>
+      <button type="button" class="chip" data-style="underline">Underline</button>
+      <button type="button" class="chip" data-style="fill">Bare → fill</button>
+    </div>
+    <p class="cb-panel__hint">
+      <b>Mix is your own reference, in the brand</b> — the drifting field, now in your two colours
+      only: navy moving over ivory grounds, ivory moving over navy ones, with the border and label
+      in that same colour. Hover settles the field and the label inverts, as yours does. Outline is
+      the bar's current language · Plate has the most contrast margin · Underline is the menu's ·
+      Bare → fill is the hero buttons' feel. All five switch navy ⇄ ivory with the ground.
+    </p>
+
+    <p class="cb-panel__group">Mix · the colour field</p>
+    <p class="cb-panel__hint">
+      <b>Two colours only, swapping with the ground</b> — navy drifting over the ivory sections,
+      ivory drifting over the navy ones. The border and the label are that same colour.
+    </p>
+    <div class="cb-panel__row cb-panel__chips">
+      <button type="button" class="chip" data-field="drops">Drops</button>
+      <button type="button" class="chip is-on" data-field="orb">Orb</button>
+      <button type="button" class="chip" data-field="sweep">Sweep</button>
+      <button type="button" class="chip" data-field="tide">Tide</button>
+    </div>
+    <p class="cb-panel__hint">
+      <b>Drops</b> is what you have — six soft blobs orbiting · <b>Orb</b> is one large one
+      <b>bouncing around inside the button</b> · <b>Sweep</b> is a true gradient turning through it ·
+      <b>Tide</b> is two broad washes. Same colour and same speed setting in all four (the orb's
+      path is longer, so it runs proportionally longer).
+    </p>
+    <label class="cb-panel__row">
+      <span>Background opacity <b id="cb-v-op">100%</b></span>
+      <input type="range" id="cb-op" min="30" max="150" step="5" value="85" />
+    </label>
+    <label class="cb-panel__row">
+      <span>Gradient size <b id="cb-v-size">1.00×</b></span>
+      <input type="range" id="cb-size" min="60" max="220" step="5" value="170" />
+    </label>
+    <label class="cb-panel__row">
+      <span>Drift speed <b id="cb-v-speed">2.6s</b></span>
+      <input type="range" id="cb-speed" min="12" max="80" step="2" value="18" />
+    </label>
+    <p class="cb-panel__hint">
+      ⚠️ <b>The opacity slider stops at 150% on purpose, and that number was measured.</b> The
+      field is the same colour as the label, so past a point the text starts dissolving into it.
+      Worst pixel behind the label, across all four shapes and both grounds:
+      <b>100% → 6.4:1</b> · <b>130% → 5.1:1</b> · <b>150% → 4.5:1</b> (the floor) ·
+      155% → 4.4 ✗ · 175% → 3.7 ✗. So the whole range you can reach stays readable.
+    </p>
+    <div class="cb-panel__row cb-panel__chips">
+      <button type="button" class="chip is-on" data-glow="drift">Always drifting</button>
+      <button type="button" class="chip" data-glow="hover">Only on hover</button>
+      <button type="button" class="chip" data-glow="still">Frozen</button>
+    </div>
+    <p class="cb-panel__hint cb-panel__hint--warn">
+      ⚠️ <b>Always drifting = a fifth motion exception.</b> Your rulebook allows four (the carousel
+      crawl · the marquees · the film · the builders strip) and says not to add a fifth — and this
+      one would run forever in the bar of <b>every page</b>. <b>Only on hover</b> gives the same
+      effect and breaks no rule. <b>Frozen</b> keeps the colour and drops the movement. Anyone with
+      reduce-motion on sees it still in all three. Your call, made knowing it.
+    </p>
+    <p class="cb-panel__hint">
+      Label legibility on the live bar, worst pixel of the field:
+      <b id="cb-ratio">measuring…</b> — floor 4.5:1.
+    </p>
+
+    <p class="cb-panel__group">Icon</p>
+    <div class="cb-panel__row cb-panel__chips">
+      <button type="button" class="chip is-on" data-icon="none">None</button>
+      <button type="button" class="chip" data-icon="chevron">Chevron ↓</button>
+      <button type="button" class="chip" data-icon="arrow">Arrow ↓</button>
+    </div>
+
+    <p class="cb-panel__group">Shape &amp; size</p>
+    <div class="cb-panel__row cb-panel__chips">
+      <button type="button" class="chip is-on" data-corners="soft">Soft corners</button>
+      <button type="button" class="chip" data-corners="sharp">Sharp</button>
+    </div>
+    <label class="cb-panel__row">
+      <span>Size <b id="cb-v-scale">1.00×</b></span>
+      <input type="range" id="cb-scale" min="85" max="135" step="5" value="85" />
+    </label>
+
+    <p class="cb-panel__group">The scroll</p>
+    <label class="cb-panel__row">
+      <span>Duration <b id="cb-v-ms">1200ms</b></span>
+      <input type="range" id="cb-ms" min="300" max="3000" step="100" value="2400" />
+    </label>
+    <div class="cb-panel__row cb-panel__chips">
+      <button type="button" class="chip" data-ease="glide">Glide</button>
+      <button type="button" class="chip is-on" data-ease="settle">Settle</button>
+      <button type="button" class="chip" data-ease="browser">Browser</button>
+    </div>
+    <p class="cb-panel__hint">
+      <b>Glide</b> eases in and out — made for long travel · <b>Settle</b> is the site's own
+      curve family (fast out of the gate, settling into the landing) · <b>Browser</b> is the
+      browser's native smooth scroll (it sets its own speed — the duration slider does nothing
+      there).
+    </p>
+    <p class="cb-panel__hint">
+      Green-lighting this means the header's Instagram, WhatsApp and phone buttons come out
+      <b>on every page</b> — the contact section keeps all four channels, and this button leads
+      there. On pages without a contact section the button navigates home to it.
+    </p>
+  </aside>
+</Base>
+
+<style>
+  .cb-panel {
+    position: fixed;
+    /* BOTTOM-LEFT, deliberately — the element being judged lives in the bar's
+       top-RIGHT, and the hero's own "Browse properties" button rides the
+       bottom-right beneath it. A tall bottom-right panel reached up and sat
+       exactly over the CTA, swallowing its clicks — the same fault the hero
+       bench had on 6 Aug, re-caught here by the suite. Height is capped well
+       short of the bar for the same reason. */
+    left: 1rem;
+    bottom: 1rem;
+    z-index: 60; /* above the header (50) so it never sits under the glass */
+    width: min(20rem, calc(100vw - 2rem));
+    max-height: min(72vh, calc(100vh - 8rem));
+    overflow-y: auto;
+    background: var(--ivory);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: var(--space-2);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--navy) 18%, transparent);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--navy);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .cb-panel__tag {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-gold-safe);
+    margin: 0;
+  }
+  #cb-toggle {
+    margin-left: auto;
+    width: 1.6rem;
+    height: 1.6rem;
+    line-height: 1;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    font-size: 1rem;
+    color: var(--navy);
+    background: none;
+  }
+  .cb-panel.is-collapsed > *:not(.cb-panel__tag) { display: none; }
+  .cb-panel.is-collapsed { width: auto; }
+  .cb-panel__row { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; }
+  .cb-panel__row span { display: flex; justify-content: space-between; }
+  .cb-panel__row b { color: var(--text-gold-safe); font-weight: 600; }
+  .cb-panel__row input[type='range'] { width: 100%; accent-color: var(--gold-antique); }
+  .cb-panel__row input[type='text'] {
+    font: inherit;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    color: var(--navy);
+  }
+  .cb-panel__chips { flex-direction: row; flex-wrap: wrap; gap: 0.35rem; }
+  .cb-panel__hint { margin: 0; color: var(--text-muted); line-height: 1.45; }
+  .cb-panel__group {
+    margin: 0.35rem 0 0;
+    font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--navy);
+    border-top: 1px solid var(--hairline);
+    padding-top: 0.5rem;
+  }
+  .chip {
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--hairline);
+    border-radius: 2px;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+  }
+  .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+</style>
+
+<script>
+  function initCtaLab() {
+    const header = document.querySelector<HTMLElement>('[data-header]');
+    const label = document.getElementById('cb-label') as HTMLInputElement | null;
+    if (!header || !label || (label as any).__wired) return;
+    (label as any).__wired = true;
+    const cta = header.querySelector<HTMLElement>('[data-cta]');
+    const ctaLabel = header.querySelector<HTMLElement>('.header__cta-label');
+    if (!cta || !ctaLabel) return;
+
+    // The header's own script picks states per scroll frame; nudge it after
+    // every change so the bar re-resolves without waiting for a real scroll.
+    const refresh = () => window.dispatchEvent(new Event('scroll'));
+    if (!header.dataset.ctaIcon) header.dataset.ctaIcon = 'none';
+    refresh();
+
+    // ⚠️ THE BENCH READS THE SHIPPED SETTINGS — it never carries its own copy.
+    // Since the client's settings went live (11 Aug) this page tunes the real
+    // header, so every control below is initialised FROM what the server sent.
+    // Hardcoding the panel's opening values would let the bench and the site
+    // drift apart, which is the one thing every lab on this project must not
+    // do (the marquee lab was fixed for exactly this on 3 Aug).
+    const hcs = getComputedStyle(header);
+    const cssNum = (n: string, dflt: number) => {
+      const v = parseFloat(hcs.getPropertyValue(n));
+      return Number.isFinite(v) ? v : dflt;
+    };
+    const setChip = (attr: string, value: string) => {
+      document.querySelectorAll<HTMLElement>(`.chip[data-${attr}]`).forEach((c) => {
+        c.classList.toggle('is-on', c.dataset[attr] === value);
+      });
+    };
+
+    // One helper wires a chip row: exclusive selection + an apply callback.
+    const chips = (attr: string, apply: (v: string) => void) => {
+      document.querySelectorAll<HTMLElement>(`.chip[data-${attr}]`).forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document
+            .querySelectorAll(`.chip[data-${attr}]`)
+            .forEach((c) => c.classList.remove('is-on'));
+          btn.classList.add('is-on');
+          apply(btn.dataset[attr]!);
+          refresh();
+        });
+      });
+    };
+
+    chips('style', (v) => (header.dataset.ctaStyle = v));
+    chips('glow', (v) => (header.dataset.ctaGlow = v));
+    chips('field', (v) => (header.dataset.ctaField = v));
+    chips('icon', (v) => (header.dataset.ctaIcon = v));
+    chips('corners', (v) =>
+      header.style.setProperty('--cta-radius', v === 'sharp' ? '0px' : '2px'),
+    );
+    chips('ease', (v) => (cta.dataset.ctaEase = v));
+
+    // The label. Empty falls back to what is shipped rather than to an
+    // invisible tap target.
+    const shippedLabel = ctaLabel.textContent?.trim() || 'Begin a conversation';
+    label.value = shippedLabel;
+    const applyLabel = () => {
+      ctaLabel.textContent = label.value.trim() || shippedLabel;
+    };
+    label.addEventListener('input', applyLabel);
+    applyLabel();
+
+    // Every chip and slider below opens on the shipped value.
+    setChip('style', header.dataset.ctaStyle ?? 'mix');
+    setChip('field', header.dataset.ctaField ?? 'drops');
+    setChip('glow', header.dataset.ctaGlow ?? 'drift');
+    setChip('icon', header.dataset.ctaIcon ?? 'none');
+    setChip('ease', cta.dataset.ctaEase ?? 'glide');
+    setChip('corners', getComputedStyle(cta).borderRadius === '0px' ? 'sharp' : 'soft');
+
+    // Sliders.
+    const scale = document.getElementById('cb-scale') as HTMLInputElement;
+    const vScale = document.getElementById('cb-v-scale')!;
+    scale.value = String(Math.round(cssNum('--cta-scale', 1) * 100));
+    const applyScale = () => {
+      const v = Number(scale.value) / 100;
+      vScale.textContent = `${v.toFixed(2)}×`;
+      header.style.setProperty('--cta-scale', String(v));
+    };
+    scale.addEventListener('input', applyScale);
+    applyScale();
+
+    const op = document.getElementById('cb-op') as HTMLInputElement;
+    const vOp = document.getElementById('cb-v-op')!;
+    op.value = String(Math.round(cssNum('--mix-user', 1) * 100));
+    const applyOp = () => {
+      vOp.textContent = `${op.value}%`;
+      header.style.setProperty('--mix-user', String(Number(op.value) / 100));
+    };
+    op.addEventListener('input', applyOp);
+    applyOp();
+
+    const size = document.getElementById('cb-size') as HTMLInputElement;
+    const vSize = document.getElementById('cb-v-size')!;
+    size.value = String(Math.round(cssNum('--mix-scale', 1) * 100));
+    const applySize = () => {
+      const v = Number(size.value) / 100;
+      vSize.textContent = `${v.toFixed(2)}×`;
+      header.style.setProperty('--mix-scale', String(v));
+    };
+    size.addEventListener('input', applySize);
+    applySize();
+
+    const speed = document.getElementById('cb-speed') as HTMLInputElement;
+    const vSpeed = document.getElementById('cb-v-speed')!;
+    speed.value = String(Math.round(cssNum('--mix-speed', 2.6) * 10));
+    const applySpeed = () => {
+      const s = (Number(speed.value) / 10).toFixed(1);
+      vSpeed.textContent = `${s}s`;
+      header.style.setProperty('--mix-speed', `${s}s`);
+    };
+    speed.addEventListener('input', applySpeed);
+    applySpeed();
+
+    const ms = document.getElementById('cb-ms') as HTMLInputElement;
+    const vMs = document.getElementById('cb-v-ms')!;
+    ms.value = cta.dataset.ctaMs ?? '1200';
+    const applyMs = () => {
+      vMs.textContent = `${ms.value}ms`;
+      cta.dataset.ctaMs = ms.value;
+    };
+    ms.addEventListener('input', applyMs);
+    applyMs();
+
+    // THE CONTRAST READOUT. These are MEASURED numbers, not computed ones:
+    // the suite freezes the drift at four angles on each ground, hides the
+    // label, finds the worst pixel of the field inside the label's own box,
+    // and contrasts the label colour against it. verify-contact-button
+    // asserts these exact figures — if the field is ever retuned and this
+    // table is not, the suite fails. A bench that can drift from the truth is
+    // the one thing this project keeps proving it must not have.
+    const MEASURED = { dark: '7.8:1', light: '6.9:1' };
+    const ratio = document.getElementById('cb-ratio');
+    const showRatio = () => {
+      if (!ratio) return;
+      if (header.dataset.ctaStyle !== 'mix') {
+        ratio.textContent = '— (mix only)';
+        return;
+      }
+      const light = header.classList.contains('is-solid');
+      ratio.textContent = `${light ? MEASURED.light : MEASURED.dark} on this ground`;
+    };
+    showRatio();
+    window.addEventListener('scroll', showRatio, { passive: true });
+    document.querySelectorAll('.chip[data-style]').forEach((c) => c.addEventListener('click', showRatio));
+
+    // Live width readout — the header lays out differently under 52rem and
+    // again under 374px, so the panel says what is being looked at.
+    const wOut = document.getElementById('cb-w');
+    const showW = () => {
+      if (wOut) wOut.textContent = `(${document.documentElement.clientWidth}px)`;
+    };
+    showW();
+    window.addEventListener('resize', showW, { passive: true });
+
+    // Collapse — on a phone the panel covers the very corner being judged.
+    const panel = document.querySelector('.cb-panel');
+    const toggle = document.getElementById('cb-toggle');
+    toggle?.addEventListener('click', () => {
+      const collapsed = panel?.classList.toggle('is-collapsed');
+      toggle.textContent = collapsed ? '+' : '–';
+      toggle.setAttribute('aria-label', collapsed ? 'Expand panel' : 'Collapse panel');
+    });
+
+    // One line with every value, so settings come back exactly rather than
+    // read off a screenshot.
+    const copy = document.getElementById('cb-copy');
+    copy?.addEventListener('click', () => {
+      const on = (attr: string) =>
+        (document.querySelector(`.chip[data-${attr}].is-on`) as HTMLElement | null)?.dataset[
+          attr
+        ] ?? '?';
+      const line =
+        `label "${label.value.trim() || 'Begin a conversation'}" · style ${on('style')} · ` +
+        (on('style') === 'mix'
+          ? `field ${on('field')} · opacity ${op.value}% · size ${(Number(size.value) / 100).toFixed(2)} · ` +
+            `glow ${on('glow')} @ ${(Number(speed.value) / 10).toFixed(1)}s · `
+          : '') +
+        `icon ${on('icon')} · corners ${on('corners')} · size ${(Number(scale.value) / 100).toFixed(2)} · ` +
+        `scroll ${ms.value}ms ${on('ease')}`;
+      navigator.clipboard?.writeText(line);
+      copy.textContent = 'Copied ✓';
+      setTimeout(() => (copy.textContent = 'Copy settings'), 1600);
+    });
+  }
+  document.addEventListener('astro:page-load', initCtaLab);
+  document.addEventListener('DOMContentLoaded', initCtaLab);
+  initCtaLab();
+</script>

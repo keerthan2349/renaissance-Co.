@@ -33,9 +33,30 @@ import { site } from '@/data/site';
 // — it lives in the footer alone (client, 28 Jul 2026). See nav.ts.
 import { headerLinks } from '@/data/nav';
 
+// ⚠️ A SECTION-SNAPPING TOGGLE BRIEFLY LIVED ON THE NAV ROW (12 Aug 2026) and
+// was REMOVED at the client's word the same day, together with the phone
+// swipe behaviour it controlled: "remove the section swiping on a phone and
+// the toggle option i dont like that". Deleted rather than parked, the same
+// way the four seam treatments went on 6 Aug. Don't rebuild it speculatively —
+// and note the header carries NOTHING of M19: that module is plumbing, wired
+// once in Base.astro and nowhere else.
+
 const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
+// THE SINGLE CONTACT BUTTON (client's settings, 11 Aug 2026). One setting in
+// site.ts decides which the header carries: this button, or the three channel
+// buttons it replaces. Nothing is rendered twice and nothing is hidden with
+// CSS — flipping `enabled` swaps the markup itself, so the live page never
+// carries the half nobody is using.
+const cta = site.headerCta;
 ---
-<header class="header header--glass" data-nav-fix="strong" data-header>
+<header
+  class:list={['header', 'header--glass', cta.enabled && 'header--cta']}
+  data-nav-fix="strong"
+  data-cta-style={cta.enabled ? 'mix' : undefined}
+  data-cta-field={cta.enabled ? 'orb' : undefined}
+  data-cta-glow={cta.enabled ? 'drift' : undefined}
+  data-header
+>
   {/* The liquid-glass stack (client, 4 Aug): four progressive blur layers +
       an optional tint, rendered only while .header--glass is on — display:none
       otherwise, so today's shipped header is untouched by its presence. */}
@@ -63,7 +84,7 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
         See vault/website/m17-meta-plumbing.md. */}
     <div class="header__contact">
       {
-        instagramUrl && (
+        !cta.enabled && instagramUrl && (
           <a
             href={instagramUrl}
             class="header__icon-btn"
@@ -83,7 +104,7 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
            sits between Instagram and the phone so the two tap-to-message
            channels read as one group with the phone keeping the last, most
            prominent spot. Unset `whatsapp` in site.ts and it disappears. */
-        whatsapp && (
+        !cta.enabled && whatsapp && (
           <a
             href={`https://wa.me/${whatsapp}`}
             class="header__icon-btn"
@@ -98,17 +119,56 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
       }
 
       {
-        phone && phoneDisplay ? (
-          <a href={`tel:${phone}`} class="header__phone" aria-label={`Call ${phoneDisplay}`} data-track="call">
-            <Icon name="phone" />
-            <span class="header__phone-num">{phoneDisplay}</span>
-          </a>
-        ) : (
-          <span class="header__phone header__phone--todo" title="Add a business phone number in src/data/site.ts">
-            TODO&nbsp;· phone
-          </span>
-        )
+        !cta.enabled &&
+          (phone && phoneDisplay ? (
+            <a href={`tel:${phone}`} class="header__phone" aria-label={`Call ${phoneDisplay}`} data-track="call">
+              <Icon name="phone" />
+              <span class="header__phone-num">{phoneDisplay}</span>
+            </a>
+          ) : (
+            <span class="header__phone header__phone--todo" title="Add a business phone number in src/data/site.ts">
+              TODO&nbsp;· phone
+            </span>
+          ))
       }
+
+      {/* THE SINGLE CONTACT BUTTON (client's ask, 11 Aug 2026) — one button
+          that glides the page down to the contact section, REPLACING all three
+          channel buttons (Instagram · WhatsApp · phone) when it ships.
+          LAB-GATED exactly as the glass was: display:none unless the header
+          carries .header--cta, which only /lab/contact-button/ sets today —
+          the live header is byte-identical while the client tunes. On green
+          light the class + chosen data-cta-* land here and the three buttons
+          above come out.
+          · An <a href="/#contact">, NOT a <button>: with JS off, or on a page
+            with no contact section, it simply navigates — the homepage's own
+            scroll-padding lands the section clear of the bar. The script
+            upgrades the click to a smooth glide when #contact exists here.
+          · data-track per the M17 standing rule (new hook: header-contact).
+            The header's call/whatsapp/instagram hooks leave WITH their
+            buttons — the contact section keeps every channel and every hook. */}
+      {cta.enabled && (
+      <a
+        href="/#contact"
+        class="header__cta"
+        data-cta
+        data-cta-ms={String(cta.scrollMs)}
+        data-cta-ease={cta.scrollEase}
+        data-track="header-contact"
+      >
+        {/* The moving field lives on its OWN layer, not on the button, so the
+            clipping it needs cannot also clip the button's tap area. See the
+            44px note in the styles. */}
+        <span class="header__cta-field" aria-hidden="true"></span>
+        <span class="header__cta-label">{cta.label}</span>
+        <svg class="header__cta-icon header__cta-icon--chevron" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3.5 6l4.5 4.5L12.5 6" />
+        </svg>
+        <svg class="header__cta-icon header__cta-icon--arrow" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 2.5v10M3.8 8.6L8 12.9l4.2-4.3" />
+        </svg>
+      </a>
+      )}
     </div>
   </div>
   <span class="header__rule" aria-hidden="true"></span>
@@ -142,14 +202,40 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
   .header__nav { grid-area: nav; }
   .header__contact { grid-area: contact; }
 
-  /* Narrow screens: the non-wrapping wordmark and the 44px buttons cannot
-     share one row, and the buttons get pushed off the right edge — the phone,
-     the conversion, disappearing entirely. Give the brand its own row and put
-     the contact beside the nav instead. Measured, not assumed — originally at
-     under 320px with two buttons; the WhatsApp icon (3 Aug) made it three,
-     which moved the tipping point up: 345px of layout failed, 375px fits, so
-     the rearrangement now triggers at ≤374px. */
-  @media (max-width: 23.375rem) {
+  /* ⚠️ PHONES KEEP THE CONTACT BUTTON IN THE TOP-RIGHT CORNER (client, 12 Aug
+     2026: "i want the begin conversation button moved up … to fit in the
+     corner just as the previous version neatly").
+     It had been dropping to a second row beside the nav from 431px down,
+     which put the control level with PROPERTIES instead of in the corner the
+     three icon buttons used to hold. That rearrangement was the right answer
+     for a button at its full drawn width; the client's instruction is to keep
+     the corner and spend size instead.
+     ⚠️ IT ONLY FITS BECAUSE THREE THINGS ARE TIGHTENED ON PHONES, EACH
+     MEASURED, NOT GUESSED — see the CTA block below for the button's own two.
+     The wordmark is 178px and must never wrap; the rest of the row is all the
+     button gets. Free space beside the brand, measured with these values:
+     430px→199 · 414px→184 · 402px→176 · 393px→175 · 390px→172 · 384px→166 ·
+     375px→157. The drawn button is 168px at 0.85× and 148px at 0.75×.
+     ⚠️ RE-MEASURE EVERY ONE OF THESE IF THE LABEL IS EVER LENGTHENED — and
+     measure the BUTTON'S OWN RECTANGLE, never page overflow: the header is
+     `position: fixed`, so its spill never widens the document and
+     `scrollWidth` stays silent the whole way down (that is exactly how this
+     button once ran off the edge at 414–375px with nothing reporting it). */
+  @media (max-width: 51.999rem) {
+    .header__inner {
+      /* A local override that buys the button ~8px. The --gutter token itself
+         is untouched, and the ≤319px squeeze below still applies on top. */
+      padding-inline: 1rem;
+      column-gap: 0.5rem;
+    }
+  }
+
+  /* ≤374px: below this the wordmark and a button carrying a WORD genuinely
+     cannot share a row at any readable size, so the brand takes its own row
+     and the button sits beside the nav at its full drawn size. This is the
+     same tipping point the three icon buttons needed (3 Aug) before the
+     button carried a word — the ≤431px version of it is retired. */
+  @media (max-width: 374px) {
     .header__inner {
       /* minmax(0, 1fr), not 1fr: a grid track defaults to a min-content floor,
          so the nav refused to shrink and pushed the contact off the edge even
@@ -316,6 +402,461 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
     text-transform: uppercase;
     font-size: var(--type-eyebrow);
     letter-spacing: 0.1em;
+  }
+
+  /* ---- THE SINGLE CONTACT BUTTON (lab-gated variant, 11 Aug 2026) ----
+     Hidden until .header--cta is on the header; the variant then swaps the
+     three channel buttons for this one. Every knob the lab drives is a custom
+     property or data attribute on the header, so the bench exercises exactly
+     the code that would ship — the same one-implementation rule as the glass.
+       --cta-scale   size multiplier (padding + type follow together)
+       --cta-radius  corner radius (soft 2px / sharp 0)
+       data-cta-style  outline · plate · underline · fill
+       data-cta-icon   none · chevron · arrow
+     Colours switch with the bar's own is-solid state — ivory ink over dark
+     grounds, navy over light — so every style holds 16.9:1 at rest on both.
+     The states are discrete (no mid-crossing blend), so there is no 1.0:1
+     moment of the kind the hero buttons' 'follow' mode had. */
+  /* ── THE CLIENT'S LOCKED SETTINGS (11 Aug 2026, chosen at
+     /lab/contact-button/ against the measured readout):
+       label "Begin a conversation" (in site.ts) · style mix · field ORB
+       (bouncing) · background opacity 85% · gradient size 1.70× · drift 1.8s,
+       always drifting · no icon · soft corners · size 0.85× · scroll settle,
+       2400ms (in site.ts).
+     They live HERE, on .header--cta, and NOT on the button itself — the bench
+     sets its own values inline on the header, and an inline style beats a
+     stylesheet, so the lab can still retune without a second copy of anything
+     existing. Putting them on .header__cta would make the component outrank
+     its own bench, which is the trap this file already carries a note about. */
+  .header--cta {
+    --mix-user: 0.85;
+    --mix-scale: 1.7;
+    --mix-speed: 1.8s;
+    --cta-scale: 0.85;
+    --cta-radius: 2px;
+  }
+
+  /* ── PHONES: the two values that make the corner placement possible
+     (client, 12 Aug 2026 — see the layout note further up). The button keeps
+     its drawn SIZE at 0.85× on every phone from 375px up; what gives way is
+     its internal padding and its tracking, because those cost width without
+     costing legibility, where scaling the whole button down would have taken
+     the label to ~9px. Measured widths with these values: 168px at 0.85×,
+     148px at 0.75×, against 157px of free space at 375px.
+     ⚠️ THIS BLOCK MUST STAY BELOW `.header--cta` ABOVE. A media query adds NO
+     specificity, so an equal-specificity override only wins by source order —
+     the exact trap that once made the mobile header's blur falloff silently
+     lose to the desktop rule. ── */
+  @media (max-width: 51.999rem) {
+    .header--cta .header__cta {
+      --cta-pad: 0.75rem;
+      --cta-track: 0.05em;
+    }
+    /* 375–401px: the same corner, one step smaller — the client's own
+       sanctioned lever ("if you want reduce size of it").
+       ⚠️ 402px IS MEASURED, NOT ROUNDED. The button draws 168px at 0.85×, and
+       the clearance beside the wordmark runs 402px→16px · 393px→8px ·
+       390px→5px · 384px→−1px: it is already off the edge at 384. The step
+       down to 0.75× (148px drawn) restores 19–25px of clearance across that
+       band. A first attempt put this threshold at 383px and 384/390 failed —
+       recorded so the number is never "tidied" back up. */
+    @media (max-width: 401px) {
+      .header--cta { --cta-scale: 0.75; }
+    }
+    /* ≤374px the brand takes its own row (see the layout block above), so the
+       button gets a full row back and returns to exactly its locked look. */
+    @media (max-width: 374px) {
+      .header--cta { --cta-scale: 0.85; }
+      .header--cta .header__cta {
+        --cta-pad: 1.05rem;
+        --cta-track: 0.09em;
+      }
+    }
+  }
+  .header__cta { display: none; }
+  .header--cta .header__cta {
+    display: inline-flex;
+    position: relative;
+    isolation: isolate; /* the fill style's plate stays inside this button's own stack */
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    min-height: calc(2.75rem * var(--cta-scale, 1)); /* 44px tap floor at scale 1 */
+    /* --cta-pad and --cta-track are var-with-fallback AT THE POINT OF USE so
+       the phone block below (and the bench) can move them without this rule
+       outranking its own caller — the trap this file already carries a note
+       about, re-made once on this button's own sliders. */
+    padding-inline: calc(var(--cta-pad, 1.05rem) * var(--cta-scale, 1));
+    font-family: var(--font-util);
+    font-size: calc(var(--type-caption) * var(--cta-scale, 1));
+    letter-spacing: var(--cta-track, 0.09em);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ivory);
+    border-radius: var(--cta-radius, 2px);
+    transition:
+      color var(--dur-micro) var(--ease),
+      border-color var(--dur-micro) var(--ease),
+      background var(--dur-micro) var(--ease);
+  }
+  /* ⚠️ THE TAP TARGET IS HELD AT 44px NO MATTER THE SIZE SETTING.
+     The client chose size 0.85×, which draws a button ~37px tall — the look
+     they picked in the lab, but under this site's own 44px floor (every other
+     control here meets it, and the checks assert it). This invisible strip
+     restores the target without changing a pixel of what is drawn: it is a
+     child of the anchor, so it is the same link to click.
+     It is also WHY the moving field sits on .header__cta-field instead of on
+     the button: the field needs `overflow: hidden` to clip to the button's
+     shape, and that clip would have cut this strip off too — hit-testing is
+     clipped exactly like painting. Two layers, each clipping only itself. */
+  .header--cta .header__cta::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: max(2.75rem, 100%);
+  }
+  .header__cta-field {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+    display: none;
+  }
+  .header--cta[data-cta-style='mix'] .header__cta-field { display: block; }
+  .header__cta-label { position: relative; }
+  .header__cta-icon {
+    display: none;
+    width: 1em;
+    height: 1em;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: square;
+  }
+  .header--cta[data-cta-icon='chevron'] .header__cta-icon--chevron { display: block; }
+  .header--cta[data-cta-icon='arrow'] .header__cta-icon--arrow { display: block; }
+
+  /* outline — the header's own current language (the phone button's). */
+  .header--cta[data-cta-style='outline'] .header__cta {
+    border: 1px solid color-mix(in srgb, var(--ivory) 36%, transparent);
+  }
+  .header--cta.is-solid[data-cta-style='outline'] .header__cta {
+    color: var(--navy);
+    border-color: color-mix(in srgb, var(--navy) 22%, transparent);
+  }
+
+  /* plate — solid, inverting with the ground. The style with the most margin. */
+  .header--cta[data-cta-style='plate'] .header__cta { background: var(--ivory); color: var(--navy); }
+  .header--cta.is-solid[data-cta-style='plate'] .header__cta { background: var(--navy); color: var(--ivory); }
+
+  /* The bench styles' hover states, gated for the same reason the shipped
+     one is (see the note on the mix flood below): a stuck :hover on a phone
+     reads as a different button. */
+  @media (hover: hover) {
+    .header--cta[data-cta-style='outline'] .header__cta:hover { border-color: var(--ivory); }
+    .header--cta.is-solid[data-cta-style='outline'] .header__cta:hover { border-color: var(--navy); }
+    .header--cta[data-cta-style='plate'] .header__cta:hover {
+      background: color-mix(in srgb, var(--ivory) 86%, transparent);
+    }
+    .header--cta.is-solid[data-cta-style='plate'] .header__cta:hover {
+      background: color-mix(in srgb, var(--navy) 86%, transparent);
+    }
+  }
+
+  /* underline — the nav links' language: bare text, the line draws on hover. */
+  .header--cta[data-cta-style='underline'] .header__cta { padding-inline: 0.35rem; }
+  .header--cta[data-cta-style='underline'] .header__cta-label::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.3em;
+    height: 1px;
+    background: var(--gold-highlight);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-micro) var(--ease);
+  }
+  @media (hover: hover) {
+    .header--cta[data-cta-style='underline'] .header__cta:hover .header__cta-label::after {
+      transform: scaleX(1);
+    }
+  }
+  .header--cta.is-solid[data-cta-style='underline'] .header__cta-label::after { background: var(--gold); }
+
+  /* mix — THE CLIENT'S OWN REFERENCE (pasted 11 Aug 2026): a soft field of
+     colour drifting inside the button, the label floating directly on it
+     (their "noborder" variant). Translated into the brand, not copied:
+     · the rainbow blobs → the brand's own tones (the palette is FIXED — no
+       colour may be added): deep golds + navy over dark grounds, highlight
+       golds + ivory over light, swapped with the bar's own state so the
+       label holds ≥4.5:1 against the field's worst pixel (measured in the
+       suite at four frozen angles on both grounds);
+     · Roboto + 4px tracking → Inter + the site's tracking; the demo's
+       2em/3em padding and 4em margin dropped (bench sizing, not design);
+     · the reference re-keyframes all six box-shadows every frame — a
+       per-frame REPAINT. Ours keeps the constellation still and ORBITS it
+       with a transform: compositor-only, same drift, none of the paint
+       cost, and the bar's glass stack above never re-samples for it;
+     · the reference's double text (anchor text + attr(data-text) overlay)
+       is its codepen mechanism, not a design — this button has a real label;
+     · hover floods the field with a settled plate and the label inverts —
+       the reference's white flood, in brand.
+     ⚠️ MOTION, stated plainly: as pasted, this animation runs FOREVER in
+     the bar of every page. Four client-approved motion exceptions exist and
+     the rulebook says "do not add a fifth" — green-lighting the DRIFT glow
+     is consciously making it the fifth (the M16 precedent: shown the note,
+     then chosen). data-cta-glow offers drift · hover (runs only under the
+     pointer — breaks no rule) · still (frozen field). The global
+     reduced-motion rule freezes all three regardless. */
+  /* ── TWO COLOURS ONLY (client, 11 Aug 2026): "navy blue gradient moving
+     when the background is ivory, and when the background is navy I want the
+     ivory moving — these two are the only colours of the button." So the
+     field is ONE hue, and which hue it is flips with the bar's own ground
+     state. `--mix-rgb` is that hue; everything else derives from it, so the
+     two directions can never drift apart. ── */
+  .header--cta[data-cta-style='mix'] .header__cta {
+    /* The clip that keeps the field inside the button's shape lives on
+       .header__cta-field, NOT here — putting it on the button would clip the
+       44px tap strip too. See the note on ::after above. */
+    --mix-rgb: 249 250 245; /* --ivory, moving over the navy ground */
+    /* ⚠️ NOT SYMMETRIC, AND IT CANNOT BE — MEASURED, NOT ASSUMED. Ivory
+       lightens navy far faster than navy darkens ivory, so the SAME alphas
+       that read gently on the light ground brightened the dark one until the
+       ivory label sat at 4.2:1, under the 4.5:1 floor. The dark ground
+       therefore takes ~60% of the strength. `--mix-k` is that scalar; the
+       geometry and the hue stay identical, so the two directions still read
+       as one object. */
+    --mix-k: 0.6;
+    /* --mix-user (client, 11 Aug: "give me the option to tweak the background
+       opacity") scales BOTH grounds together, so the pair keeps its relative
+       balance; --mix-scale is the size of the moving shape ("increase … the
+       background moving gradient").
+       ⚠️ NEITHER IS DECLARED HERE, DELIBERATELY. They are read as
+       var(--name, 1) at the point of use, because a component that declares
+       its own default outranks the caller trying to set it — declaring
+       `--mix-user: 1` here made the bench's slider silently do NOTHING while
+       every value still read correctly. That is the marquee-opacity trap from
+       3 Aug, re-made and caught by measuring rather than by looking.
+       ⚠️ The opacity slider is CAPPED at the bench, and the cap is measured,
+       not chosen: at the top of the range the label must still clear 4.5:1 on
+       both grounds and in all four field shapes. */
+    /* The border, clearly visible (client's ask) — the same one colour. */
+    border: 1px solid rgb(var(--mix-rgb) / 0.8);
+    /* ⚠️ THE ALPHAS ARE LOAD-BEARING, NOT DECORATION. Six blobs of ONE
+       colour COMPOSITE where they overlap (two at 0.2 read as 0.36, three as
+       0.49), and past roughly half strength the field reaches the label's own
+       colour and the text dissolves into it. These values are the ones the
+       suite measures at four angles on both grounds — retune them and re-run
+       verify-contact-button, which prints the worst pixel behind the label. */
+    --mix-a1: calc(0.2 * var(--mix-k) * var(--mix-user, 1));
+    --mix-a2: calc(0.13 * var(--mix-k) * var(--mix-user, 1));
+    --mix-a3: calc(0.22 * var(--mix-k) * var(--mix-user, 1));
+    --mix-a4: calc(0.11 * var(--mix-k) * var(--mix-user, 1));
+    --mix-a5: calc(0.17 * var(--mix-k) * var(--mix-user, 1));
+    --mix-a6: calc(0.09 * var(--mix-k) * var(--mix-user, 1));
+    --mix-u: calc(1em * var(--mix-scale, 1));
+    --mix-field:
+      0 var(--mix-u) calc(2 * var(--mix-u)) calc(2.2 * var(--mix-u)) rgb(var(--mix-rgb) / var(--mix-a1)),
+      calc(2.4 * var(--mix-u)) calc(0.4 * var(--mix-u)) calc(2 * var(--mix-u)) calc(1.8 * var(--mix-u)) rgb(var(--mix-rgb) / var(--mix-a2)),
+      calc(-2.4 * var(--mix-u)) calc(-1 * var(--mix-u)) calc(2 * var(--mix-u)) calc(1.8 * var(--mix-u)) rgb(var(--mix-rgb) / var(--mix-a3)),
+      calc(-2.2 * var(--mix-u)) calc(1.2 * var(--mix-u)) calc(2 * var(--mix-u)) calc(2.2 * var(--mix-u)) rgb(var(--mix-rgb) / var(--mix-a4)),
+      0 calc(-1.8 * var(--mix-u)) calc(2 * var(--mix-u)) calc(2 * var(--mix-u)) rgb(var(--mix-rgb) / var(--mix-a5)),
+      calc(1.8 * var(--mix-u)) calc(-1 * var(--mix-u)) calc(2 * var(--mix-u)) calc(1.6 * var(--mix-u)) rgb(var(--mix-rgb) / var(--mix-a6));
+  }
+
+  /* ── FOUR SHAPES FOR THE MOVING FIELD (client: "change the background
+     moving gradient"). All four are the same one colour, the same orbit and
+     the same speed — only the shape of what is orbiting differs.
+     'drops' and 'orb' are soft blobs (a 0×0 element wearing box-shadows, the
+     reference's own mechanism); 'sweep' and 'tide' are real gradients on a
+     sized layer. The keyframe translates before rotating, which is a no-op on
+     the 0×0 shapes and what centres the sized ones. ── */
+  .header--cta[data-cta-field='orb'] .header__cta {
+    --mix-field:
+      calc(-1.1 * var(--mix-u)) calc(0.5 * var(--mix-u)) calc(3.2 * var(--mix-u)) calc(2.6 * var(--mix-u))
+        rgb(var(--mix-rgb) / calc(var(--mix-a1) + var(--mix-a3)));
+  }
+  /* ⚠️ 'sweep' and 'tide' need to REPLACE the base ::before's size and
+     box-shadow, and they tie it at specificity — so their rules MUST sit
+     after it in this file. Placed before, they lost silently and both shapes
+     rendered as 'drops' (caught by a pixel diff, not by reading the code).
+     Third time this exact trap has appeared here: the glass block, the mobile
+     falloff, now this. They live just below the ::before rule. */
+  /* Over a light ground the pair simply swaps: navy moves, navy writes. */
+  .header--cta.is-solid[data-cta-style='mix'] .header__cta {
+    color: var(--navy);
+    --mix-rgb: 10 20 64; /* --navy, moving over the ivory ground */
+    --mix-k: 1;
+  }
+  .header--cta[data-cta-style='mix'] .header__cta-field::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    z-index: -1; /* under the button's own background, so the hover flood covers it */
+    border-radius: 100%;
+    box-shadow: var(--mix-field);
+    /* Sped up from the reference's 5s (client, 11 Aug: "speed up the gradient
+       animation a bit to make it noticeable"). Lab-tunable via --mix-speed. */
+    animation: cta-mix var(--mix-speed, 2.6s) linear infinite;
+    animation-play-state: var(--mix-play, running);
+    /* --mix-t is the freeze hook: a negative delay parks the animation at a
+       chosen point of its own timeline. It replaced freezing by ANGLE, which
+       only ever worked for the shapes that rotate — the bouncing orb has no
+       angle to freeze. Never remove it: it is how the suite samples the field
+       at several points and measures the worst pixel behind the label. */
+    animation-delay: var(--mix-t, 0s);
+    transition: opacity var(--dur-micro) var(--ease);
+  }
+  /* ⚠️ WHY THE FIELD FADES ON HOVER RATHER THAN BEING COVERED: a negative
+     z-index child paints ABOVE its parent's own background (and below the
+     parent's content). So a hover `background` on the button would have sat
+     UNDER this field and the flood would have been invisible. Fading the
+     field is what makes the settled plate actually read. Same class as the
+     recorded `z-index: -1` trap on the hero's arrow button. */
+  /* ⚠️ EVERY :hover STATE ON THIS BUTTON IS GATED BEHIND `(hover: hover)`
+     (client-reported, 12 Aug 2026: "after i click on the button in mobile
+     version the button is changed to a solid background completely different
+     from previous one"). On a touchscreen `:hover` STICKS after a tap — the
+     browser holds it until something else is tapped — so the flood below
+     latched on and the drifting field faded to nothing, leaving a flat plate
+     that looked like a different button. It was worst here because this
+     button does not navigate away on the homepage: it glides to contact and
+     the visitor is left looking at the stuck state.
+     `:focus-visible` deliberately stays OUTSIDE the gate — it is the keyboard
+     path, and it does not match on a touch tap. Any hover state added to this
+     button later must be split the same way. */
+  @media (hover: hover) {
+    .header--cta[data-cta-style='mix'] .header__cta:hover .header__cta-field::before {
+      opacity: 0;
+    }
+  }
+  .header--cta[data-cta-style='mix'] .header__cta:focus-visible .header__cta-field::before {
+    opacity: 0;
+  }
+
+  /* ── The orb takes the bouncing path instead of the orbit. Like the two
+     gradient shapes below, this MUST follow the base ::before rule — it
+     overrides that rule's animation-name at equal specificity. The path
+     covers far more ground than a rotation, so it runs longer for the same
+     slider setting; the speed slider still scales it. ── */
+  .header--cta[data-cta-field='orb'] .header__cta-field::before {
+    animation-name: cta-mix-bounce;
+    animation-duration: calc(var(--mix-speed, 2.6s) * 2.2);
+  }
+
+  /* ── The two GRADIENT shapes (see the note above: they must follow the
+     base ::before rule, which sets width/height 0 and the box-shadow). ── */
+  .header--cta[data-cta-field='sweep'] .header__cta-field::before,
+  .header--cta[data-cta-field='tide'] .header__cta-field::before {
+    /* Oversized so no bald corner can swing into view as it turns. */
+    width: calc(320% * var(--mix-scale, 1));
+    height: calc(900% * var(--mix-scale, 1));
+    box-shadow: none;
+    border-radius: 0;
+  }
+  .header--cta[data-cta-field='sweep'] .header__cta-field::before {
+    background: conic-gradient(
+      from 0deg,
+      rgb(var(--mix-rgb) / 0) 0deg,
+      rgb(var(--mix-rgb) / var(--mix-a3)) 70deg,
+      rgb(var(--mix-rgb) / 0) 150deg,
+      rgb(var(--mix-rgb) / var(--mix-a1)) 230deg,
+      rgb(var(--mix-rgb) / 0) 320deg,
+      rgb(var(--mix-rgb) / 0) 360deg
+    );
+  }
+  .header--cta[data-cta-field='tide'] .header__cta-field::before {
+    background:
+      radial-gradient(60% 50% at 25% 40%, rgb(var(--mix-rgb) / var(--mix-a3)), transparent 70%),
+      radial-gradient(55% 45% at 78% 62%, rgb(var(--mix-rgb) / var(--mix-a1)), transparent 72%);
+  }
+  /* --mix-a exists so the suite can freeze the orbit at a known angle and
+     measure the label against the field's worst pixel — never remove it.
+     The translate is a no-op on the 0×0 blob shapes and is what centres the
+     sized gradient shapes on the button. */
+  @keyframes cta-mix {
+    from { transform: translate(-50%, -50%) rotate(var(--mix-a, 0deg)); }
+    to { transform: translate(-50%, -50%) rotate(calc(var(--mix-a, 0deg) + 360deg)); }
+  }
+
+  /* ── THE ORB BOUNCES (client, 11 Aug: "change the motion orb to be randomly
+     bouncing around"). Nine irregular stops at irregular times, returning to
+     the first so the loop closes invisibly — the path never traces the same
+     shape twice within a cycle and reads as wandering rather than looping.
+     ⚠️ It is DETERMINISTIC, not random: real randomness would need a script
+     running on every page, and this site's motion is CSS by rule. Linear
+     timing on purpose — a ball changes direction at a wall, it does not ease
+     into one. Offsets are in `em`, so the path scales with the button instead
+     of drifting outside it at another size. Still transform-only, so it stays
+     on the compositor and repaints nothing. ── */
+  @keyframes cta-mix-bounce {
+    0% { transform: translate(-1.45em, 0.34em); }
+    12% { transform: translate(1.15em, -0.52em); }
+    26% { transform: translate(2.35em, 0.46em); }
+    37% { transform: translate(-0.35em, -0.6em); }
+    49% { transform: translate(-2.4em, 0.52em); }
+    58% { transform: translate(0.7em, 0.62em); }
+    71% { transform: translate(2.5em, -0.44em); }
+    84% { transform: translate(-1.05em, -0.58em); }
+    93% { transform: translate(-2.5em, -0.1em); }
+    100% { transform: translate(-1.45em, 0.34em); }
+  }
+  .header--cta[data-cta-glow='hover'] .header__cta { --mix-play: paused; }
+  .header--cta[data-cta-glow='hover'] .header__cta:hover,
+  .header--cta[data-cta-glow='hover'] .header__cta:focus-visible { --mix-play: running; }
+  /* Frozen = the animation held at its current frame, not removed — so the
+     field keeps whatever shape and position --mix-t selects, and one
+     mechanism covers the shapes that rotate AND the one that bounces. */
+  .header--cta[data-cta-glow='still'] .header__cta-field::before { --mix-play: paused; }
+  /* The hover flood — the reference's rgba(255,255,255,.8), in brand: a
+     settled plate rises over the field and the label inverts onto it. */
+  @media (hover: hover) {
+    .header--cta[data-cta-style='mix'] .header__cta:hover {
+      background: rgb(var(--mix-rgb) / 0.92); /* the moving colour, settled */
+      border-color: rgb(var(--mix-rgb));
+      color: var(--navy);
+    }
+    .header--cta.is-solid[data-cta-style='mix'] .header__cta:hover {
+      color: var(--ivory);
+    }
+  }
+  .header--cta[data-cta-style='mix'] .header__cta:focus-visible {
+    background: rgb(var(--mix-rgb) / 0.92);
+    border-color: rgb(var(--mix-rgb));
+    color: var(--navy);
+  }
+  .header--cta.is-solid[data-cta-style='mix'] .header__cta:focus-visible {
+    color: var(--ivory);
+  }
+
+  /* fill — bare at rest; the plate grows in from the left on hover and the
+     label inverts onto it. The hero buttons' own feel, in the bar. */
+  .header--cta[data-cta-style='fill'] .header__cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--ivory);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--dur-element) var(--ease);
+  }
+  .header--cta.is-solid[data-cta-style='fill'] .header__cta::before { background: var(--navy); }
+  .header--cta.is-solid[data-cta-style='fill'] .header__cta { color: var(--navy); }
+  @media (hover: hover) {
+    .header--cta[data-cta-style='fill'] .header__cta:hover { color: var(--navy); }
+    .header--cta[data-cta-style='fill'] .header__cta:hover::before { transform: scaleX(1); }
+    .header--cta.is-solid[data-cta-style='fill'] .header__cta:hover { color: var(--ivory); }
   }
 
   /* ---- State: scrolling through the dark hero ---- */
@@ -673,6 +1214,79 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
     window.addEventListener('resize', setHeight, { passive: true });
     (header as any).__setHeight = setHeight;
 
+    // ── THE CONTACT GLIDE (rides the lab-gated .header--cta button) ──
+    // A deliberate, user-initiated jump is NOT scroll-jacking — the banned
+    // thing is interfering with the user's OWN scrolling (the 28 Jul global
+    // smooth-scroll bug; that rule is untouched and hash landings stay
+    // instant). This animates only the click the visitor asked for, and:
+    //   · surrenders the instant they scroll/touch/key mid-flight;
+    //   · honours reduced motion with an instant jump;
+    //   · lands exactly where a native #contact anchor would, by reading the
+    //     page's own scroll-padding-top (sized from --header-h) — one source
+    //     of truth, never a second guessed offset;
+    //   · is cancelled by teardownHeader, so a page swap mid-glide cannot
+    //     keep scrolling the next page.
+    // Duration and feel are lab-tunable via data-cta-ms / data-cta-ease.
+    const cta = header.querySelector<HTMLAnchorElement>('[data-cta]');
+    let cancelGlide: (() => void) | null = null;
+    (header as any).__cancelGlide = () => cancelGlide?.();
+    if (cta && !(cta as any).__wired) {
+      (cta as any).__wired = true;
+      cta.addEventListener('click', (e) => {
+        const target = document.getElementById('contact');
+        if (!target) return; // no contact section on this page → the href navigates
+        e.preventDefault();
+        cancelGlide?.();
+        const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
+        const offset = Number.isFinite(pad) ? pad : header.offsetHeight + 16;
+        const doc = document.documentElement;
+        const to = Math.max(
+          0,
+          Math.min(
+            window.scrollY + target.getBoundingClientRect().top - offset,
+            doc.scrollHeight - window.innerHeight,
+          ),
+        );
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          window.scrollTo(0, to);
+          return;
+        }
+        const feel = cta.dataset.ctaEase ?? 'glide';
+        if (feel === 'browser') {
+          window.scrollTo({ top: to, behavior: 'smooth' });
+          return;
+        }
+        const ms = Math.max(1, Number(cta.dataset.ctaMs ?? 1200));
+        const from = window.scrollY;
+        const t0 = performance.now();
+        let raf = 0;
+        const stop = () => {
+          cancelAnimationFrame(raf);
+          (['wheel', 'touchstart', 'keydown'] as const).forEach((t) =>
+            window.removeEventListener(t, stop),
+          );
+          cancelGlide = null;
+        };
+        cancelGlide = stop;
+        (['wheel', 'touchstart', 'keydown'] as const).forEach((t) =>
+          window.addEventListener(t, stop, { passive: true }),
+        );
+        // glide = ease-in-out, made for long travel; settle = the site's own
+        // expo-out family (fast out of the gate, settling into the landing).
+        const ease =
+          feel === 'settle'
+            ? (t: number) => 1 - Math.pow(1 - t, 5)
+            : (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+        const step = (now: number) => {
+          const t = Math.min(1, (now - t0) / ms);
+          window.scrollTo(0, Math.round(from + (to - from) * ease(t)));
+          if (t < 1) raf = requestAnimationFrame(step);
+          else stop();
+        };
+        raf = requestAnimationFrame(step);
+      });
+    }
+
     // GLASS MODE ONLY (lab-driven until green-lit): the tint follows the
     // ground actually beneath the bar — navy glass over dark sections, ivory
     // glass over light ones, on every page. The fixed flip at the hero
@@ -822,6 +1436,9 @@ const { phone, phoneDisplay, whatsapp, instagramUrl } = site.contact;
     if (onScroll) { window.removeEventListener('scroll', onScroll); (header as any).__onScroll = null; }
     const setHeight = (header as any).__setHeight;
     if (setHeight) { window.removeEventListener('resize', setHeight); (header as any).__setHeight = null; }
+    // A contact glide still in flight must not keep scrolling the next page.
+    const cancelGlide = (header as any).__cancelGlide;
+    if (cancelGlide) { cancelGlide(); (header as any).__cancelGlide = null; }
   }
 
   document.addEventListener('astro:page-load', initHeader);

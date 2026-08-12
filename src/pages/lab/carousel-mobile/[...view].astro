@@ -1,0 +1,277 @@
+---
+// ⚠️ DEV-ONLY LAB ROUTE — BUILDS NOTHING IN PRODUCTION.
+// Same guard as every other lab: getStaticPaths returns an empty array outside
+// `astro dev`, so a production build generates no page.
+//
+// THE SHELF ON A PHONE — one card at a time (client's ask, 12 Aug 2026):
+//   "i want cards to have extra height … only one card to shown along with
+//    slide preview just border of another card just to know that there are
+//    more cards … however much strength that swipe has it should show one
+//    card at a time … also give some animations to choose … and i dont want
+//    automatic movement of carousel in mobile version"
+//
+// It drives the REAL carousel through its own attributes and custom
+// properties, so the bench and the site can never be two implementations.
+// The live site is untouched: nothing sets `data-mob-one` outside this page.
+//
+// ⚠️ JUDGE THIS AT PHONE WIDTH. Every rule is inside a 52rem media query, so
+// on a desktop window the carousel is deliberately unchanged — which is also
+// the point: the desktop crawl, width and ratio must survive all of this.
+import Base from '@/layouts/Base.astro';
+import Carousel from '@/components/modules/M10-Projects/Carousel.astro';
+import WhatWeDo from '@/components/modules/M05-WhatWeDo/WhatWeDo.astro';
+
+export function getStaticPaths() {
+  if (!import.meta.env.DEV) return [];
+  return [{ params: { view: undefined } }];
+}
+---
+
+<Base title="LAB · The shelf on a phone — Renaissance & Co. (dev only)">
+  <Carousel />
+  <WhatWeDo />
+
+  <aside class="cm-panel" aria-label="Lab controls">
+    <p class="cm-panel__tag">
+      Lab · the shelf on a phone <span id="cm-w"></span>
+      <button type="button" id="cm-toggle" aria-label="Collapse panel">–</button>
+    </p>
+
+    <p class="cm-panel__hint" id="cm-warn"></p>
+
+    <div class="cm-panel__row cm-panel__chips">
+      <button type="button" class="chip is-on" id="cm-on">One card at a time</button>
+      <button type="button" class="chip" id="cm-off">Today's shelf</button>
+    </div>
+    <p class="cm-panel__hint">
+      <b>Swipe it.</b> However hard you flick, it moves exactly one card — that's native
+      <em>snap-stop</em>, not a script fighting your finger. <b>Nothing moves on its own here</b>, as you asked.
+    </p>
+
+    <p class="cm-panel__group">Card height</p>
+    <label class="cm-panel__row">
+      <span>Height <output id="cm-h-o">1.25</output>× the card's width</span>
+      <input type="range" id="cm-h" min="1.05" max="2.10" step="0.05" value="1.25" />
+    </label>
+    <p class="cm-panel__hint">1.25 is what the desktop card uses today (a 4:5 crop). Higher is taller.</p>
+
+    <p class="cm-panel__group">How much of the next card shows</p>
+    <label class="cm-panel__row">
+      <span>Card width <output id="cm-cw-o">88</output>% of the screen</span>
+      <input type="range" id="cm-cw" min="70" max="97" step="1" value="88" />
+    </label>
+    <div class="cm-panel__row cm-panel__chips">
+      <button type="button" class="chip is-on" data-align="start">Peek on one side</button>
+      <button type="button" class="chip" data-align="center">A sliver on both</button>
+    </div>
+    <p class="cm-panel__hint">
+      At 88% you get about a <b>12% sliver</b> of the next card — enough to say “there's another”,
+      not enough to read as two cards. Below ~80% it starts to look like two.
+    </p>
+
+    <p class="cm-panel__group">Moving from one card to the next</p>
+    <div class="cm-panel__row cm-panel__chips">
+      <button type="button" class="chip is-on" data-anim="slide">Slide</button>
+      <button type="button" class="chip" data-anim="fade">Fade</button>
+      <button type="button" class="chip" data-anim="lift">Lift</button>
+      <button type="button" class="chip" data-anim="depth">Depth</button>
+    </div>
+    <p class="cm-panel__hint" id="cm-anim-desc"></p>
+    <label class="cm-panel__row" id="cm-dim-row">
+      <span>How far the off-card recedes <output id="cm-dim-o">0.30</output></span>
+      <input type="range" id="cm-dim" min="0.10" max="0.90" step="0.05" value="0.30" />
+    </label>
+    <p class="cm-panel__hint">
+      All three follow <b>your finger</b> rather than playing a timed animation at you — drag half way
+      and you see half the change. Anyone with “reduce motion” on gets plain sliding, and
+      <b>still gets one card per swipe</b>: the snapping isn't motion, it's where the scroll comes to rest.
+    </p>
+
+    <p class="cm-panel__group">Automatic movement</p>
+    <div class="cm-panel__row cm-panel__chips">
+      <button type="button" class="chip is-on" id="cm-crawl-off">Off (your ask)</button>
+      <button type="button" class="chip" id="cm-crawl-on">Crawling</button>
+    </div>
+    <p class="cm-panel__hint">
+      ⚠️ <b>These two are a pair, not a preference.</b> The one-card layout uses mandatory snapping,
+      and snapping fights a continuous crawl every frame — turn the crawl back on here and you'll
+      see it judder. <b>The desktop crawl is untouched either way.</b>
+    </p>
+
+    <div class="cm-panel__row cm-panel__chips">
+      <button type="button" class="chip" id="cm-copy">Copy settings</button>
+    </div>
+    <p class="cm-panel__hint cm-panel__warn">
+      Nothing here touches your live site. When you've picked, send me the line and I'll bake it in —
+      then it's a separate “push it” as always. <b>One good side effect:</b> with nothing moving by
+      itself on a phone, the accessibility trade-off recorded against this carousel in July no longer
+      applies there.
+    </p>
+  </aside>
+</Base>
+
+<style is:global>
+  .cm-panel {
+    position: fixed;
+    left: 1rem;
+    bottom: 1rem;
+    z-index: 60;
+    width: min(21rem, calc(100vw - 2rem));
+    max-height: min(60vh, calc(100vh - 8rem));
+    overflow-y: auto;
+    background: var(--ivory);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    padding: var(--space-2);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--navy) 18%, transparent);
+    font-family: var(--font-util);
+    font-size: var(--type-caption);
+    color: var(--navy);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .cm-panel.is-collapsed > *:not(.cm-panel__tag) { display: none; }
+  .cm-panel__tag {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase; color: var(--text-gold-safe); margin: 0;
+  }
+  #cm-toggle {
+    margin-left: auto; width: 1.6rem; height: 1.6rem; line-height: 1;
+    border: 1px solid var(--hairline); border-radius: 3px;
+    font-size: 1rem; color: var(--navy); background: none; cursor: pointer;
+  }
+  .cm-panel__group {
+    margin: 0.2rem 0 0; font-size: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--text-muted);
+  }
+  .cm-panel__row { display: flex; flex-direction: column; gap: 0.25rem; margin: 0; }
+  .cm-panel__row input[type='range'] { width: 100%; }
+  .cm-panel__chips { flex-direction: row; flex-wrap: wrap; gap: 0.35rem; }
+  .cm-panel .chip {
+    font-family: var(--font-util); font-size: var(--type-caption);
+    padding: 0.3rem 0.55rem; border: 1px solid var(--hairline); border-radius: 3px;
+    background: none; color: var(--navy); cursor: pointer;
+  }
+  .cm-panel .chip.is-on { background: var(--navy); color: var(--ivory); border-color: var(--navy); }
+  .cm-panel__hint { margin: 0; font-size: 0.72rem; line-height: 1.5; color: var(--text-muted); }
+  .cm-panel__warn { border-top: 1px solid var(--hairline); padding-top: 0.5rem; color: var(--gold-antique); }
+  .cm-panel__hint b { color: var(--navy); font-weight: 500; }
+  #cm-w { font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+  // The bench writes the carousel's OWN attributes and variables. There is no
+  // second implementation of any of this.
+  const root = document.querySelector('[data-carousel]') as HTMLElement;
+  const panel = document.querySelector('.cm-panel') as HTMLElement;
+
+  const ANIM: Record<string, string> = {
+    slide: 'Slide — the cards simply travel with your finger. The phone\'s own scrolling, nothing added.',
+    fade: 'Fade — the card you\'re leaving dims out and the next one comes up as it arrives. The quietest of the three.',
+    lift: 'Lift — the off-card sits slightly smaller and dimmer, so the one you\'re reading is visibly the one in hand.',
+    depth: 'Depth — the next card comes forward from further back. The most physical, and the loudest; worth judging against Lift before choosing it.',
+  };
+
+  // Re-evaluating the crawl is the carousel's own resize path — no second hook.
+  const nudge = () => window.dispatchEvent(new Event('resize'));
+
+  const setAttr = (name: string, value: string | null) => {
+    if (value === null) root.removeAttribute(name);
+    else root.setAttribute(name, value);
+    nudge();
+  };
+  const setVar = (name: string, value: string) => root.style.setProperty(name, value);
+
+  // Open on the layout the client asked for.
+  setAttr('data-mob-one', '');
+  setAttr('data-mob-anim', 'slide');
+
+  const showWidth = () => {
+    const w = window.innerWidth;
+    const phone = w < 832;
+    (document.getElementById('cm-w') as HTMLElement).textContent = `${w}px`;
+    (document.getElementById('cm-warn') as HTMLElement).innerHTML = phone
+      ? '<b>You are at phone width — this is the layout in question.</b> Swipe the shelf.'
+      : '⚠️ <b>You are on a desktop width, where none of this applies by design.</b> Narrow the window below 832px, or open this page on your phone, to judge it. What you see now is the desktop carousel, which must survive unchanged.';
+  };
+  showWidth();
+  window.addEventListener('resize', showWidth);
+
+  const group = (selector: string, apply: (v: string) => void) => {
+    panel.querySelectorAll<HTMLButtonElement>(selector).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        panel.querySelectorAll(selector).forEach((b) => b.classList.remove('is-on'));
+        btn.classList.add('is-on');
+        apply((btn.dataset.align ?? btn.dataset.anim)!);
+      });
+    });
+  };
+  group('[data-align]', (v) => setVar('--mob-align', v));
+
+  const animDesc = document.getElementById('cm-anim-desc')!;
+  const dimRow = document.getElementById('cm-dim-row')!;
+  const showAnim = (v: string) => {
+    animDesc.textContent = ANIM[v] ?? '';
+    dimRow.style.display = v === 'slide' ? 'none' : '';
+  };
+  group('[data-anim]', (v) => { setAttr('data-mob-anim', v); showAnim(v); });
+  showAnim('slide');
+
+  const slider = (id: string, apply: (v: string) => void, fmt: (v: string) => string) => {
+    const input = document.getElementById(id) as HTMLInputElement;
+    const out = document.getElementById(`${id}-o`) as HTMLOutputElement;
+    const run = () => { out.textContent = fmt(input.value); apply(input.value); };
+    input.addEventListener('input', run);
+    run();
+  };
+  slider('cm-h', (v) => setVar('--mob-card-h', v), (v) => (+v).toFixed(2));
+  slider('cm-cw', (v) => setVar('--mob-card-w', `${v}%`), (v) => String(Math.round(+v)));
+  slider('cm-dim', (v) => setVar('--mob-dim', v), (v) => (+v).toFixed(2));
+
+  document.getElementById('cm-on')!.addEventListener('click', () => {
+    setAttr('data-mob-one', '');
+    document.getElementById('cm-on')!.classList.add('is-on');
+    document.getElementById('cm-off')!.classList.remove('is-on');
+  });
+  document.getElementById('cm-off')!.addEventListener('click', () => {
+    setAttr('data-mob-one', null);
+    document.getElementById('cm-off')!.classList.add('is-on');
+    document.getElementById('cm-on')!.classList.remove('is-on');
+  });
+
+  // The crawl chips prove the pairing rather than offering a real choice —
+  // "crawling" re-arms it so the client can feel why it cannot stay.
+  document.getElementById('cm-crawl-on')!.addEventListener('click', () => {
+    setAttr('data-mob-one', null);
+    document.getElementById('cm-crawl-on')!.classList.add('is-on');
+    document.getElementById('cm-crawl-off')!.classList.remove('is-on');
+  });
+  document.getElementById('cm-crawl-off')!.addEventListener('click', () => {
+    setAttr('data-mob-one', '');
+    document.getElementById('cm-crawl-off')!.classList.add('is-on');
+    document.getElementById('cm-crawl-on')!.classList.remove('is-on');
+  });
+
+  document.getElementById('cm-copy')!.addEventListener('click', async () => {
+    const s = root.style;
+    const line = [
+      `one card at a time ${root.hasAttribute('data-mob-one') ? 'ON' : 'off'}`,
+      `height ${s.getPropertyValue('--mob-card-h') || '1.25'}×`,
+      `card width ${s.getPropertyValue('--mob-card-w') || '88%'}`,
+      `peek ${s.getPropertyValue('--mob-align') || 'start'}`,
+      `animation ${root.getAttribute('data-mob-anim')}`,
+      `recede ${s.getPropertyValue('--mob-dim') || '0.30'}`,
+      'auto-movement off',
+    ].join(' · ');
+    try {
+      await navigator.clipboard.writeText(line);
+      const b = document.getElementById('cm-copy')!;
+      const t = b.textContent; b.textContent = 'Copied ✓';
+      setTimeout(() => { b.textContent = t; }, 1400);
+    } catch { prompt('Copy this line and send it back:', line); }
+  });
+
+  document.getElementById('cm-toggle')!.addEventListener('click', () => panel.classList.toggle('is-collapsed'));
+</script>

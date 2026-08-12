@@ -27,6 +27,10 @@ import Reveal from '@/components/primitives/Reveal.astro';
 import Marquee from '@/components/primitives/Marquee.astro';
 import { projects, projectsContent } from '@/data/projects';
 import { backdropRows, BACKDROP_REPEAT } from './backdrop';
+// How the shelf behaves on a phone (client's settings, 12 Aug 2026). Phone
+// only — every rule these feed is inside a 52rem media query below, so the
+// desktop carousel is untouched. See shelf-mobile.ts for the full contract.
+import { shelfMobile, shelfMobileVars } from './shelf-mobile';
 
 const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsContent;
 ---
@@ -67,7 +71,13 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     </div>
 
     <Reveal index={2}>
-      <div class="carousel" data-carousel>
+      <div
+        class="carousel"
+        data-carousel
+        data-mob-one={shelfMobile.enabled ? '' : undefined}
+        data-mob-anim={shelfMobile.enabled ? shelfMobile.anim : undefined}
+        style={shelfMobile.enabled ? shelfMobileVars() : undefined}
+      >
         {/* `data-carousel-track`, NOT `data-track`: the latter is the Meta
             plumbing hook (data-track="call" etc.), and the two collided — a bare
             [data-track] query matched the header's phone button instead of this
@@ -378,6 +388,92 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
     flex: 0 0 var(--card-w);
   }
 
+  /* ── ONE CARD AT A TIME ON A PHONE (client's ask, 12 Aug 2026) ────────────
+     "only one card to shown along with slide preview just border of another
+      card just to know that there are more cards … however much strength that
+      swipe has it should show one card at a time … and i dont want automatic
+      movement of carousel in mobile version"
+
+     ⚠️ PHONE ONLY, AND GATED OFF. Nothing here applies without `data-mob-one`
+     on the root, and nothing applies above 52rem — the desktop carousel keeps
+     its crawl, its width and its ratio exactly as they are.
+
+     ⚠️ `scroll-snap-stop: always` IS THE WHOLE ANSWER TO "one card however
+     hard you swipe", and it is native. Mandatory snap alone does NOT do it —
+     a hard fling passes several snap points and lands wherever momentum dies.
+     `always` forces the scroll to stop at each one, so a flick and a shove
+     both advance exactly one card. No JavaScript owns the gesture, which is
+     what keeps the swipe feeling like the phone's own.
+
+     ⚠️ This pairs with the crawl being OFF here, and the two must stay paired.
+     Mandatory snap and a continuous crawl are incompatible — snap drags the
+     track back to the nearest card every frame (the note above this block).
+     Turning the crawl back on for phones without removing this snap gives a
+     carousel that judders or never moves. */
+  @media (max-width: 51.999rem) {
+    .carousel[data-mob-one] {
+      /* Wider card = thinner sliver of the next one. 88% leaves ~12%: enough
+         to read as "there is another card", not enough to read as two cards. */
+      --card-w: var(--mob-card-w, 88%);
+    }
+    .carousel[data-mob-one] .card__media {
+      /* Height as a multiple of the card's width. The desktop 4/5 is 1.25. */
+      aspect-ratio: 1 / var(--mob-card-h, 1.25);
+    }
+    .carousel[data-mob-one] .carousel__track {
+      scroll-snap-type: x mandatory;
+    }
+    .carousel[data-mob-one] .carousel__item {
+      scroll-snap-align: var(--mob-align, start);
+      scroll-snap-stop: always;
+    }
+
+    /* ── How one card becomes the next ───────────────────────────────────
+       Driven by each card's own position in the track's scrollport, so the
+       motion IS the swipe rather than a timed animation played at it: drag
+       half way and you see half the change, exactly as a finger expects.
+       Pure CSS on the compositor — the same mechanism M18's film already
+       uses. `slide` is the native track scroll and adds nothing at all. */
+    @supports (animation-timeline: view()) {
+      .carousel[data-mob-one]:not([data-mob-anim='slide']) .carousel__item {
+        animation: linear both;
+        animation-timeline: view(inline);
+        animation-range: cover 0% cover 100%;
+      }
+      .carousel[data-mob-one][data-mob-anim='fade'] .carousel__item { animation-name: mobFade; }
+      .carousel[data-mob-one][data-mob-anim='lift'] .carousel__item { animation-name: mobLift; }
+      .carousel[data-mob-one][data-mob-anim='depth'] .carousel__item { animation-name: mobDepth; }
+    }
+
+    /* ⚠️ Reduced motion switches the choreography off but KEEPS the snapping.
+       Snapping is not motion — it is where a scroll comes to rest, and it is
+       the thing that makes one swipe mean one card. Removing it here would
+       take the feature away from the visitors most helped by it. */
+    @media (prefers-reduced-motion: reduce) {
+      .carousel[data-mob-one] .carousel__item {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+    }
+  }
+
+  @keyframes mobFade {
+    0% { opacity: var(--mob-dim, 0.3); }
+    50% { opacity: 1; }
+    100% { opacity: var(--mob-dim, 0.3); }
+  }
+  @keyframes mobLift {
+    0% { opacity: var(--mob-dim, 0.45); transform: scale(var(--mob-scale, 0.9)); }
+    50% { opacity: 1; transform: scale(1); }
+    100% { opacity: var(--mob-dim, 0.45); transform: scale(var(--mob-scale, 0.9)); }
+  }
+  @keyframes mobDepth {
+    0% { opacity: var(--mob-dim, 0.55); transform: scale(var(--mob-scale, 0.82)) translateY(2%); }
+    50% { opacity: 1; transform: scale(1) translateY(0); }
+    100% { opacity: var(--mob-dim, 0.55); transform: scale(var(--mob-scale, 0.82)) translateY(2%); }
+  }
+
   .card { display: block; height: 100%; }
 
   .card__media {
@@ -553,6 +649,10 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
       let resumeTimer: number | null = null;
       let busy = false; // focused, or recently interacted with
       let focused = false; // keyboard focus inside — wrapping pauses too, see below
+      // A finger is down, or the fling it released has not settled. Wrapping
+      // pauses for the same reason it pauses for focus — see `normalize`.
+      let dragging = false;
+      let dragTimer = 0;
       let onScreen = false;
 
       // ---- THE ENDLESS CIRCLE (client, 6 Aug 2026) --------------------------
@@ -596,8 +696,18 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
       // Keep scrolling inside the band. Skipped while keyboard focus is inside:
       // a teleport moves the focused element physically, and the browser's own
       // scroll-to-focused would fight it — focusout normalizes instead.
+      // ⚠️ NEVER TELEPORT WHILE A FINGER IS DOWN. Setting `scrollLeft` during a
+      // gesture cancels the browser's own scroll, and where the phone layout's
+      // mandatory snap is active the two then fight each other: measured on the
+      // real homepage, the track oscillated 1438 → 2875 → 1438 on every scroll
+      // event at the band edge and NO swipe could move it at all — a carousel
+      // that looked completely dead. Same family as the focus guard beside it
+      // (a teleport moves the focused element and the browser's scroll-to-focus
+      // fights back), and as the 28 Jul finding that snap and the crawl cannot
+      // coexist. The wrap is not urgent: the band is a whole period wide, so
+      // deferring it to the end of the gesture is invisible.
       const normalize = () => {
-        if (period <= 0 || focused) return;
+        if (period <= 0 || focused || dragging) return;
         let x = track.scrollLeft;
         if (x >= period && x < 2 * period) return;
         while (x < period) x += period;
@@ -633,8 +743,20 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
         track.scrollBy({ left: d * step(), behavior: reduce.matches ? 'auto' : 'smooth' });
       };
 
+      // ⚠️ THE CRAWL DOES NOT RUN ON A PHONE ONCE THE ONE-CARD LAYOUT IS ON
+      // (client, 12 Aug 2026: "i dont want automatic movement of carousel in
+      // mobile version"). Re-read live rather than captured once, because the
+      // breakpoint can be crossed by a rotation or a resize — and because the
+      // bench toggles the gate without reloading.
+      // This is also load-bearing, not preference: that layout uses mandatory
+      // scroll-snap, and snap plus a continuous crawl fight each other every
+      // frame. The two settings must move together.
+      const phoneOneCard = () =>
+        root.hasAttribute('data-mob-one') &&
+        window.matchMedia('(max-width: 51.999rem)').matches;
+
       const mayRun = () =>
-        !busy && onScreen && !reduce.matches && !document.hidden && period > 4;
+        !busy && onScreen && !reduce.matches && !document.hidden && period > 4 && !phoneOneCard();
 
       // One continuous crawl at a constant rate — distance is derived from real
       // elapsed time, so the speed is identical on a 60Hz and a 120Hz screen and
@@ -682,6 +804,22 @@ const { carouselEyebrow, carouselHeading, carouselAll, labels } = projectsConten
       ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach((evt) =>
         track.addEventListener(evt, interacted, { passive: true }),
       );
+
+      // Hold the wrap off for the whole gesture AND the fling it releases.
+      // `touchend` is not the end of the movement — momentum and the snap
+      // settle after it, and teleporting into either kills them.
+      const holdWrap = () => {
+        dragging = true;
+        window.clearTimeout(dragTimer);
+      };
+      const releaseWrap = () => {
+        window.clearTimeout(dragTimer);
+        dragTimer = window.setTimeout(() => { dragging = false; normalize(); }, 450);
+      };
+      track.addEventListener('touchstart', holdWrap, { passive: true });
+      track.addEventListener('touchmove', holdWrap, { passive: true });
+      track.addEventListener('touchend', releaseWrap, { passive: true });
+      track.addEventListener('touchcancel', releaseWrap, { passive: true });
 
       // NOTE: hovering does NOT pause. It used to, and that was a mistake — a
       // reader's cursor commonly just sits somewhere in the middle of the page,
